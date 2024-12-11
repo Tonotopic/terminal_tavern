@@ -6,11 +6,13 @@ import inspect
 
 # <editor-fold desc="Ingredients">
 class Ingredient:
-    def __init__(self, ingredient_id=None, name=None, image=None, character=None):
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None, volumes=None):
         self.ingredient_id = ingredient_id
         self.name = name
         self.image = image
         self.character = character
+        if volumes is None:
+            self.volumes = {}
 
     def a(self):
         """Determines whether "a" or "an" should be printed just before the character attribute."""
@@ -59,8 +61,8 @@ class Ingredient:
 
 # <editor-fold desc="Drinks">
 class Drink(Ingredient):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None):
-        super().__init__(ingredient_id, name, image, character)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, volumes=None):
+        super().__init__(ingredient_id, name, image, character, volumes)
         self.flavor = flavor
         if flavor is None:
             self.flavor = ""
@@ -83,9 +85,10 @@ class Drink(Ingredient):
 
 # <editor-fold desc="Alcohols">
 class Alcohol(Drink):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, volumes)
         self.abv = abv
+
 
     def notes_desc(self):
         return f" with notes of {self.notes}"
@@ -102,18 +105,18 @@ class Alcohol(Drink):
 
 
 class Beer(Alcohol):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class Stout(Beer):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class MilkStout(Beer):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
     @override
     def format_type(self):
@@ -121,13 +124,13 @@ class MilkStout(Beer):
 
 
 class Ale(Beer):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class BlondeAle(Ale):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
     @override
     def format_type(self):
@@ -136,18 +139,18 @@ class BlondeAle(Ale):
 
 # <editor-fold desc="Wine">
 class Wine(Alcohol):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class Chardonnay(Wine):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class PinotNoir(Wine):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
     @override
     def format_type(self):
@@ -155,13 +158,13 @@ class PinotNoir(Wine):
 
 
 class Merlot(Wine):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class Rose(Wine):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
     @override
     def format_type(self):
@@ -169,8 +172,8 @@ class Rose(Wine):
 
 
 class Riesling(Wine):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 # </editor-fold>  # Wine
@@ -178,53 +181,53 @@ class Riesling(Wine):
 
 # <editor-fold desc="Spirits">
 class Spirit(Alcohol):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class Vodka(Spirit):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 # <editor-fold desc="Whiskey">
 class Whiskey(Spirit):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class Bourbon(Whiskey):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class Scotch(Whiskey):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 # </editor-fold>  # Whiskey
 
 
 class Gin(Spirit):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class Tequila(Spirit):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 # <editor-fold desc="Rum">
 class Rum(Spirit):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class WhiteRum(Rum):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
     @override
     def format_type(self):
@@ -232,8 +235,8 @@ class WhiteRum(Rum):
 
 
 class DarkRum(Rum):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
     @override
     def format_type(self):
@@ -247,35 +250,51 @@ class DarkRum(Rum):
 
 
 class Liqueur(Alcohol):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class Bitter(Liqueur):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 class Vermouth(Liqueur):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
-        super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 # </editor-fold>  # Alcohols
 
+class NonAlcohol(Drink):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, "", volumes)
 
-class Tea(Drink):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None):
-        super().__init__(ingredient_id, name, image, flavor, character, "")
+    @override
+    def format_type(self):
+        return "Non-Alcoholic Drink"
+
+
+class Tea(NonAlcohol):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, volumes)
 
     @override
     def description(self):  # Skip Drink desc and go back to Ingredient to re-capitalize generics
         return Ingredient.description(self)
 
+    @override
+    def format_type(self):
+        return Ingredient.format_type(self)
 
-class Soda(Drink):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None):
-        super().__init__(ingredient_id, name, image, flavor, character, "")
+
+class Soda(NonAlcohol):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, volumes)
+
+    @override
+    def format_type(self):
+        return Ingredient.format_type(self)
 
 
 # </editor-fold>  # Drinks
@@ -283,36 +302,36 @@ class Soda(Drink):
 
 # <editor-fold desc="Additives">
 class Additive(Ingredient):
-    def __init__(self, ingredient_id=None, name=None, image=None, character=None):
-        super().__init__(ingredient_id, name, image, character)
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None, volumes=None):
+        super().__init__(ingredient_id, name, image, character, volumes)
 
 
 class Syrup(Additive):
-    def __init__(self, ingredient_id=None, name=None, image=None, character=None, flavor=None):
-        super().__init__(ingredient_id, name, image, character)
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None, flavor=None, volumes=None):
+        super().__init__(ingredient_id, name, image, character, volumes)
         if flavor is None:
             flavor = ""
         self.flavor = flavor
 
 
 class Spice(Additive):
-    def __init__(self, ingredient_id=None, name=None, image=None, character=None):
-        super().__init__(ingredient_id, name, image, character)
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None, volumes=None):
+        super().__init__(ingredient_id, name, image, character, volumes)
 
 
 class Herb(Additive):
-    def __init__(self, ingredient_id=None, name=None, image=None, character=None):
-        super().__init__(ingredient_id, name, image, character)
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None, volumes=None):
+        super().__init__(ingredient_id, name, image, character, volumes)
 
 
 class Sweetener(Additive):
-    def __init__(self, ingredient_id=None, name=None, image=None, character=None):
-        super().__init__(ingredient_id, name, image, character)
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None, volumes=None):
+        super().__init__(ingredient_id, name, image, character, volumes)
 
 
 class Fruit(Additive):
-    def __init__(self, ingredient_id=None, name=None, image=None, character=None):
-        super().__init__(ingredient_id, name, image, character)
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None, volumes=None):
+        super().__init__(ingredient_id, name, image, character, volumes)
 
     def crush(self):
         pass
@@ -326,41 +345,42 @@ class Fruit(Additive):
 
 # @TODO:  Not sure that there is truly no way to extract this automatically
 class_arg_mapping = {
-    "Ingredient": ["ingredient_id", "name", "image", "character"],
-    "Drink": ["ingredient_id", "name", "image", "flavor", "character", "notes"],
-    "Alcohol": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Beer": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Stout": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "MilkStout": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Ale": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "BlondeAle": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Wine": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Chardonnay": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "PinotNoir": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Merlot": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Rose": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Riesling": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Spirit": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Vodka": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Whiskey": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Bourbon": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Scotch": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Gin": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Tequila": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Rum": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "WhiteRum": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "DarkRum": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Liqueur": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Bitter": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Vermouth": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv"],
-    "Tea": ["ingredient_id", "name", "image", "flavor", "character"],
-    "Soda": ["ingredient_id", "name", "image", "flavor", "character"],
-    "Additive": ["ingredient_id", "name", "image", "character"],
-    "Syrup": ["ingredient_id", "name", "image", "flavor", "character"],
-    "Spice": ["ingredient_id", "name", "image", "character"],
-    "Herb": ["ingredient_id", "name", "image", "character"],
-    "Sweetener": ["ingredient_id", "name", "image", "character"],
-    "Fruit": ["ingredient_id", "name", "image", "character"]
+    "Ingredient": ["ingredient_id", "name", "image", "character", "volumes"],
+    "Drink": ["ingredient_id", "name", "image", "flavor", "character", "notes", "volumes"],
+    "Alcohol": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Beer": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Stout": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "MilkStout": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Ale": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "BlondeAle": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Wine": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Chardonnay": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "PinotNoir": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Merlot": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Rose": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Riesling": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Spirit": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Vodka": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Whiskey": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Bourbon": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Scotch": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Gin": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Tequila": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Rum": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "WhiteRum": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "DarkRum": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Liqueur": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Bitter": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "Vermouth": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
+    "NonAlcohol": ["ingredient_id", "name", "image", "flavor", "character", "volumes"],
+    "Tea": ["ingredient_id", "name", "image", "flavor", "character", "volumes"],
+    "Soda": ["ingredient_id", "name", "image", "flavor", "character", "volumes"],
+    "Additive": ["ingredient_id", "name", "image", "character", "volumes"],
+    "Syrup": ["ingredient_id", "name", "image", "flavor", "character", "volumes"],
+    "Spice": ["ingredient_id", "name", "image", "character", "volumes"],
+    "Herb": ["ingredient_id", "name", "image", "character", "volumes"],
+    "Sweetener": ["ingredient_id", "name", "image", "character", "volumes"],
+    "Fruit": ["ingredient_id", "name", "image", "character", "volumes"]
 }
 
 # Database connection
@@ -385,6 +405,7 @@ def create_ingredient(ingredient_type, **row_data):
 
 
 all_ingredients = {}
+product_volumes = {}
 
 
 def load_ingredients_from_db():
@@ -401,6 +422,17 @@ def load_ingredients_from_db():
         ingredient = create_ingredient(ingredient_class, **ingredient_data)
         all_ingredients[ingredient.name] = ingredient  # Use ingredient.name as key
 
+    cursor.execute("SELECT * FROM product_volumes")
+    column_names = [description[0] for description in cursor.description]
+    for row in cursor.fetchall():
+        volume_data = dict(zip(column_names, row))
+        product_name = volume_data["product_name"]
+        ingredient = all_ingredients.get(product_name)
+
+        if ingredient:
+            volume = volume_data["oz"]
+            price = volume_data["price"]
+            ingredient.volumes[volume] = price
 
 def list_ingredients(container, typ):
     lst = {}

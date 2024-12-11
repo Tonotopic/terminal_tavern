@@ -2,7 +2,8 @@ from rich.console import Console
 from rich.theme import Theme
 from rich.style import Style
 
-ing_styles_dict = {"abv": Style(color="#8395fc"),
+ing_styles_dict = {"abv": Style(color="#d40241"),
+                   # Ingredients
                    "fruit": Style(color="#ff66bb"),
                    "herb": Style(color="#47b809"),
                    "additive": Style(color="#a755fa"),

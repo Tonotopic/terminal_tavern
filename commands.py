@@ -13,8 +13,12 @@ def find_command(inpt, allowed_commands=None):
     matching_commands = []
 
     for command in commands:
-        if command.startswith(inpt):
-            matching_commands.append(command)
+        if len(inpt) < 5:  # Short inputs likely to be only the beginning of a word
+            if command.startswith(inpt):
+                matching_commands.append(command)
+        else:  # Long inputs may be a later part of a product name
+            if inpt in command:
+                matching_commands.append(command)
 
     if len(matching_commands) == 1:
         # found 1 match
