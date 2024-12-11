@@ -88,6 +88,8 @@ help_panels = {
 }
 
 
+# TODO: "shop fr" goes to fruit tarts, not fruit
+
 def draw_help_panel(term):
     """Print a panel to the user containing help info for the given term."""
     logger.log("Drawing help panel for " + term)

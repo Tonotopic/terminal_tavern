@@ -14,6 +14,7 @@ styles = {"abv": Style(color="#d40241"),
           "warn": Style(color="#fcba03"),
           "highlight": Style(color="#a3bfff"),
           "error": Style(color="#ba2318"),
+          "l": Style(color="#3c8fc2"),
           # Ingredients
           "cocktails": Style(color="#5de3c1"),
           "drink": Style(color="#db1818"),

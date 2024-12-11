@@ -355,7 +355,8 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
         #  Don't do mid-word matches for Alcohol vs Non-Alcohol so "alco"+ doesn't return both commands
         force_beginning = True if current_selection == Drink else False
 
-        primary_cmd, args = input_loop(prompt, shop_commands, force_beginning, current_selection, bar=bar, skip="shop")
+        primary_cmd, args = input_loop(prompt=prompt, commands=shop_commands, force_beginning=force_beginning,
+                                       ingredient=current_selection, bar=bar, skip="shop")
 
         if msg:
             msg = None

@@ -124,6 +124,8 @@ class BarStock:
         global table_section
         table_section = table_1
         for item in items:
+            min_price = 0
+            max_price = 0
             if len(table_section.rows) > console.height - 12:
                 table_section = Table(**table_settings)
                 table_section.add_column(justify="center")
@@ -169,6 +171,7 @@ class BarStock:
         ing_missing = False
         for req_ingredient, req_quantity in recipe.r_ingredients.items():
             if isinstance(req_ingredient, type):  # Check if requirement is a type (accepts any)
+                req_quantity = req_ingredient().get_portions()[req_quantity]
                 found_match = False
                 for inv_ingredient in self.inventory:
                     if isinstance(inv_ingredient,
@@ -236,8 +239,8 @@ class BarStock:
 
     def pour(self, menu_item: MenuItem):
         if isinstance(menu_item, Recipe):
-            r_ingredients = self.select_ingredients(menu_item)
-            for ingredient, volume in r_ingredients:
+            provided_ings = self.select_ingredients(menu_item)
+            for ingredient, volume in provided_ings:
                 self.inventory[ingredient] -= volume
                 logger.log(f"Pouring {volume} of {ingredient.name} - stock now at {self.inventory[ingredient]}")
         else:

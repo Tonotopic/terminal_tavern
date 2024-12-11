@@ -1,10 +1,13 @@
+import inspect
 import logging
 import datetime
 import os
 import sys
 import traceback
-import inspect
+import types
 from logging.handlers import RotatingFileHandler
+
+from rich_console import console
 
 
 def filename():
@@ -26,9 +29,11 @@ def delete_oldest_log(log_dir, max_files):
         os.remove(log_files[0])
 
 
-def exception_handler(exc_type, exc_value, exc_traceback):
+def log_exception(exc_type, exc_value, exc_traceback):
+    console.print("[error]!!!!!!!!Exception encountered!!!!!!!!!!")
     tb_str = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
     logger.error(tb_str)
+    console.print(tb_str)
 
     # Extract the frame where the exception occurred
     tb = exc_traceback
@@ -37,9 +42,40 @@ def exception_handler(exc_type, exc_value, exc_traceback):
     frame = tb.tb_frame
 
     # Get local variables from the frame
+    console.print("[error]Locals:")
+
     local_vars = frame.f_locals
     for var_name, var_value in local_vars.items():
-        logger.error(f"  {var_name}: {var_value}")
+        if var_name.startswith("__") or isinstance(var_value, types.ModuleType):
+            continue
+
+        def is_ingredient(obj):
+            for cls in inspect.getmro(type(obj)):
+                if cls.__name__ == "Ingredient":
+                    return True
+
+        def ing_name(obj):
+            if hasattr(obj, "name"):
+                return obj.name
+            else:
+                return obj.format_type()
+
+        if isinstance(var_value, list) or isinstance(var_value, dict):
+            locals_line = f"  [l]{var_name}[/l]: "
+            for item in var_value:
+                if is_ingredient(item):
+                    locals_line += f"{ing_name(item)}, "
+                else:
+                    locals_line += str(var_value)
+        else:
+            if is_ingredient(var_value):
+                var_value = ing_name(var_value)
+            locals_line = f"  [l]{var_name}[/l]: {var_value}"
+
+        logger.error(locals_line)
+        if len(locals_line) > 500:
+            locals_line = locals_line[:500] + "..."
+        console.print(locals_line)
 
 
 if not os.path.exists("logs"):
@@ -56,6 +92,6 @@ file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
 
-sys.excepthook = exception_handler
+sys.excepthook = log_exception
 
 delete_oldest_log("logs", 5)
