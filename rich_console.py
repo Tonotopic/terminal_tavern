@@ -3,6 +3,7 @@ from rich.theme import Theme
 from rich.style import Style
 
 ing_styles_dict = {"abv": Style(color="#d40241"),
+                   "money": Style(color="#cfba02"),
                    # Ingredients
                    "fruit": Style(color="#ff66bb"),
                    "herb": Style(color="#47b809"),
