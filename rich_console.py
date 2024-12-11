@@ -2,16 +2,21 @@ from rich.console import Console
 from rich.theme import Theme
 from rich.style import Style
 
+
 styles = {"abv": Style(color="#d40241"),
           "money": Style(color="#cfba02"),
           "dimmed": Style(color="#6e6e6e"),
+          "panel": Style(color="#3c8fc2"),
+          "prompt": Style(color="#429e45"),
+          "error": Style(color="#ba2318"),
           # Ingredients
+          "drink": Style(color="#8189fc"),
+          "additive": Style(color="#ff66bb"),
           "fruit": Style(color="#ff66bb"),
           "herb": Style(color="#3b8c0e"),
           "spice": Style(color="#875933"),
           "sweetener": Style(color="#fcd29f"),
-          "additive": Style(color="#a755fa"),
-          "drink": Style(color="#8189fc"),
+          "syrup": Style(color="#a755fa"),
           "energy drink": Style(color="#57d63e"),
           "alcohol": Style(color="#db1818"),
           "beer": Style(color="#ffba59"),

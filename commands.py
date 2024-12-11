@@ -1,114 +1,35 @@
 import cmd
 import sys
-from typing import override
+from typing import override, Iterable
+from rich.layout import Layout
+from rich.panel import Panel
+from unidecode import unidecode
+import warnings
 
 import ingredients
+import recipe
 from rich_console import console
+import bar
 
 # TODO: Make "buy" work outside ingredient volumes screen
-all_commands = {"shop", "buy", "save", "quit"}
-main_commands = {"shop"}
-
-
 # TODO: Help info on command logic
-class BarCmd(cmd.Cmd):
-    intro = 'Welcome to the bar. Type help or ? to list commands.\n'
-    prompt = '> '
 
-    def __init__(self, bar_instance):  # Pass your Bar instance
-        super().__init__()
-        self.bar = bar_instance
+warnings.filterwarnings("ignore", category=SyntaxWarning)
 
-    @override
-    def onecmd(self, cmd, return_result=False):
-        # Check if find_command returned a tuple
-        if isinstance(cmd, list):
-            cmd, args = cmd  # Unpack the tuple
-            if cmd == 'buy':
-                if len(args) == 2:
-                    # If ingredient passed as Ingredient
-                    if isinstance(args[0], ingredients.Ingredient):
-                        result = self.do_buy(args[0], args[1])
-                    # If ingredient passed as string
-                    elif isinstance(args[0], str):
-                        # Join ingredient name parts (excluding the last element which is the quantity)
-                        ingredient_name = ' '.join(args[:-1])
-                        quantity = args[-1]  # Get the last element as the quantity
-
-                        ingredient = ingredients.get_ingredient(ingredient_name)
-                        if ingredient:
-                            result = self.do_buy(ingredient, quantity)
-                        else:
-                            console.print(f"Ingredient '{ingredient_name}' not found.")
-                            return False
-                    else:
-                        console.print("Invalid arguments.")
-                        return False
-
-                    if return_result:  # If we need to check the success of do_buy
-                        return result
-                    else:  # Just check success of passing args to function
-                        return True
-
-                else:  # Not enough arguments
-                    console.print("Syntax: buy \[volume] | buy 24 > ")
-                    return False
-        else:
-            return super().onecmd(cmd)
-
-    def do_buy(self, ingredient: ingredients.Ingredient = None, arg: str = ""):  # buy jameson 24
-        parts = arg.split()
-        if len(parts) == 3:
-            if parts[0] == "buy":
-                parts.remove("buy")
-
-        if len(parts) == 2:
-            ingredient = ingredients.get_ingredient(str(parts[0]))
-            oz = parts[1]
-
-        elif len(parts) == 1:
-            oz = arg
-
-        else:
-            console.print("Incorrect number of arguments. Invalid buy command. Usage: buy <quantity>")
-            return False
-
-        try:
-            oz = int(oz)
-        except ValueError:
-            console.print("Invalid quantity. Please enter a number.")
-            return False
-
-        if ingredient:
-            if oz in ingredient.volumes:
-                price = ingredient.volumes[oz]
-                balance = self.bar.balance
-                if balance >= price:
-                    self.bar.balance -= price
-                    self.bar.inventory[ingredient] = self.bar.inventory.get(ingredient, 0) + oz
-                    return True
-                else:
-                    console.print(f"Insufficient funds. Bar balance: [money]${balance}")
-                    return False
-            else:
-                console.print(f"Invalid volume. Available: {[oz for oz in ingredient.volumes.keys()]}")
-                return False
-        else:
-            console.print("No ingredient selected. Please select an ingredient first.")
-            return False
-
-    def do_save(self, arg):
-        """Save the current game state."""
-        self.bar.save_game()  # Call the save_game() method of the Bar instance
-
-    def do_quit(self, arg):
-        """Exit the application."""
-        self.do_save(arg)
-        print("Exiting...")  # Optional: Print a message before exiting
-        sys.exit(0)  # Terminate the application with exit code 0 (success)
+all_commands = {"shop", "buy", "menu", "save"}
+main_commands = {"shop", "menu"}
 
 
-def find_command(inpt, allowed_commands=None, force_beginning=False):
+def find_command(inpt, commands=None, force_beginning=False):
+    """Takes an input string and a command list, and either returns a single command match,
+    prints multiple matching commands for the user to choose between,
+    or prints all valid commands if no valid command is found.
+
+        Args:
+          :param inpt: The string from user input.
+          :param commands: Optional list of commands to match to. all_commands if None
+          :param force_beginning: Can be set to True to disallow matching to the middle of a command.
+        """
     # TODO: Make "jose silver" return "Jose Cuervo Especial Silver"
     # Because "jose" and "silver" on their own will both return multiple products
     # Currently entire input match must be sequential so "especial silver" or "ial sil" is required
@@ -137,18 +58,20 @@ def find_command(inpt, allowed_commands=None, force_beginning=False):
     # </editor-fold>
 
     primary_command = parts[0]
-    commands = allowed_commands or all_commands
-    commands.add("quit")
+    commands = commands or all_commands
+    sorted_commands = sorted(commands)
+    sorted_commands.append("back")
+    sorted_commands.append("quit")
 
     # <editor-fold desc="Find matching commands">
     matching_commands = []
-    for command in commands:
+    for command in sorted_commands:
         if len(primary_command) < 4 or force_beginning:  # Short inputs likely to be only the beginning of a word
             if command.startswith(primary_command):
                 matching_commands.append(command)
         # If it hasn't already matched to startswith
     if not matching_commands:
-        for command in commands:
+        for command in sorted_commands:
             # Match to any part of command when input > 3, e.g. so "gold" can return "Jose Cuervo Especial Gold"
             if primary_command in command:
                 matching_commands.append(command)
@@ -161,8 +84,225 @@ def find_command(inpt, allowed_commands=None, force_beginning=False):
         else:
             return matching_commands[0]
     elif len(matching_commands) == 0:
-        console.print(f'Valid commands: {sorted(commands)}')
+
+        console.print(f"[error]Valid commands: {sorted_commands}")
         return None
     else:  # found either no match or more than one
         console.print(f"Command matches: {matching_commands}")
         return None
+
+
+def parse_input(prompt, commands=None, force_beginning: bool = False):
+    """Prints prompt, takes, standardizes, and validates input, handles spaces logic,
+    and distinguishes primary commands from arguments.
+
+        Args:
+          :param prompt: Message printed just before the user's input cursor in the console.
+          :param commands: Optional list of commands to pass to find_command. all_commands if None
+          :param force_beginning: Can be set to True to disallow matching to the middle of a command.
+        """
+    inpt = console.input(f"[prompt]{prompt}:[/prompt][white] > ").strip().lower()
+
+    # TODO: As commands with args are added, skip them here
+    if not inpt.startswith("buy"):  # If not a command with args
+        inpt = f'"{inpt}"'  # Group spaced words together
+
+    inpt_cmd = find_command(inpt, commands, force_beginning)
+
+    if isinstance(inpt_cmd, tuple):  # If find_command returned args
+        primary_command, args = inpt_cmd  # Unpack the tuple
+    else:
+        primary_command = inpt_cmd  # The entire input is one part
+        args = []
+
+    return primary_command, args
+
+
+def items_to_commands(lst: Iterable[ingredients.Ingredient]):
+    commands = set("")
+    for entry in lst:
+        if isinstance(entry, type):
+            if entry == recipe.Recipe:
+                commands.add("cocktails")
+            else:
+                obj = entry()
+                commands.add(unidecode(f"{obj.format_type().lower()}s"))
+        elif isinstance(entry, ingredients.Ingredient):
+            commands.add(unidecode(entry.name.lower()))
+
+    return commands
+
+
+def command_to_item(cmd, lst):
+    for entry in lst:
+        if isinstance(entry, type):
+            if entry == recipe.Recipe:
+                if cmd == "cocktails":
+                    return recipe.Recipe
+            elif cmd == f"{unidecode(entry().format_type().lower())}s":
+                return entry
+        elif isinstance(entry, ingredients.Ingredient):
+            if cmd == unidecode(entry.name.lower()):
+                return entry
+        else:
+            console.print("[error]command_to_item argument not registering as type or Ingredient")
+    return None
+
+
+class BarCmd(cmd.Cmd):
+    intro = 'Welcome to the bar. Type help or ? to list commands.\n'
+    prompt = '> '
+
+    def __init__(self, bar_instance):  # Pass your Bar instance
+        super().__init__()
+        self.bar = bar_instance
+
+    @override
+    def onecmd(self, cmd, return_result=False):
+        # Check if find_command returned a tuple
+        if isinstance(cmd, list):
+            cmd, args = cmd  # Unpack the tuple
+            if cmd == 'buy':
+                if len(args) == 2:
+                    # If ingredient passed as Ingredient
+                    if isinstance(args[0], ingredients.Ingredient):
+                        result = self.do_buy(args[0], args[1])
+                    # If ingredient passed as string
+                    elif isinstance(args[0], str):
+                        # Join ingredient name parts (excluding the last element which is the quantity)
+                        ingredient_name = ' '.join(args[:-1])
+                        quantity = args[-1]  # Get the last element as the quantity
+
+                        ingredient = ingredients.get_ingredient(ingredient_name)
+                        if ingredient:
+                            result = self.do_buy(ingredient, quantity)
+                        else:
+                            console.print(f"[error]Ingredient '{ingredient_name}' not found.")
+                            return False
+                    else:
+                        console.print("[error]Invalid arguments.")
+                        return False
+
+                    if return_result:  # If we need to check the success of do_buy
+                        return result
+                    else:  # Just check success of passing args to function
+                        return True
+
+                else:  # Not enough arguments
+                    console.print("[error]Syntax: buy \[volume] | buy 24 > ")
+                    return False
+        else:
+            return super().onecmd(cmd)
+
+    def do_shop(self, arg):
+        self.bar.shop()
+
+    def do_buy(self, ingredient: ingredients.Ingredient = None, arg: str = ""):  # buy jameson 24
+        parts = arg.split()
+        if len(parts) == 3:
+            if parts[0] == "buy":
+                parts.remove("buy")
+
+        if len(parts) == 2:
+            ingredient = ingredients.get_ingredient(str(parts[0]))
+            volume = parts[1]
+
+        elif len(parts) == 1:
+            volume = arg
+
+        else:
+            console.print("[error]Incorrect number of arguments. Invalid buy command. Usage: buy <quantity>")
+            return False
+
+        try:
+            volume = int(volume)
+        except ValueError:
+            console.print("[error]Invalid quantity. Please enter a number.")
+            return False
+
+        if ingredient:
+            if volume in ingredient.volumes:
+                price = ingredient.volumes[volume]
+                balance = self.bar.balance
+                if balance >= price:
+                    self.bar.balance -= price
+                    self.bar.inventory[ingredient] = self.bar.inventory.get(ingredient, 0) + volume
+                    return True
+                else:
+                    console.print(f"[error]Insufficient funds. Bar balance: [money]${balance}")
+                    return False
+            else:
+                console.print(f"[error]Invalid volume. Available: {[oz for oz in ingredient.volumes.keys()]}")
+                return False
+        else:
+            console.print("[error]No ingredient selected. Please select an ingredient first.")
+            return False
+
+    def do_menu(self, arg):
+        self.bar.screen = bar.MENU
+        global typ
+        typ = None
+        prompt = "'Back' to go back"
+
+        while self.bar.screen == bar.MENU:
+            menu_table, menu_list = self.bar.show_menu(typ=typ, expanded=True)
+            bar_menu_panel = Panel(title=f"{self.bar.name} Menu", renderable=menu_table)
+            bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
+            console.print(bar_menu_layout)
+
+            commands = items_to_commands(menu_list)
+
+            primary_cmd = None
+            while primary_cmd is None:
+                primary_cmd, args = parse_input(prompt, commands)
+            if primary_cmd == "back":
+                if typ is None:
+                    self.bar.screen = bar.MAIN
+                else:
+                    typ = None
+            elif primary_cmd in items_to_commands(menu_list):
+                typ = command_to_item(primary_cmd, menu_list)
+            elif self.onecmd(primary_cmd):
+                pass
+            else:
+                console.print("[error]No allowed command recognized.")
+
+    def do_add(self, arg):
+        pass
+
+    '''def do_menu(self, arg):
+        bar_menu_commands = {"back", "add"}
+
+        bar_menu_panel = Panel(title="bar_menu_panel", renderable=self.bar.view_menu(expanded=True))
+        bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
+        console.print(bar_menu_layout)
+
+        inpt = console.input("'Add' to add a beverage to the menu")
+        inpt_cmd = find_command(inpt, bar_menu_commands)
+        if inpt_cmd == "add":
+            inv_table, inv_list = self.bar.view_inv()
+            console.print(inv_table)
+            inpt = console.input("Type a category to view, or a product to add to menu: > ")
+            inpt_cmd = find_command(inpt)
+            for entry in inv_list:
+                entry_cmd = ""
+                if isinstance(entry, type):
+                    obj = entry()
+                    entry_cmd = unidecode(obj.format_type())
+                    if inpt_cmd == entry_cmd:
+                        
+                elif isinstance(entry, ingredients.Ingredient):
+                    entry_cmd = unidecode(entry.name)
+
+
+                # Loop this somewhere'''
+
+    def do_save(self, arg):
+        """Save the current game state."""
+        self.bar.save_game()  # Call the save_game() method of the Bar instance
+
+    def do_quit(self, arg):
+        """Exit the application."""
+        self.do_save(arg)
+        print("Exiting...")  # Optional: Print a message before exiting
+        sys.exit(0)  # Terminate the application with exit code 0 (success)

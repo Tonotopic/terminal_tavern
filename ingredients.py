@@ -7,13 +7,22 @@ import traceback
 all_ingredients = []
 
 
+# TODO: Group flavored spirits into a category to shorten shop list
+# TODO: Soda water always available
+# TODO: Fix "Scotchs"
+# TODO: Fix "Crown Royal Black" vs "Blackberry"
 # <editor-fold desc="Ingredients">
 class Ingredient:
-    def __init__(self, ingredient_id=None, name=None, image=None, character=None, volumes=None):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None,
+                 volumes=None):
         self.ingredient_id = ingredient_id
         self.name = name
         self.image = image
+        self.flavor = flavor
+        if flavor is None:
+            self.flavor = ""
         self.character = character
+        self.notes = notes
         if volumes is None:
             self.volumes = {}
         else:
@@ -26,15 +35,20 @@ class Ingredient:
         else:
             return "a"
 
-    def description(self):  # {Name} is a/an {character} {type}.
-        style = self.get_ing_style()
-        desc = (f"[{style}][italic]{self.name.capitalize()}[/{style}][/italic] "
-                f"is {self.a()} {self.character} "
-                f"[{style}]{self.format_type().lower()}[/{style}].")
-        return desc
+    def format_flavor(self):  # Add the necessary space after flavor if there is one
+        if self.flavor:
+            return f"{self.flavor} "
+        else:
+            return ""
 
     def format_type(self):
         return type(self).__name__
+
+    def notes_desc(self):
+        if self.notes:
+            return f" with notes of {self.notes}"
+        else:
+            return ""
 
     def get_ing_style(self):
         """Gets the style for the given type or its nearest parent in the theme."""
@@ -48,6 +62,13 @@ class Ingredient:
                 if style:
                     return style
         return ""
+
+    def description(self):  # {Name} is a/an {character} {flavor}{type}{notes}.
+        style = self.get_ing_style()
+        desc = (f"[{style}][italic]{self.name.capitalize()}[/{style}][/italic] "
+                f"is {self.a()} {self.character} {self.format_flavor()}"
+                f"[{style}]{self.format_type().lower()}[/{style}]{self.notes_desc()}.")
+        return desc
 
     def get_attributes(self):
         """Returns a list of attribute values in the correct order for the constructor."""
@@ -68,25 +89,7 @@ class Ingredient:
 class Drink(Ingredient):
     def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None,
                  volumes=None):
-        super().__init__(ingredient_id, name, image, character, volumes)
-        self.flavor = flavor
-        if flavor is None:
-            self.flavor = ""
-        self.notes = notes
-
-    def format_flavor(self):  # Add the necessary space after flavor if there is one
-        if self.flavor:
-            return f"{self.flavor} "
-        else:
-            return ""
-
-    @override
-    def description(self):  # Add flavor when applicable
-        style = self.get_ing_style()
-        desc = (f"[{style}][italic]{self.name}[/{style}][/italic] "
-                f"is {self.a()} {self.character} "
-                f"[{style}]{self.format_flavor()}{self.format_type().lower()}[/{style}].")
-        return desc
+        super().__init__(ingredient_id, name, image, flavor, character, notes, volumes)
 
 
 # <editor-fold desc="Alcohols">
@@ -96,18 +99,9 @@ class Alcohol(Drink):
         super().__init__(ingredient_id, name, image, flavor, character, notes, volumes)
         self.abv = abv
 
-    def notes_desc(self):
-        return f" with notes of {self.notes}"
-
     def abv_desc(self):
         if self.abv is not None:
             return f"It is [abv]{self.abv}% ABV[/abv]"
-
-    @override
-    def description(self):  # Remove the punctuation and add notes and ABV
-        desc = super().description()[:-1]
-        desc += f"{self.notes_desc()}. {self.abv_desc()}."
-        return desc
 
 
 # <editor-fold desc="Beer">
@@ -384,11 +378,19 @@ class Witbier(WheatBeer):
                  volumes=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
+    @override
+    def format_type(self):
+        return Ingredient.format_type(self)
+
 
 class Hefeweizen(WheatBeer):
     def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return Ingredient.format_type(self)
 
 
 # </editor-fold>
@@ -444,6 +446,16 @@ class Riesling(Wine):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
+class Sparkling(Wine):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Sparkling Wine"
+
+
 # </editor-fold>  # Wine
 
 
@@ -474,6 +486,12 @@ class Bourbon(Whiskey):
 
 
 class Scotch(Whiskey):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+
+class Rye(Whiskey):
     def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
@@ -556,10 +574,15 @@ class Vermouth(Liqueur):
 
 # </editor-fold>  # Alcohols
 
-# TODO: Change non-alcoholic drink description to just say drink
+# <editor-fold desc="NonAlcohols">
 class NonAlcohol(Drink):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, volumes=None):
-        super().__init__(ingredient_id, name, image, flavor, character, "", volumes)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, volumes)
+
+    @override
+    def description(self):
+        return super().description().replace("non-alcoholic drink", "drink")
 
     @override
     def format_type(self):
@@ -567,8 +590,9 @@ class NonAlcohol(Drink):
 
 
 class Tea(NonAlcohol):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, volumes=None):
-        super().__init__(ingredient_id, name, image, flavor, character, volumes)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, volumes)
 
     @override
     def description(self):  # Skip Drink desc and go back to Ingredient to re-capitalize generics
@@ -580,8 +604,9 @@ class Tea(NonAlcohol):
 
 
 class Soda(NonAlcohol):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, volumes=None):
-        super().__init__(ingredient_id, name, image, flavor, character, volumes)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, volumes)
 
     @override
     def format_type(self):
@@ -589,11 +614,15 @@ class Soda(NonAlcohol):
 
 
 class EnergyDrink(NonAlcohol):
-    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, volumes=None):
-        super().__init__(ingredient_id, name, image, flavor, character, volumes)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, volumes)
 
     def format_type(self):
         return "Energy Drink"
+
+
+# </editor-fold>
 
 
 # </editor-fold>  # Drinks
@@ -601,36 +630,34 @@ class EnergyDrink(NonAlcohol):
 
 # <editor-fold desc="Additives">
 class Additive(Ingredient):
-    def __init__(self, ingredient_id=None, name=None, image=None, character=None, volumes=None):
-        super().__init__(ingredient_id, name, image, character, volumes)
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, volumes)
 
 
 class Syrup(Additive):
-    def __init__(self, ingredient_id=None, name=None, image=None, character=None, flavor=None, volumes=None):
-        super().__init__(ingredient_id, name, image, character, volumes)
-        if flavor is None:
-            flavor = ""
-        self.flavor = flavor
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None, flavor=None, notes=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, volumes)
 
 
 class Spice(Additive):
     def __init__(self, ingredient_id=None, name=None, image=None, character=None, volumes=None):
-        super().__init__(ingredient_id, name, image, character, volumes)
+        super().__init__(ingredient_id, name, image, "", character, "", volumes)
 
 
 class Herb(Additive):
     def __init__(self, ingredient_id=None, name=None, image=None, character=None, volumes=None):
-        super().__init__(ingredient_id, name, image, character, volumes)
+        super().__init__(ingredient_id, name, image, "", character, "", volumes)
 
 
 class Sweetener(Additive):
     def __init__(self, ingredient_id=None, name=None, image=None, character=None, volumes=None):
-        super().__init__(ingredient_id, name, image, character, volumes)
+        super().__init__(ingredient_id, name, image, "", character, "", volumes)
 
 
 class Fruit(Additive):
     def __init__(self, ingredient_id=None, name=None, image=None, character=None, volumes=None):
-        super().__init__(ingredient_id, name, image, character, volumes)
+        super().__init__(ingredient_id, name, image, "", character, "", volumes)
 
     def crush(self):
         pass
@@ -647,6 +674,7 @@ connection = sqlite3.connect('cocktailDB.db')
 cursor = connection.cursor()
 
 
+# <editor-fold desc="Functions">
 def get_constructor_args(ingredient_type):
     """Gets the constructor arguments for a given ingredient type.
 
@@ -675,9 +703,9 @@ def create_object(ingredient_type, row_data, column_names):
 
     # Create a dictionary mapping argument names to their values
     arg_dict = {arg: row_data[arg] for arg in column_names if arg in constructor_args}
-    # If 'oz' is a constructor argument, and is in row_data, add it to the dictionary:
-    if 'oz' in constructor_args and 'oz' in row_data:
-        arg_dict['oz'] = row_data['oz']
+    # If 'volume' is a constructor argument, and is in row_data, add it to the dictionary:
+    if 'volume' in constructor_args and 'volume' in row_data:
+        arg_dict['volume'] = row_data['volume']
     # If 'id' is a constructor argument, and is in row_data, add it to the dictionary:
     if 'ingredient_id' in constructor_args and 'ingredient_id' in row_data:
         arg_dict['ingredient_id'] = row_data['ingredient_id']
@@ -701,7 +729,7 @@ def load_ingredients_from_db():
         product_name = dict(zip(column_names, row))["name"]  # Get the product name
 
         # Fetch volume data using product_name as the foreign key
-        cursor.execute("SELECT oz, price FROM product_volumes WHERE product_name=?", (product_name,))
+        cursor.execute("SELECT volume, price FROM product_volumes WHERE product_name=?", (product_name,))
         volume_data = cursor.fetchall()  # Fetch all volumes and prices
         volumes = {}
 
@@ -718,12 +746,17 @@ def load_ingredients_from_db():
             all_ingredients.append(ingredient)
 
 
-def list_ingredients(container, typ):
+def list_ingredients(container, typ, type_specific=False):
     lst = {}
     i = 0
 
     for ingredient in container:
-        is_instance = isinstance(ingredient, typ)
+        is_instance = False
+        if type_specific:
+            if type(ingredient) == typ:
+                is_instance = True
+        else:
+            is_instance = isinstance(ingredient, typ)
         if is_instance:
             lst[i] = ingredient
             i += 1
@@ -733,3 +766,4 @@ def list_ingredients(container, typ):
 def get_ingredient(ingredient_name):
     """Returns the Ingredient object corresponding to the given name."""
     return all_ingredients[ingredient_name]
+# </editor-fold>

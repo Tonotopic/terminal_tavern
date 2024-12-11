@@ -1,15 +1,20 @@
-from rich.layout import Layout
-
 import commands
 import bar
 import ingredients
 from rich_console import console
 
-main_layout = Layout()
-
 ingredients.load_ingredients_from_db()
 
-bar = bar.Bar(1000)
-inpt = commands.find_command(console.input("Type 'shop' to shop: > "), commands.main_commands)
-if inpt == "shop":
-    bar.shop()
+bar_name = console.input("Name your bar: > ")
+bar = bar.Bar(bar_name, 1000)
+
+while True:
+    bar.dashboard()
+
+    prompt = "Type 'shop' to shop: > "
+    inpt_cmd = commands.find_command(console.input(prompt).strip().lower(), commands.main_commands)
+    bar.bar_cmd.onecmd(inpt_cmd)
+
+
+    def save_game(self, filename="save_game.json"):
+        pass
