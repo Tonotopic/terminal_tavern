@@ -1,10 +1,12 @@
 import rich.pretty
 
-import ingredients
+from ingredients import Ingredient, list_ingredients, all_ingredients
 from rich.layout import Layout
 from rich_console import console
 from rich.text import Text
 from rich.panel import Panel
+from rich.table import Table
+from rich import box
 
 
 class Bar:
@@ -19,28 +21,45 @@ class Bar:
             Layout(name="purchase_header"),
             Layout(name="purchase_screen")
         )
-        purchase_layout["purchase_screen"].split_row(
-            Layout(name="left"),
-            Layout(name="right")
-        )
-        purchase_layout["left"].split_column(
-            Layout(name="inventory_header", renderable=Text("Your bar", justify="center")),
-            Layout(renderable=rich.pretty.Pretty(self.inventory), name="inventory")
-        )
-        purchase_layout["right"].split_column(
-            Layout(name="shop_header", renderable=Text("Available for purchase", justify="center")),
-            Layout(name="shop")
-        )
-        console.print(purchase_layout)
 
-    def list_ingredients(self, typ):
-        for ingredient in self.inventory:
-            if isinstance(ingredient, typ):
-                print(ingredient.description())
+        # <editor-fold desc="populating shop panels">
+        shop_list = []
+        subclasses = Ingredient.__subclasses__()
+        for typ in subclasses:
+            shop_list.append(typ)
+
+        # Create a table to display the shop list
+        shop_table = Table(title="Available for Purchase",
+                           title_style="underline", show_header=False, expand=True, leading=2)
+        inv_table = Table(title="Bar Stock",
+                          title_style="underline", show_header=False, expand=True, leading=2)
+
+        tables = (shop_table, inv_table)
+        for table in tables:
+            table.add_column("Category", justify="center")
+            for category in shop_list:
+                obj = category()
+                style = obj.get_ing_style()
+                container = self.inventory if table == inv_table else all_ingredients
+                table.add_row(Text(f"{obj.format_type()}s "  # Pluralize
+                                   f"({len(list_ingredients(container, category))})",  # Quantity
+                                   style=style))
+
+        # Embed the table in a panel for better visual presentation
+        shop_panel = Panel(shop_table, box=box.DOUBLE_EDGE, style="#c2af02")
+        inv_panel = Panel(inv_table, box=box.DOUBLE_EDGE, style="#c2af02")
+        # </editor-fold>
+
+        purchase_layout["purchase_screen"].split_row(
+            Layout(name="bar", renderable=inv_panel),
+            Layout(name="shop", renderable=shop_panel)
+        )
+
+        console.print(purchase_layout)
 
 
 class Recipe:
-    def __init__(self, name, r_ingredients: dict[type[ingredients.Ingredient] | ingredients.Ingredient, float]):
+    def __init__(self, name, r_ingredients: dict[type[Ingredient] | Ingredient, float]):
         self.name = name
         self.r_ingredients = r_ingredients
 
@@ -49,7 +68,7 @@ class Recipe:
             if isinstance(r_ingredient, type):
                 pass
 
-    def check_ingredients(self, provided_ingredients: dict[ingredients.Ingredient, float]):
+    def check_ingredients(self, provided_ingredients: dict[Ingredient, float]):
         """Checks if provided ingredients satisfy the recipe requirements."""
         for required_ingredient, quantity in self.r_ingredients.items():
             if isinstance(required_ingredient, type):  # Check if requirement is a type (accepts any)

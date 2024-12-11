@@ -6,7 +6,7 @@ import inspect
 
 # <editor-fold desc="Ingredients">
 class Ingredient:
-    def __init__(self, ingredient_id, name, image, character):
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None):
         self.ingredient_id = ingredient_id
         self.name = name
         self.image = image
@@ -62,7 +62,7 @@ class Ingredient:
 
 # <editor-fold desc="Drinks">
 class Drink(Ingredient):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None):
         super().__init__(ingredient_id, name, image, character)
         self.flavor = flavor
         if flavor is None:
@@ -286,7 +286,7 @@ class Soda(Drink):
 
 # <editor-fold desc="Additives">
 class Additive(Ingredient):
-    def __init__(self, ingredient_id, name, image, character):
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None):
         super().__init__(ingredient_id, name, image, character)
 
 
@@ -403,13 +403,17 @@ def load_ingredients_from_db():
         all_ingredients[ingredient.name] = ingredient  # Use ingredient.name as key
 
 
+def list_ingredients(container, typ):
+    lst = {}
+    i = 0
+    for ingredient in container.values():
+        is_instance = isinstance(ingredient, typ)
+        if is_instance:
+            lst[i] = ingredient
+            i += 1
+    return lst
+
+
 def get_ingredient(ingredient_name):
     """Returns the Ingredient object corresponding to the given name."""
     return all_ingredients.get(ingredient_name)
-
-
-def list_ingredients(typ):
-    """Lists all ingredients of the specified type or its subclasses."""
-    for ingredient in all_ingredients.values():
-        if isinstance(ingredient, typ):
-            print(ingredient.description())
