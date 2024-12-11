@@ -1,14 +1,18 @@
 from typing import override
 import sqlite3
+from rich.style import Style
+from rich_console import ing_styles_dict, get_attributes
+from rich.theme import Theme
 
 
 # <editor-fold desc="Ingredients">
 class Ingredient:
     def __init__(self, ingredient_id, name, image, character):
-        self.id = ingredient_id
+        self.ingredient_id = ingredient_id
         self.name = name
         self.image = image
         self.character = character
+        # self.ing_style = ingredient_styles.get(self.format_type(), Style())
 
     def a(self):
         #  Determines whether "a" or "an" should be printed just before the character attribute
@@ -18,10 +22,33 @@ class Ingredient:
             return "a"
 
     def description(self):
-        return "Generic ingredient with no type"
+        style = self.get_ing_style()
+        desc = (f"[{style}][underline]{self.name.capitalize()}[/{style}][/underline] "
+                f"is {self.a()} {self.character} "
+                f"[{style}]{self.format_type().lower()}[/{style}].")
+        return desc
 
     def format_type(self):
-        return type(self).__name__.lower()
+        return type(self).__name__
+
+    def get_ing_style(self):
+        """Gets the style for the given type or its nearest parent in the theme."""
+        typ = self.format_type().lower()
+        if typ in ing_styles_dict:
+            return typ
+        else:
+            for parent_class in type(self).__bases__:
+                attributes = get_attributes(self)
+                if isinstance(self, Syrup):
+                    attributes.pop()
+                parent_object = parent_class(*attributes)
+                style = parent_object.get_ing_style()
+                if style:
+                    return style
+        return self.format_type().lower()
+
+    def __rich__(self):
+        return
 
 
 # <editor-fold desc="Drinks">
@@ -42,7 +69,11 @@ class Drink(Ingredient):
 
     @override
     def description(self):
-        return f"{self.name} is {self.a()} {self.character} {self.format_flavor()}{self.format_type().lower()}."
+        style = self.get_ing_style()
+        desc = (f"[{style}][underline]{self.name}[/{style}][/underline] "
+                f"is {self.a()} {self.character} "
+                f"[{style}]{self.format_flavor()}{self.format_type().lower()}[/{style}].")
+        return desc
 
 
 # <editor-fold desc="Alcohols">
@@ -56,12 +87,13 @@ class Alcohol(Drink):
 
     def abv_desc(self):
         if self.abv is not None:
-            return f"It is {self.abv}% alcohol by volume"
+            return f"It is [abv]{self.abv}% ABV[/abv]"
 
     @override
     def description(self):
-        super_desc = super().description()
-        return f"{super_desc[:-1]}{self.notes_desc()}. {self.abv_desc()}."  # Remove period and add notes/ABV
+        desc = super().description()
+        desc += f" {self.abv_desc()}."
+        return desc
 
 
 class Beer(Alcohol):
@@ -233,7 +265,11 @@ class Tea(Drink):
 
     @override
     def description(self):
-        return super().description().capitalize()  # So generics can be lowercase in the DB
+        style = self.get_ing_style()
+        desc = (f"[{style}][underline]{self.name.capitalize()}[/{style}][underline] "
+                f"is {self.a()} {self.character} "
+                f"[{style}]{self.format_type().lower()}[/{style}].")
+        return desc
 
 
 class Soda(Drink):
@@ -248,10 +284,6 @@ class Soda(Drink):
 class Additive(Ingredient):
     def __init__(self, ingredient_id, name, image, character):
         super().__init__(ingredient_id, name, image, character)
-
-    @override
-    def description(self):
-        return f"{self.name.capitalize()} is {self.a()} {self.character} {self.format_type()}."
 
 
 class Syrup(Additive):

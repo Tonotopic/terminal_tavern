@@ -1,14 +1,42 @@
+import rich.pretty
+
 import ingredients
+from rich.layout import Layout
+from rich_console import console
+from rich.text import Text
+from rich.panel import Panel
 
 
 class Bar:
-    def __init__(self, inventory, balance, menu):
-        self.inventory = inventory  # Dictionary: {product_name: fluid_ounces}
+    def __init__(self, balance=1000):
+        self.inventory = {}  # Dictionary: {ingredient_object: fluid_ounces}
         self.balance = balance  # Float: current balance in dollars
-        self.menu = menu  # List of Recipe objects
+        self.menu = {}  # List of Recipe objects
 
     def purchase(self):
-        pass
+        purchase_layout = Layout(name="purchase_layout")
+        purchase_layout.split_column(
+            Layout(name="purchase_header"),
+            Layout(name="purchase_screen")
+        )
+        purchase_layout["purchase_screen"].split_row(
+            Layout(name="left"),
+            Layout(name="right")
+        )
+        purchase_layout["left"].split_column(
+            Layout(name="inventory_header", renderable=Text("Your bar", justify="center")),
+            Layout(renderable=rich.pretty.Pretty(self.inventory), name="inventory")
+        )
+        purchase_layout["right"].split_column(
+            Layout(name="shop_header", renderable=Text("Available for purchase", justify="center")),
+            Layout(name="shop")
+        )
+        console.print(purchase_layout)
+
+    def list_ingredients(self, typ):
+        for ingredient in self.inventory:
+            if isinstance(ingredient, typ):
+                print(ingredient.description())
 
 
 class Recipe:
@@ -20,8 +48,6 @@ class Recipe:
         for r_ingredient in self.r_ingredients:
             if isinstance(r_ingredient, type):
                 pass
-
-
 
     def check_ingredients(self, provided_ingredients: dict[ingredients.Ingredient, float]):
         """Checks if provided ingredients satisfy the recipe requirements."""

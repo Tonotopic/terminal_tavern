@@ -1,20 +1,20 @@
+from pyplayscii import playscii
+import bar
+
+from rich_console import console
 import ingredients
-from ingredients import all_ingredients, get_ingredient, load_ingredients_from_db
-from bar import Recipe
+from rich.layout import Layout
 
-load_ingredients_from_db()
+main_layout = Layout()
 
-for ingredient in all_ingredients.values():
-    print(ingredient.description())
+bar = bar.Bar(1000)
+bar.purchase()
 
-manhattan = Recipe(
-    "Manhattan",
-    {
-        ingredients.Whiskey: 2.0,
-        ingredients.Vermouth: 1.0,
-        get_ingredient("Angostura"): 1 / 30,
-        get_ingredient("maraschino cherry"): 1.0
-    }
-)
+ingredients.load_ingredients_from_db()
+
+for ingredient in ingredients.all_ingredients.values():
+    console.print(ingredient.description())
+
+
 
 
