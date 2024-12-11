@@ -1,8 +1,3 @@
-import commands
-import ingredients
-import rich_console
-from ingredients import Ingredient, list_ingredients, all_ingredients
-import rich.layout
 from rich.layout import Layout
 from rich_console import console
 from rich.text import Text
@@ -11,6 +6,12 @@ from rich.table import Table
 from rich.style import Style
 from rich import box
 from unidecode import unidecode
+
+import commands
+import ingredients
+import rich_console
+from ingredients import Ingredient, list_ingredients, all_ingredients
+
 
 global prompt
 
@@ -22,20 +23,31 @@ class Bar:
         self.balance = balance  # Float: current balance in dollars
         self.menu = {}  # List of Recipe objects
 
-    def shop(self, current_selection: type or Ingredient = Ingredient):
+    def shop(self, current_selection: type or Ingredient = Ingredient, msg = None):
+        """Opens the shop screen and executes an input loop.
+        Sub-categories and ingredient items falling under the current selection are displayed and set as commands.
+        The user can view and buy products in their available quantities.
+
+            Args:
+              current_selection: The current category or product being displayed.
+            """
         # TODO: Shop list goes off screen when larger than display
         # <editor-fold desc="Layout">
-
+        global prompt
         table_settings = {
-            'title_style': "underline",
-            'show_header': False,
-            'expand': True,
-            'leading': 2
+            "title_style": "underline",
+            "show_header": False,
+            "expand": True,
+            "leading": 2
+        }
+        panel_settings = {
+            "renderable": "render failed",
+            "box": box.DOUBLE_EDGE
         }
 
-        header_panel = Panel(renderable="render failed", box=box.DOUBLE_EDGE)
-        shop_panel = Panel(box=box.DOUBLE_EDGE, renderable="render failed")
-        inv_panel = Panel(box=box.DOUBLE_EDGE, renderable="render failed")
+        header_panel = Panel(**panel_settings)
+        shop_panel = Panel(**panel_settings)
+        inv_panel = Panel(**panel_settings)
 
         shop_layout = Layout(name="shop_layout")
         shop_layout.split_column(
@@ -46,7 +58,6 @@ class Bar:
             Layout(name="bar", renderable=inv_panel),
             Layout(name="shop", renderable=shop_panel)
         )
-        # </editor-fold>
 
         # <editor-fold desc="Header">
         global header_text
@@ -59,8 +70,10 @@ class Bar:
         header_panel.renderable = header_table
         header_panel.renderable.justify = "center"
         # </editor-fold>
+        # </editor-fold>
 
         # <editor-fold desc="Populating shop panels">
+
         shop_commands = set("")
         shop_commands.add("back")  # Commands specific to the shop
         # TODO: Sort shop list display
@@ -68,15 +81,19 @@ class Bar:
 
         # Category selected, not currently selecting an ingredient
         if isinstance(current_selection, type):
-            prompt = "Type a category to view: > "
+            if msg:
+                prompt = msg
+            else:
+                prompt = "Type a category to view: > "
             obj = current_selection()
             if current_selection == Ingredient:
                 header_text = "All"
-            else:
+            else:  # Show pluralized category name in its proper style
                 style = rich_console.styles.get(obj.get_ing_style())
                 header_text = Text(f"{obj.format_type()}s", style=style)
 
-            subclasses = current_selection.__subclasses__()  # Any more categories available
+            # Sub-categories
+            subclasses = current_selection.__subclasses__()
             for typ in subclasses:
                 shop_list.append(typ)
 
@@ -99,12 +116,16 @@ class Bar:
 
                 items = list_ingredients(container, current_selection)
                 if items:  # If there are ingredients in this category
-                    prompt = "Type a category or product to view: > "
+                    if not msg:
+                        prompt = "Type a category or product to view: > "
                     for item in items.values():
                         if type(item) is current_selection:
-                            # TODO: Display volume of items in inv_table
                             style = item.get_ing_style()
-                            table.add_row(f"[{style}][italic]{item.name}")
+                            if table == inv_table:
+                                volume = self.inventory.get(item, 0)  # Default volume to 0
+                                table.add_row(f"[{style}][italic]{item.name}[/italic] ({volume}oz)")
+                            else:  # shop_table
+                                table.add_row(f"[{style}][italic]{item.name}")
                             # TODO: At-a-glance price comparison
                             shop_list.append(item)
                             shop_commands.add(unidecode(item.name.lower()))
@@ -141,7 +162,6 @@ class Bar:
             vol_table.show_header = True
 
             for volume, price in obj.volumes.items():
-                # TODO: Sort volumes by price ascending
                 vol_table.add_row(f"[{style}]{volume}oz[/{style}]",
                                   Text("${:.2f}".format(price), style=Style(color="#cfba02")))
             # </editor-fold>
@@ -149,81 +169,78 @@ class Bar:
             inv_panel.renderable = inv_table
         else:
             console.print("current category is not category or ingredient")
+
+        # 60 just appears to be the sweet spot here regardless of window size
+        shop_layout["shop_header"].size = 9 if len(header_text) > header_table.columns[1].width + 60 else 8
+        header_table.add_row(Text(f"${self.balance}", rich_console.styles.get("money")), header_text)
+
         # </editor-fold>
 
-        shop_layout["shop_header"].size = 9 if len(header_text) > header_table.columns[1].width else 8
-        header_table.add_row(Text(f"${self.balance}", rich_console.styles.get("money")), header_text)
         console.print(shop_layout)
 
         # <editor-fold desc="Input">
+        while True:
+            #  Match to any part of command when input > 3
+            force_beginning = False
+            #  When options on the screen are "Alcohols" and "Non-Alcoholic Drinks"
+            if current_selection == ingredients.Drink:
+                # Force match to the beginning of the word so "alco"+ doesn't return both commands
+                force_beginning = True
 
-        #  Match to any part of command when input > 3, e.g. so "gold" can return "Jose Cuervo Especial Gold"
-        force_beginning = False
-        #  When options on the screen are "Alcohols" and "Non-Alcoholic Drinks"
-        if current_selection == ingredients.Drink:
-            # Force match to the beginning of the word so "alco"+ doesn't return both commands
-            force_beginning = True
+            inpt = console.input(prompt).strip().lower()
 
-        inpt = console.input(prompt).strip().lower()
-        # TODO: As commands with args are added, skip them here
-        if not inpt.startswith("buy"):
-            inpt = f'"{inpt}"'
-        inpt_cmd = commands.find_command(inpt, shop_commands, force_beginning)
-        if isinstance(inpt_cmd, tuple):  # If find_command returned args
-            primary_command, args = inpt_cmd  # Unpack the tuple
-        else:
-            primary_command = inpt_cmd
-            args = []
-        if primary_command in shop_commands:
-            if primary_command == "buy":
-                # Inject ingredient from menu into buy command
-                '''parts = inpt.split()'''
-                args.insert(0, current_selection)
-                # TODO: Nonexistent quantity throws Key_Error in do_buy
-                if self.bar_cmd.onecmd([primary_command, args]):
-                    self.shop(type(current_selection))  # Go back from the ingredient screen
-            elif inpt_cmd == "back":
-                if current_selection == Ingredient:
-                    # TODO Main menu
-                    return
-                elif isinstance(current_selection, Ingredient):  # Ingredient selected, go back to category
-                    self.shop(type(current_selection))
-                    return
-                elif isinstance(current_selection, type):  # Back to last category
-                    self.shop(current_selection.__base__)
-                    return
+            # TODO: As commands with args are added, skip them here
+            if not inpt.startswith("buy"):  # If not a command with args
+                inpt = f'"{inpt}"'  # Group spaced words together
+
+            inpt_cmd = commands.find_command(inpt, shop_commands, force_beginning)
+
+            if isinstance(inpt_cmd, tuple):  # If find_command returned args
+                primary_command, args = inpt_cmd  # Unpack the tuple
+            else:
+                primary_command = inpt_cmd  # The entire input is one part
+                args = []
+
+            if primary_command in shop_commands:
+                if primary_command == "buy":
+                    # Inject ingredient from menu into buy command
+                    '''parts = inpt.split()'''
+                    args.insert(0, current_selection)
+                    if self.bar_cmd.onecmd([primary_command, args], return_result=True):
+                        msg = f"Bought {args[1]}oz of [{style}]{current_selection.name}[/{style}]. Current stock: {self.inventory[current_selection]}oz > "
+
+                        self.shop(type(current_selection), msg)  # Go back from the ingredient screen
+                elif inpt_cmd == "back":
+                    if current_selection == Ingredient:
+                        # TODO Main menu
+                        return
+                    elif isinstance(current_selection, Ingredient):  # Ingredient selected, go back to category
+                        self.shop(type(current_selection))
+                        return
+                    elif isinstance(current_selection, type):  # Back to last category
+                        self.shop(current_selection.__base__)
+                        return
+                    else:
+                        console.print("current_category is not category or ingredient")
                 else:
-                    console.print("current_category is not category or ingredient")
-            for entry in shop_list:
-                if isinstance(entry, type):  # Category commands
-                    if inpt_cmd == f"{unidecode(entry().format_type().lower())}s":
-                        self.shop(entry)
-                        return
-                elif isinstance(entry, Ingredient):  # Ingredient commands
-                    if inpt_cmd == unidecode(entry.name.lower()):
-                        self.shop(entry)
-                        return
-        else:
-            console.print("No valid command found.")
+                    for entry in shop_list:
+                        if isinstance(entry, type):  # Category commands
+                            if inpt_cmd == f"{unidecode(entry().format_type().lower())}s":
+                                self.shop(entry)
+                                return
+                        elif isinstance(entry, Ingredient):  # Ingredient commands
+                            if inpt_cmd == unidecode(entry.name.lower()):
+                                self.shop(entry)
+                                return
+                    # If no shop-specific command found
+                    self.bar_cmd.onecmd(inpt_cmd)  # Checks for quit
+            '''else:
+                console.print("No valid shop command found.")'''
+
         # </editor-fold>
 
     def save_game(self, filename="save_game.json"):
         pass
-        """Saves the bar's inventory and balance to a file."""
-        data = {
-            "balance": self.balance,
-            "inventory": {
-                ingredient.name: ingredient.quantity  # Assuming ingredient has name and quantity
-                for ingredient in self.inventory  # Assuming inventory is a list of Ingredient objects
-                if ingredient.quantity > 0
-            },
-        }
-
-        with open(filename, "w") as f:
-            pass
-            # json.dump(data, f, indent=4)  # Write data to file with indentation for readability
-
-        print(f"Game saved to {filename}")
 
 
 class Recipe:

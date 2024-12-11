@@ -17,7 +17,7 @@ class Ingredient:
         if volumes is None:
             self.volumes = {}
         else:
-            self.volumes = volumes
+            self.volumes = dict(sorted(volumes.items(), key=lambda item: item[1]))
 
     def a(self):
         """Determines whether "a" or "an" should be printed just before the character attribute."""
@@ -216,6 +216,10 @@ class Saison(PaleAle):
     def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return Ingredient.format_type(self)
 
 
 class BlondeAle(Ale):
