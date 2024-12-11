@@ -3,11 +3,14 @@ import sys
 from typing import override, Iterable
 from rich.layout import Layout
 from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
 from unidecode import unidecode
 import warnings
 
 import ingredients
 import recipe
+import rich_console
 from rich_console import console
 import bar
 
@@ -16,7 +19,7 @@ import bar
 
 warnings.filterwarnings("ignore", category=SyntaxWarning)
 
-all_commands = {"shop", "buy", "menu", "save"}
+persistent_commands = {"shop", "buy", "menu", "save"}
 main_commands = {"shop", "menu"}
 
 
@@ -58,10 +61,12 @@ def find_command(inpt, commands=None, force_beginning=False):
     # </editor-fold>
 
     primary_command = parts[0]
-    commands = commands or all_commands
+    commands = commands or persistent_commands
     sorted_commands = sorted(commands)
-    sorted_commands.append("back")
     sorted_commands.append("quit")
+    if inpt == "":
+        console.print(f"Valid commands: {sorted_commands}")
+        return None
 
     # <editor-fold desc="Find matching commands">
     matching_commands = []
@@ -104,7 +109,7 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
     inpt = console.input(f"[prompt]{prompt}:[/prompt][white] > ").strip().lower()
 
     # TODO: As commands with args are added, skip them here
-    if not inpt.startswith("buy"):  # If not a command with args
+    if not inpt.startswith("buy") and not inpt.startswith("add"):  # If not a command with args
         inpt = f'"{inpt}"'  # Group spaced words together
 
     inpt_cmd = find_command(inpt, commands, force_beginning)
@@ -119,6 +124,7 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
 
 
 def items_to_commands(lst: Iterable[ingredients.Ingredient]):
+    #  Converts a list of ingredients, ingredient types, and/or strings into a list of commands for parsing.
     commands = set("")
     for entry in lst:
         if isinstance(entry, type):
@@ -129,11 +135,14 @@ def items_to_commands(lst: Iterable[ingredients.Ingredient]):
                 commands.add(unidecode(f"{obj.format_type().lower()}s"))
         elif isinstance(entry, ingredients.Ingredient):
             commands.add(unidecode(entry.name.lower()))
+        elif isinstance(entry, str):
+            commands.add(entry.lower())
 
     return commands
 
 
 def command_to_item(cmd, lst):
+    #  Matches a string command to an ingredient or type from the given list.
     for entry in lst:
         if isinstance(entry, type):
             if entry == recipe.Recipe:
@@ -197,7 +206,7 @@ class BarCmd(cmd.Cmd):
     def do_shop(self, arg):
         self.bar.shop()
 
-    def do_buy(self, ingredient: ingredients.Ingredient = None, arg: str = ""):  # buy jameson 24
+    def do_buy(self, ingredient: ingredients.Ingredient = None, arg=""):  # buy jameson 24
         parts = arg.split()
         if len(parts) == 3:
             if parts[0] == "buy":
@@ -246,11 +255,14 @@ class BarCmd(cmd.Cmd):
 
         while self.bar.screen == bar.MENU:
             menu_table, menu_list = self.bar.show_menu(typ=typ, expanded=True)
-            bar_menu_panel = Panel(title=f"{self.bar.name} Menu", renderable=menu_table)
+            bar_menu_panel = Panel(title=f"{self.bar.name} Menu", renderable=menu_table, border_style=rich_console.styles.get("bar_menu"))
             bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
+
             console.print(bar_menu_layout)
 
             commands = items_to_commands(menu_list)
+            commands.add("add")
+            commands.add("back")
 
             primary_cmd = None
             while primary_cmd is None:
@@ -260,42 +272,61 @@ class BarCmd(cmd.Cmd):
                     self.bar.screen = bar.MAIN
                 else:
                     typ = None
-            elif primary_cmd in items_to_commands(menu_list):
+            elif primary_cmd == "add":
+                ing_cmd = find_command(args[0], items_to_commands(menu_list))
+                if ing_cmd is not None:  # e.g. add beer
+                    add_typ = command_to_item(ing_cmd, menu_list)
+                    self.do_add(add_typ)
+            elif primary_cmd in commands:
                 typ = command_to_item(primary_cmd, menu_list)
             elif self.onecmd(primary_cmd):
                 pass
             else:
                 console.print("[error]No allowed command recognized.")
 
-    def do_add(self, arg):
-        pass
+    def do_add(self, add_typ, add_arg=""):
+        self.bar.screen = bar.MENU
+        inv_ingredients = ingredients.list_ingredients(self.bar.inventory, add_typ)
 
-    '''def do_menu(self, arg):
-        bar_menu_commands = {"back", "add"}
+        if add_arg != "":
+            ing_command, empty_args = find_command(add_arg, items_to_commands(inv_ingredients))
+            if ing_command is not None:
+                ingredient = command_to_item(ing_command, inv_ingredients)
+                if ingredient:
+                    self.bar.menu[ingredient.get_menu_section()].append(ingredient)
+                    console.print(f"{ingredient.name} added to menu.")
+                    return True
+                else:
+                    console.print("[error]Ingredient arg given to add command, but ingredient not found")
+                    return False
+            else:
+                console.print("[error]Arg given to add method, but find_command returned None")
+                return False
 
-        bar_menu_panel = Panel(title="bar_menu_panel", renderable=self.bar.view_menu(expanded=True))
-        bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
-        console.print(bar_menu_layout)
+        else:  # No ingredient given
+            if add_typ is ingredients.Ingredient:
+                console.print("[error]No type or ingredient given to add command. Syntax: add beer | add guinness")
+                return False
+            else:
+                add_tool_table, add_tool_list = self.bar.table_inv(add_typ, off_menu=True)
+                add_tool_panel = Panel(add_tool_table)
+                add_tool_layout = Layout(add_tool_panel)
 
-        inpt = console.input("'Add' to add a beverage to the menu")
-        inpt_cmd = find_command(inpt, bar_menu_commands)
-        if inpt_cmd == "add":
-            inv_table, inv_list = self.bar.view_inv()
-            console.print(inv_table)
-            inpt = console.input("Type a category to view, or a product to add to menu: > ")
-            inpt_cmd = find_command(inpt)
-            for entry in inv_list:
-                entry_cmd = ""
-                if isinstance(entry, type):
-                    obj = entry()
-                    entry_cmd = unidecode(obj.format_type())
-                    if inpt_cmd == entry_cmd:
-                        
-                elif isinstance(entry, ingredients.Ingredient):
-                    entry_cmd = unidecode(entry.name)
+                console.print(add_tool_layout)
 
-
-                # Loop this somewhere'''
+                adding = True
+                add_commands = items_to_commands(add_tool_list)
+                add_commands.add("back")
+                add_commands.add("quit")
+                while adding:
+                    primary_cmd, ing_args = parse_input("Type a name to add", add_commands)
+                    if primary_cmd:
+                        if primary_cmd == "back":
+                            return
+                        else:
+                            ingredient = command_to_item(primary_cmd, inv_ingredients)
+                            self.bar.menu[ingredient.get_menu_section()].append(ingredient)
+                            adding = False
 
     def do_save(self, arg):
         """Save the current game state."""

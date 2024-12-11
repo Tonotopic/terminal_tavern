@@ -5,11 +5,14 @@ from rich.style import Style
 
 styles = {"abv": Style(color="#d40241"),
           "money": Style(color="#cfba02"),
+          "shop": Style(color="#628260"),
           "dimmed": Style(color="#6e6e6e"),
           "panel": Style(color="#3c8fc2"),
+          "bar_menu": Style(color="#9c0834"),
           "prompt": Style(color="#429e45"),
           "error": Style(color="#ba2318"),
           # Ingredients
+          "cocktails": Style(color="#5de3c1"),
           "drink": Style(color="#8189fc"),
           "additive": Style(color="#ff66bb"),
           "fruit": Style(color="#ff66bb"),
