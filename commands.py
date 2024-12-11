@@ -88,15 +88,16 @@ help_panels = {
 }
 
 
-def draw_help_panel(cmd):
-    logger.log("Drawing help panel for " + cmd)
-    panel = Panel(help_panels.get(cmd), title=f"Help: {cmd}", box=rich.box.ASCII2,
+def draw_help_panel(term):
+    """Print a panel to the user containing help info for the given term."""
+    logger.log("Drawing help panel for " + term)
+    panel = Panel(help_panels.get(term), title=f"Help: {term}", box=rich.box.ASCII2,
                   style=rich_console.styles.get("highlight"), width=100)
     console.print(panel)
 
 
 def items_to_commands(lst: Iterable[ingredients.Ingredient]):
-    #  Converts a list of ingredients, ingredient types, and/or strings into a list of commands for parsing.
+    """Convert a list of ingredients, ingredient types, and/or strings into a list of commands for parsing."""
     commands = set("")
     for entry in lst:
         if isinstance(entry, type):
@@ -116,7 +117,7 @@ def items_to_commands(lst: Iterable[ingredients.Ingredient]):
 
 
 def command_to_item(cmd, lst):
-    #  Matches a string command to an ingredient or type from the given list.
+    """Match a string command to an ingredient or type from the given list."""
     if cmd is None:
         return None
     for entry in lst:
@@ -141,15 +142,16 @@ def command_to_item(cmd, lst):
 
 
 def find_command(inpt, commands=None, force_beginning=False, feedback=True):
-    """Takes an input string and a command list, and either returns a single command match,
+    """
+    Take an input string and a command list, and either returns a single command match,
     prints multiple matching commands for the user to choose between,
     or prints all valid commands if no valid command is found.
 
-        Args:
-          :param inpt: The string from user input.
-          :param commands: Optional list of commands to match to. all_commands if None
-          :param force_beginning: Can be set to True to disallow matching to the middle of a command.
-        """
+    :param inpt: The string from user input.
+    :param commands: Optional list of commands to match to.
+    :param force_beginning: Can be set to True to disallow matching to the middle of a command.
+    :param feedback: Whether to print the result to the user.
+    """
     # Because "jose" and "silver" on their own will both return multiple products
     # Currently entire input match must be sequential so "especial silver" or "ial sil" is required
     inpt = inpt.strip().lower()
@@ -265,12 +267,12 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
 
 
 def parse_input(prompt, commands=None, force_beginning: bool = False):
-    """Prints prompt, takes, standardizes, and validates input, handles spaces logic,
-    and distinguishes primary commands from arguments.
+    """
+    Gather, standardize, and validate input, handling multi-word logic and distinguishing primary commands from arguments.
 
         Args:
           :param prompt: Message printed just before the user's input cursor in the console.
-          :param commands: Optional list of commands to pass to find_command. all_commands if None
+          :param commands: Optional list of commands to pass to find_command.
           :param force_beginning: Can be set to True to disallow matching to the middle of a command.
         """
     inpt = ""
@@ -280,23 +282,39 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
     # TODO: As commands with args are added, skip them here
     # If not a command with args, group spaced words together
     arg_commands = ["shop", "buy", "add", "remove", "load", "markup", "markdown"]  # help is added by find_command
-    if not find_command(inpt.split()[0], arg_commands, feedback=False):
-        inpt = f'"{inpt}"'
+    arg_cmd = find_command(inpt.split()[0], arg_commands, feedback=False)
+    while True:
+        if arg_cmd is None:
+            inpt = f'"{inpt}"'
 
-    inpt_cmd = find_command(inpt, commands, force_beginning)
+        inpt_cmd = find_command(inpt, commands, force_beginning)
+        # Start over parsing with input wrapped in quotes if the potential arg command we detected isn't accurate
+        if arg_cmd and inpt_cmd[0] != arg_cmd:
+            arg_cmd = None
+            continue
 
-    if isinstance(inpt_cmd, tuple):  # If find_command returned args
-        primary_command, args = inpt_cmd  # Unpack the tuple
-    else:
-        primary_command = inpt_cmd  # The entire input is one part
-        args = []
+        if isinstance(inpt_cmd, tuple):  # If find_command returned args
+            primary_command, args = inpt_cmd  # Unpack the tuple
+        else:
+            primary_command = inpt_cmd  # The entire input is one part
+            args = []
 
-    return primary_command, args
+        return primary_command, args
 
 
-def input_loop(prompt, commands, force_beginning=False, ingredient=None, bar=None, skip=None):
-    """Loops the prompt checking for the success of certain commands so feedback can be shown without
-    re-drawing the entire screen."""
+def input_loop(prompt: str, commands, force_beginning=False, skip: str = None, ingredient=None, bar=None):
+    """
+    Loops the prompt checking for the success of certain commands so feedback can be shown without
+    re-drawing the entire screen.
+
+    :param prompt: Message printed just before the user's input cursor in the console.
+    :param commands: Optional list of commands to pass to find_command.
+    :param force_beginning: Can be set to True to disallow matching to the middle of a command.
+    :param skip: This command's checker will not be called, e.g. distinguishing "new" cocktail from "new" game
+    :param ingredient: Current context ingredient/type where needed for command checkers.
+    :param bar: Current context bar where needed for command checkers.
+    :return: The primary command and any args, whether or not a command checker has executed
+    """
     while True:
         inpt = parse_input(prompt, commands, force_beginning)
         if inpt[0] is None:
