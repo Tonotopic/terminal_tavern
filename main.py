@@ -28,15 +28,10 @@ while True:
     bar.dashboard()
 
     prompt = "'Shop' or view the 'menu'"
-    primary_cmd = None
-    while primary_cmd is None:
-        inpt = commands.parse_input(prompt, ["shop", "menu"])
-        if inpt is None:
-            continue
-        primary_cmd, args = inpt
+    primary_cmd, args = bar.bar_cmd.input_loop(prompt, ["shop", "menu"])
     if primary_cmd == "shop":
         bar.shop()
     elif primary_cmd == "menu":
-        bar.menu.menu_screen(bar)
+        bar.menu.menu_screen()
     elif primary_cmd == "quit":
         bar.bar_cmd.do_quit("")

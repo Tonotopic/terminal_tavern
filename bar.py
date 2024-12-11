@@ -20,12 +20,12 @@ global prompt
 class Bar:
     def __init__(self, name, balance=1000):
         self.name = name
+        self.balance = balance  # Float: current balance in dollars
+        self.reputation = 0
         self.bar_cmd = commands.BarCmd(self)
         self.inventory = {}  # Dictionary: {ingredient_object: fluid_ounces}
-        self.balance = balance  # Float: current balance in dollars
-        # self.menu: List[List[Recipe | ingredients.Beer | ingredients.Cider | ingredients.Wine | ingredients.Mead]] = [], [], [], [], []]  # Cocktails, beer, cider, wine, mead
         self.recipes = {}
-        self.menu = bar_menu.BarMenu()
+        self.menu = bar_menu.BarMenu(self)
         self.screen = Screen.MAIN
 
     def dashboard(self):
@@ -207,35 +207,18 @@ class Bar:
 
             # <editor-fold desc="Input">
 
-            #  Match to any part of command when input > 3
-            force_beginning = False
-            #  When options on the screen are "Alcohols" and "Non-Alcoholic Drinks"
-            if current_selection == ingredients.Drink:
-                # Force match to the beginning of the word so "alco"+ doesn't return both commands
-                force_beginning = True
+            #  Don't do mid-word matches for Alcohol vs Non-Alcohol so "alco"+ doesn't return both commands
+            force_beginning = True if current_selection == ingredients.Drink else False
 
-            # There's probably a better way to custom loop the input
-            primary_cmd = None
-            while primary_cmd is None:
-                inpt = commands.parse_input(prompt, shop_commands, force_beginning)
-                if inpt is None:
-                    continue
-                primary_cmd, args = inpt
-                if primary_cmd == "buy":  # Inside the loop so error messages with buy can be shown on same screen
-                    # Inject ingredient from menu into buy command
-                    args.insert(0, current_selection)
-                    if self.bar_cmd.onecmd([primary_cmd, args], return_result=True):
-                        msg = (f"Bought {args[1]}oz of [{style}]{current_selection.name}[/{style}]. "
-                               f"Current stock: {self.inventory[current_selection]}oz")
-                        self.shop(type(current_selection), msg)  # Go back from the ingredient screen
-                        return
-                    else:
-                        primary_cmd = None
-                elif primary_cmd == "help":
-                    self.bar_cmd.onecmd(primary_cmd, args)
-                    primary_cmd = None
+            primary_cmd, args = self.bar_cmd.input_loop(prompt, shop_commands, force_beginning, current_selection)
 
-            if primary_cmd == "back":
+            if primary_cmd == "buy":
+                # Buy has been executed in input loop
+                msg = (f"Bought {args[0]}oz of [{style}]{current_selection.name}[/{style}]. "
+                       f"Current stock: {self.inventory[current_selection]}oz")
+                self.shop(type(current_selection), msg)  # Go back from the ingredient screen
+                return
+            elif primary_cmd == "back":
                 if current_selection == Ingredient:
                     self.screen = Screen.MAIN
                     return
@@ -256,11 +239,11 @@ class Bar:
             elif commands.command_to_item(primary_cmd, shop_list):
                 current_selection = commands.command_to_item(primary_cmd, shop_list)
             else:
-                # If no shop-specific command found
-                self.bar_cmd.onecmd(primary_cmd)  # Checks for quit
+                console.print("[error]Command not handled")
 
             # </editor-fold>
 
+    # <editor-fold desc="Recipes">
     # @TODO: '2 whole maraschino cherry'
     def show_recipes(self, off_menu=False):
         recipes_list = []
@@ -307,10 +290,7 @@ class Bar:
             cmds.add("back")
             cmds.add("finish")
 
-            while cmd is None:
-                cmd = commands.parse_input(rcp_write_prompt, cmds)[0]
-                if cmd == "":
-                    cmd = None
+            cmd = self.bar_cmd.input_loop(rcp_write_prompt, cmds)[0]
 
             if cmd == "finish":
                 recipe_name = None
@@ -321,8 +301,6 @@ class Bar:
 
                 self.recipes[recipe_name] = Recipe(name=recipe_name, r_ingredients=recipe_dict)
                 return recipe_name
-            elif cmd == "quit":
-                self.bar_cmd.onecmd(cmd)
             elif cmd == "back":
                 writing_recipe = False
 
@@ -355,12 +333,8 @@ class Bar:
             console.print(portioning_layout)
             rcp_write_prompt = f"Select a portion of {ingredient}"
 
-            portion_command = None
-            while portion_command is None:
-                portion_command = commands.parse_input(rcp_write_prompt, portions_list, force_beginning=True)[0]
-            if portion_command == "quit":
-                self.bar_cmd.do_quit(self)
-            elif portion_command == "back":
+            portion_command = self.bar_cmd.input_loop(rcp_write_prompt, portions_list, force_beginning=True)[0]
+            if portion_command == "back":
                 continue
             for portion in matching_obj.get_portions():
                 if portion_command == portion.lower():
@@ -374,7 +348,9 @@ class Bar:
                         recipe_table.add_row(f"-   {portion}", of, Text(matching_obj.name,
                                                                         matching_obj.get_ing_style()))
                     recipe_table.add_row()  # Spacing
+    # </editor-fold>
 
+    # <editor-fold desc="Inventory">
     def show_inv(self, table_settings, typ: type = Ingredient, showing_flavored=False, shop=False):
         table = Table(**table_settings)
         lst = []
@@ -473,6 +449,28 @@ class Bar:
             add_tool_table.add_row(row_ings[0], row_ings[1], row_ings[2], row_ings[3], row_ings[4], row_ings[5])
 
         return add_tool_table, lst
+
+    def check_ingredients(self, recipe):
+        """Checks if there are ingredients in the inventory to make the recipe."""
+        for required_ingredient, quantity in recipe.r_ingredients.items():
+            if isinstance(required_ingredient, type):  # Check if requirement is a type (accepts any)
+                found_match = False
+                for inv_ingredient in self.inventory:
+                    if isinstance(inv_ingredient,
+                                  required_ingredient):
+                        found_match = True
+                        break  # Stop checking further for this ingredient
+                if not found_match:
+                    return False  # No ingredient of the right type provided
+            else:  # Specific ingredient required
+                if required_ingredient not in self.inventory:
+                    return False  # Missing specific ingredient
+                # Add quantity check if needed
+
+        return True  # All ingredients are valid
+    # </editor-fold>
+
+
 
     def save_game(self):
         pass

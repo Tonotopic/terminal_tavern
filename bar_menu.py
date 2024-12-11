@@ -12,12 +12,16 @@ import ingredients
 
 
 class BarMenu:
-    def __init__(self):
+    def __init__(self, bar):
+        self.bar = bar
         self.cocktails: list[Recipe] = []
         self.beer: list[Beer] = []
         self.cider: list[Cider] = []
         self.wine: list[Wine] = []
         self.mead: list[Mead] = []
+
+    def full_menu(self):
+        return self.cocktails + self.beer + self.cider + self.wine + self.mead
 
     def menu_sections(self):
         return [(self.cocktails, "Cocktails", Recipe), (self.beer, "Beer", Beer), (self.cider, "Cider", Cider),
@@ -65,8 +69,8 @@ class BarMenu:
 
             if display_section == self.cocktails:
                 for cocktail in display_section:
-                    listing, price = cocktail.list_item()
-                    table.add_row(listing, price)
+                    listing = cocktail.list_item()
+                    table.add_row(listing)
                     table.add_row()
                     lst.append(cocktail)
             else:
@@ -77,15 +81,15 @@ class BarMenu:
 
         return table, lst
 
-    def menu_screen(self, bar):
-        bar.screen = Screen.BAR_MENU
+    def menu_screen(self):
+        self.bar.screen = Screen.BAR_MENU
         global type_displaying
         type_displaying = None
         prompt = "'Back' to go back"
 
-        while bar.screen == Screen.BAR_MENU:
+        while self.bar.screen == Screen.BAR_MENU:
             menu_table, menu_list = self.table_menu(display_type=type_displaying, expanded=True)
-            bar_menu_panel = Panel(title=f"{bar.name} Menu", renderable=menu_table,
+            bar_menu_panel = Panel(title=f"{self.bar.name} Menu", renderable=menu_table,
                                    border_style=styles.get("bar_menu"))
             bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
 
@@ -95,57 +99,49 @@ class BarMenu:
             # When viewing a section, don't add menu items as primary commands
             if type_displaying is None:
                 menu_commands = items_to_commands(menu_list)  # Categories
-                menu_commands.add("add")
+            menu_commands.add("add")
             menu_commands.add("remove")
+            menu_commands.add("markup")
+            menu_commands.add("markdown")
             menu_commands.add("back")
             menu_commands.add("menu")
 
-            primary_cmd = None
-            while primary_cmd is None:
-                inpt = parse_input(prompt, menu_commands)
-                if inpt is None:  # Help method returned
-                    continue  # Don't try to unpack and throw an error
-                primary_cmd, args = inpt
-                if primary_cmd == "add" and len(args) == 0:
-                    console.print("[error]Invalid args. Use: 'add cocktail', 'add beer', etc.")
-                    primary_cmd = None
+            typ = None if type_displaying is None else type_displaying
+            primary_cmd, args = self.bar.bar_cmd.input_loop(prompt, menu_commands, ingredient=typ, bar=self.bar)
 
             if primary_cmd == "back":
                 if type_displaying is None:  # At the full menu screen
-                    bar.screen = Screen.MAIN
+                    self.bar.screen = Screen.MAIN
                 else:  # Viewing beer menu, etc.
                     type_displaying = None
             elif primary_cmd == "menu":
-                bar.screen = Screen.MAIN
+                self.bar.screen = Screen.MAIN
             elif primary_cmd == "add":
-                typ_cmd = find_command(args[0], items_to_commands(menu_list))
-                if typ_cmd is not None:  # e.g. add beer
-                    add_typ = command_to_item(typ_cmd, menu_list)
-                    self.add(bar, add_typ)
+                # Add handled by input loop
+                continue
             elif primary_cmd == "remove":
-                typ_cmd = find_command(args[0], menu_commands)
-                if typ_cmd is not None:
-                    remove_typ = command_to_item(typ_cmd, menu_list)
-                    self.do_remove(remove_typ)
+                self.remove(args[0])
+            elif primary_cmd == "markup":
+                self.markup(args[0])
+            elif primary_cmd == "markdown":
+                self.markdown(args[0])
             elif primary_cmd in menu_commands:  # beer, cider, wine, etc.
                 type_displaying = command_to_item(primary_cmd, menu_list)
-            elif bar.bar_cmd.onecmd(primary_cmd, args):
+            elif self.bar.bar_cmd.onecmd(primary_cmd, args):
                 pass
             else:
                 console.print("[error]No allowed command recognized.")
 
-    def add(self, bar, add_typ, add_arg=""):
-        bar.screen = Screen.BAR_MENU
-        inv_ingredients = ingredients.list_ingredients(bar.inventory, add_typ)
+    def add(self, add_typ, add_arg=""):
+        self.bar.screen = Screen.BAR_MENU
+        inv_ingredients = ingredients.list_ingredients(self.bar.inventory, add_typ)
 
         if add_arg != "":
             ing_command = find_command(add_arg, items_to_commands(inv_ingredients))[0]
             if ing_command is not None:
                 ingredient = command_to_item(ing_command, inv_ingredients)
                 if ingredient:
-                    bar.menu.__getattribute__(add_typ.__name__).append(ingredient)
-                    # TODO: This isn't visible
-                    console.print(f"{ingredient.name} added to menu.")
+                    self.bar.menu.__getattribute__(add_typ.__name__).append(ingredient)
                     return True
                 else:
                     console.print("[error]Ingredient arg given to add command, but ingredient not found")
@@ -155,13 +151,26 @@ class BarMenu:
                 return False
 
         else:  # No ingredient given
+            if isinstance(add_typ, str):
+                typ_cmd = find_command(add_typ, [section[1].lower() for section in self.menu_sections()])
+                add_typ = None
+                if typ_cmd:
+                    pass
+                else:
+                    console.print(f"[error]{typ_cmd} did not match to a menu category")
+                    return False
+                add_typ = command_to_item(typ_cmd, [Recipe, ingredients.Beer, ingredients.Cider, ingredients.Wine,
+                                                    ingredients.Mead])
+                if add_typ is None:
+                    console.print("[error]Add type argument does not match any category")
+                    return False
             if add_typ is ingredients.Ingredient:
-                console.print("[error]No type or ingredient given to add command. Syntax: add beer | add guinness")
+                console.print("[error]No type or ingredient given to add command. Syntax: add beer")
                 return False
             elif add_typ == Recipe:
                 choosing_recipe = True
                 while choosing_recipe:
-                    recipes_table, recipes_list = bar.show_recipes(off_menu=True)
+                    recipes_table, recipes_list = self.bar.show_recipes(off_menu=True)
                     recipes_panel = Panel(recipes_table, border_style=styles.get("bar_menu"))
                     recipes_layout = Layout(recipes_panel)
 
@@ -171,16 +180,13 @@ class BarMenu:
 
                     console.print(recipes_layout)
 
-                    recipe_cmd = None
-                    while recipe_cmd is None:
-                        recipe_cmd = parse_input("Enter the name of a recipe, or 'new' to define a new recipe",
-                                                 recipe_commands)[0]
+                    prompt = "Enter the name of a recipe, or 'new' to define a new recipe"
+                    recipe_cmd = self.bar.bar_cmd.input_loop(prompt, recipe_commands)[0]
+
                     if recipe_cmd == "new":
-                        bar.new_recipe()
+                        self.bar.new_recipe()
                     elif recipe_cmd == "back":
-                        return
-                    elif recipe_cmd == "quit":
-                        bar.bar_cmd.onecmd(recipe_cmd)
+                        return True
                     else:
                         for index, recipe in enumerate(recipes_list):
                             if recipe_cmd == recipe.name.lower():
@@ -188,7 +194,7 @@ class BarMenu:
                                 return True
 
             else:
-                add_tool_table, add_tool_list = bar.table_inv(add_typ, off_menu=True)
+                add_tool_table, add_tool_list = self.bar.table_inv(add_typ, off_menu=True)
                 add_tool_panel = Panel(add_tool_table, border_style=styles.get("bar_menu"))
                 add_tool_layout = Layout(add_tool_panel)
 
@@ -197,13 +203,32 @@ class BarMenu:
                 adding = True
                 add_commands = items_to_commands(add_tool_list)
                 add_commands.add("back")
-                add_commands.add("quit")
                 while adding:
-                    recipe_cmd, ing_args = parse_input("Type a name to add", add_commands)
-                    if recipe_cmd:
-                        if recipe_cmd == "back":
-                            return
-                        else:
-                            ingredient = command_to_item(recipe_cmd, inv_ingredients)
-                            self.get_section(ingredient).append(ingredient)
-                            adding = False
+                    recipe_cmd, ing_args = self.bar.bar_cmd.input_loop("Type a name to add", add_commands)
+                    if recipe_cmd == "back":
+                        return True
+                    else:
+                        ingredient = command_to_item(recipe_cmd, inv_ingredients)
+                        self.get_section(ingredient).append(ingredient)
+                        adding = False
+
+    def remove(self, remove_arg):
+        item_cmd = find_command(remove_arg, items_to_commands(self.full_menu()))
+        if item_cmd:
+            rmv_item = command_to_item(item_cmd, self.full_menu())
+            menu_section = self.get_section(rmv_item)
+            menu_section.remove(rmv_item)
+            return True
+        else:
+            console.print(f"[error]'{remove_arg}' did not match to a current menu item")
+            return False
+
+    def markup(self, markup_arg):
+        if markup_arg == "":
+            console.print("[error]Syntax: 'markup \\[menu item]'")
+            return False
+        else:
+            pass
+
+    def markdown(self, markdown_arg):
+        pass

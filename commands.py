@@ -21,8 +21,8 @@ help_panels = {
     "help": f"Syntax: [cmd]'help \\[term]'[/cmd]\n"
             f"[cmd]'Help'[/cmd] can be used on commands (shop, add, etc), products (lychee, Ketel One Classic, etc), "
             f"and some game concepts (input, recipe, etc).\n"
-            f"Command parsing will work the same for the help arg, i.e. [cmd]'fish pois'[/cmd]"
-            f" can return [italic][beer]Little Fish Saison du Poisson.[/italic][/beer]",
+            f"Command parsing will work the same for the help arg, i.e. [cmd]'help fish pois'[/cmd]"
+            f" can return the description for [italic][beer]Little Fish Saison du Poisson.[/italic][/beer]",
 
     "input": f"Input parsing is [highlight]case-insensitive[/highlight] and allows for partial terms - "
              f"[cmd]'rh b f h'[/cmd] is as effective as 'Rhinegeist Beer for Humans', and in the right context, "
@@ -69,13 +69,12 @@ help_panels = {
            f"[cmd]'Add cocktails'[/cmd] allows both selecting from created recipes, and writing them ([cmd]'new'[/cmd]).",
     # </editor-fold>
 
-
-
 }
 
 
 def draw_help_panel(cmd):
-    panel = Panel(help_panels.get(cmd), title=f"Help: {cmd}", box=rich.box.ASCII2, style=rich_console.styles.get("highlight"), width=100)
+    panel = Panel(help_panels.get(cmd), title=f"Help: {cmd}", box=rich.box.ASCII2,
+                  style=rich_console.styles.get("highlight"), width=100)
     console.print(panel)
 
 
@@ -222,26 +221,6 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
         primary_command = inpt_cmd  # The entire input is one part
         args = []
 
-    # Putting this here so that help functions the same anywhere input is taken
-    if primary_command == "help":
-        ingredient_cmds = items_to_commands(ingredients.all_ingredients)
-        all_help_args = ingredient_cmds | help_panels.keys()
-
-        arg_input = " ".join(args)
-        if arg_input == "":
-            draw_help_panel("help")
-            console.print(f"Help topics: {all_help_args}")
-            return None
-
-        arg = find_command(f'"{arg_input}"', all_help_args)
-        if arg in help_panels.keys():
-            draw_help_panel(arg)
-        elif arg in ingredient_cmds:
-            arg_ing = command_to_item(arg, ingredients.all_ingredients)
-            console.print(arg_ing.description())
-
-        return None
-
     return primary_command, args
 
 
@@ -267,6 +246,8 @@ def items_to_commands(lst: Iterable[ingredients.Ingredient]):
 
 def command_to_item(cmd, lst):
     #  Matches a string command to an ingredient or type from the given list.
+    if cmd is None:
+        return None
     for entry in lst:
         if isinstance(entry, type):
             if entry == Recipe:
@@ -275,6 +256,9 @@ def command_to_item(cmd, lst):
             elif f"{unidecode(entry().format_type().lower())}s".startswith(cmd):
                 return entry
         elif isinstance(entry, ingredients.Ingredient):
+            if cmd == unidecode(entry.name.lower()):
+                return entry
+        elif isinstance(entry, Recipe):
             if cmd == unidecode(entry.name.lower()):
                 return entry
         elif isinstance(entry, str):
@@ -287,7 +271,6 @@ def command_to_item(cmd, lst):
 
 class BarCmd(cmd.Cmd):
     intro = 'Welcome to the bar. Type help or ? to list commands.\n'
-    prompt = '> '
 
     def __init__(self, bar_instance):  # Pass your Bar instance
         super().__init__()
@@ -330,13 +313,62 @@ class BarCmd(cmd.Cmd):
         else:
             return super().onecmd(cmd)
 
-    # <editor-fold desc="Command Functions">
+    def input_loop(self, prompt, commands, force_beginning=False, ingredient = None, bar=None):
+        """Loops the prompt checking for the success of certain commands so feedback can be shown without
+        re-drawing the entire screen."""
+        found_valid_input = False
+        while found_valid_input is False:
+            inpt = parse_input(prompt, commands, force_beginning)
+            if inpt is None:
+                continue
+            primary_cmd, args = inpt
+            if primary_cmd == "quit":
+                self.do_quit("")
+            elif primary_cmd == "help":
+                ingredient_cmds = items_to_commands(ingredients.all_ingredients)
+                help_args = help_panels.keys()
+
+                arg_input = " ".join(args)
+                if arg_input == "":
+                    draw_help_panel("help")
+                    console.print(f"Help topics: {help_args}")
+                    continue
+
+                arg = find_command(f'"{arg_input}"', help_args)
+                if arg in help_panels.keys():
+                    draw_help_panel(arg)
+                    continue
+                elif arg in ingredient_cmds:
+                    arg_ing = command_to_item(arg, ingredients.all_ingredients)
+                    console.print(arg_ing.description())
+                    continue
+            elif primary_cmd == "buy":
+                if len(args) > 0:
+                    if self.do_buy(ingredient, args[0]):
+                        return primary_cmd, args[0]
+                else:
+                    console.print("[error]Incorrect number of arguments. Usage: buy <quantity>")
+            elif primary_cmd == ("add" or "remove") and ingredient is None and len(args) == 0:
+                console.print("[error]Invalid args. Use: 'add cocktail', 'add beer', etc.")
+                continue
+            elif primary_cmd == "add":
+                type_displaying = ingredient
+                if type_displaying is None:
+                    if self.bar.menu.add(args[0]):
+                        return primary_cmd, args
+                else:
+                    if self.bar.menu.add(type_displaying):
+                        return primary_cmd, args
+            elif primary_cmd == "remove":
+                if bar.menu.remove(args[0]):
+                    return primary_cmd, args
+            else:
+                return primary_cmd, args
+
+            # <editor-fold desc="Command Functions">
 
     def do_buy(self, ingredient: ingredients.Ingredient = None, arg=""):
         parts = arg.split()
-        if len(parts) == 3:  # i.e. buy jameson 24
-            if parts[0] == "buy":
-                parts.remove("buy")
 
         if len(parts) == 2:  # i.e. buy 24
             ingredient = ingredients.get_ingredient(str(parts[0]))
@@ -346,7 +378,7 @@ class BarCmd(cmd.Cmd):
             volume = arg
 
         else:
-            console.print("[error]Incorrect number of arguments. Invalid buy command. Usage: buy <quantity>")
+            console.print("[error]Incorrect number of arguments. Usage: buy <quantity>")
             return False
 
         try:

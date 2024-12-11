@@ -84,25 +84,6 @@ class Recipe(MenuItem):
             if isinstance(r_ingredient, type):
                 pass
 
-    def check_ingredients(self, provided_ingredients: dict[Ingredient, float]):
-        """Checks if provided ingredients satisfy the recipe requirements."""
-        for required_ingredient, quantity in self.r_ingredients.items():
-            if isinstance(required_ingredient, type):  # Check if requirement is a type (accepts any)
-                found_match = False
-                for provided_ingredient in provided_ingredients:
-                    if isinstance(provided_ingredient,
-                                  required_ingredient):
-                        found_match = True
-                        break  # Stop checking further for this ingredient
-                if not found_match:
-                    return False  # No ingredient of the right type provided
-            else:  # Specific ingredient required
-                if required_ingredient not in provided_ingredients:
-                    return False  # Missing specific ingredient
-                # Add quantity check if needed
-
-        return True  # All ingredients are valid
-
     def make(self):
         provided_ingredients = {}
         if self.check_ingredients(provided_ingredients):
