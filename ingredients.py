@@ -288,7 +288,7 @@ class Additive(Ingredient):
 
 
 class Syrup(Additive):
-    def __init__(self, ingredient_id, name, image, character, flavor=None):
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None, flavor=None):
         super().__init__(ingredient_id, name, image, character)
         if flavor is None:
             flavor = ""

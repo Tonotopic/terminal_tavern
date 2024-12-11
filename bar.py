@@ -17,11 +17,9 @@ class Bar:
         self.menu = {}  # List of Recipe objects
 
     def purchase(self):
-        shop_commands = set()
         current_category = Ingredient
 
         while True:
-
             purchase_layout = Layout(name="purchase_layout")
             purchase_layout.split_column(
                 Layout(name="purchase_header"),
@@ -29,6 +27,7 @@ class Bar:
             )
 
             # <editor-fold desc="populating shop panels">
+            shop_commands = set()
             shop_list = []
             subclasses = current_category.__subclasses__()
             for typ in subclasses:
@@ -79,7 +78,7 @@ class Bar:
                         for category in shop_list:
                             if inpt == f"{category().format_type().lower()}s":
                                 current_category = category
-                            break
+                                break
                     else:
                         console.print("No matching commands found.")
 
