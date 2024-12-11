@@ -46,23 +46,38 @@ class BarMenu:
     # <editor-fold desc="Display">
     def table_menu(self, display_type=None, expanded=False):
         # @TODO: Multiple columns or live display to save space
-        table = Table(show_header=False, box=box.MINIMAL, style=styles.get("bar_menu"))
+        table_settings = {
+            "show_header": False,
+            "box": box.MINIMAL,
+            "style": styles.get("bar_menu")
+        }
+        table_1 = Table(**table_settings)
+        table_2 = Table(**table_settings)
+        table_3 = Table(**table_settings)
+        tables = [table_1, table_2, table_3]
+        width = console.size[0] if expanded else int(console.size[0] / 2)
+        for table in tables:
+            table.add_column(width=width - 12)
         lst = []
 
         # Menu overview
         if display_type is None:
-            width = console.size[0] if expanded else int(console.size[0]/2)
-            table.add_column("Type", width=width - 12)
-            table.add_column("Quantity")
+
+            table_section = table_1
             for menu_section, sect_name, sect_typ in self.menu_sections():
-                table.add_row()
-                table.add_row(Text(sect_name, style=styles.get(sect_name.lower())),
-                              str(len(menu_section)), end_section=True)
+                table_section.add_row()
+                table_section.add_row(Text(sect_name, style=styles.get(sect_name.lower())),
+                                      str(len(menu_section)), end_section=True)
                 lst.append(sect_typ)
 
                 for menu_item in menu_section:
-                    table.add_row(menu_item.list_item(expanded=expanded))
-                    table.add_row()
+                    if len(table_1.rows) > console.height - 8:
+                        if len(table_2.rows) > console.height - 8:
+                            table_section = table_3
+                        else:
+                            table_section = table_2
+                    table_section.add_row(menu_item.list_item(expanded=expanded))
+                    table_section.add_row()
                     lst.append(menu_item)
 
         # Viewing specifically the Beer menu, Cocktail menu, etc
@@ -76,16 +91,24 @@ class BarMenu:
                 console.print("[error]Display section does not match to an existing menu section")
                 return None
 
-            table.add_row(Text(sect_name, style=styles.get(sect_name.lower())), str(len(display_section)),
-                          end_section=True)
+            table_1.add_row(Text(sect_name, style=styles.get(sect_name.lower())), str(len(display_section)),
+                            end_section=True)
 
+            table_section = table_1
             for item in display_section:
+                if len(table_1.rows) > console.height - 12:
+                    if len(table_2.rows) > console.height - 12:
+                        table_section = table_3
+                    else:
+                        table_section = table_2
+
                 listing = item.list_item(expanded=expanded)
-                table.add_row(listing)
-                table.add_row()
+                table_section.add_row(listing)
+                table_section.add_row()
                 lst.append(item)
 
-        return table, lst
+        filled_tables = [table for table in [table_1, table_2, table_3] if len(table.rows) > 0]
+        return filled_tables, lst
 
     # </editor-fold>
 
@@ -201,10 +224,11 @@ class BarMenu:
                     style = item.get_ing_style()
 
                 if item.markup != 0:
-                    console.print(f"[{style}]{item.name}[/{style}]'s price is marked up by [money]{"${:.2f}".format(item.markup)}.")
+                    console.print(
+                        f"[{style}]{item.name}[/{style}]'s price is marked up by [money]{"${:.2f}".format(item.markup)}.")
                 if item.markdown != 0:
-                    console.print(f"[{style}]{item.name}[/{style}] is currently marked down by {item.formatted_markdown}.")
-
+                    console.print(
+                        f"[{style}]{item.name}[/{style}] is currently marked down by {item.formatted_markdown}.")
 
                 prompt = f"[cmd]Mark{direction} [{style}]{item.name}[/{style}] by what percentage or dollar value?[/cmd] > "
                 value = None

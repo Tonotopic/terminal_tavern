@@ -77,20 +77,17 @@ class MenuItem:
             return formatted_price + f" ({self.formatted_markdown})"
 
     def list_item(self, expanded=False):
-        # Layout offset (12) and markdown offset (14)
+        # Layout offset (12) and markdown offset (15)
         total_spacing = console.size[0] - 12 - 15 if expanded else int(console.size[0] / 2) - 18
 
         if isinstance(self, Beer):
             name = self.name
-            if expanded:  # Half taken by beer name
-                price_spacing = total_spacing / 2
-                beer_spacing = price_spacing
-            else:  # 3/4 Taken by beer name
-                price_spacing = total_spacing / 4
-                beer_spacing = 3 * price_spacing
+            price_spacing = total_spacing / 3
+            beer_spacing = 2 * price_spacing
 
             if len(name) > beer_spacing:
-                name = name[:-3] + "..."
+                hidden_chars = int(len(name) - beer_spacing)
+                name = name[:-(hidden_chars + 3)] + "..."
 
             return (f"[beer]{name}{standardized_spacing(name, beer_spacing)}({self.format_type()})[/beer]"
                     f"{standardized_spacing(self.format_type() + "()", price_spacing)}{self.list_price(expanded=expanded)}")
@@ -151,7 +148,7 @@ class Ingredient:
         if plural:
             if type_name.endswith("ey"):
                 type_name = type_name[:-2] + "ies"  # Replace "ey" with "ies"
-            elif type_name.endswith("y"):
+            elif type_name.endswith("y") and not type_name == "Chardonnay":
                 type_name = type_name[:-1] + "ies"  # Replace "y" with "ies"
             elif type_name.endswith("ch") or type_name.endswith("sh") or type_name.endswith("x") or type_name.endswith(
                     "s") or type_name.endswith("z"):

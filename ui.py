@@ -15,6 +15,45 @@ from commands import items_to_commands, input_loop, command_to_item
 from ingredients import Ingredient, list_ingredients, Drink
 from bar import Bar
 
+live_prompt = "Cycling multiple pages... Begin typing to stop."
+
+
+def bump_console_size(down=False):
+    width, height = console.size
+    if down:
+        height = height - 1
+    else:
+        height = height + 1
+    console.size = (width, height)
+
+
+def draw_sentinel_update(key):
+    global draw_sentinel
+    draw_sentinel = True
+    raise keyboard.Listener.StopException()
+
+
+def listen(sec: int):
+    with keyboard.Listener(on_press=draw_sentinel_update) as listener:  # , suppress=True
+        listener.join(sec)
+
+
+def draw_live(tables, panel, layout, sec):
+    bump_console_size()
+    with Live(console=console, refresh_per_second=0.00001) as live:
+
+        global draw_sentinel
+        draw_sentinel = False
+        for table in cycle(tables):
+            if draw_sentinel:
+                break
+
+            panel.renderable = table
+            live.update(layout, refresh=False)
+            live.refresh()
+
+            listen(sec=sec)
+    bump_console_size(down=True)
 
 
 def startup_screen():
@@ -52,12 +91,11 @@ def startup_screen():
 
 
 def dashboard(bar):
-    # <editor-fold desc="Layout">
-
+    # <editor-fold desc="Layout"
     bar_name_panel = Panel(renderable=f"Welcome to [underline]{bar.name}!")
     balance_panel = Panel(renderable=f"Balance: [money]${str(bar.balance)}[/money]  "
                                      f"Reputation: Lvl {bar.rep_level}")
-    menu_panel = Panel(title="~*~ Menu ~*~", renderable=bar.menu.table_menu(expanded=False)[0],
+    menu_panel = Panel(title="~*~ Menu ~*~", renderable="render failed",
                        border_style=styles.get("bar_menu"))
 
     dash_layout = Layout(name="dash_layout")
@@ -65,11 +103,21 @@ def dashboard(bar):
                              Layout(name="dash_body"))
     dash_layout["dash_header"].split_row(Layout(name="bar_name", renderable=bar_name_panel),
                                          Layout(name="balance", renderable=balance_panel))
-    dash_layout["dash_body"].split_row(Layout(name="menu_layout", renderable=menu_panel),
-                                       Layout())
-    # </editor-fold>
 
-    console.print(dash_layout)
+    # </editor-fold>
+    menu_tables = bar.menu.table_menu(expanded=False)[0]
+    if len(menu_tables) > 1:
+        dash_layout["dash_body"].split_column(Layout(name="dash"),
+                                              Layout(name="footer", size=1, renderable=live_prompt))
+        dash_layout["dash"].split_row(Layout(name="menu_layout", renderable=menu_panel),
+                                      Layout())
+
+        draw_live(tables=menu_tables, panel=menu_panel, layout=dash_layout, sec=3)
+
+    else:
+        dash_layout["dash_body"].split_row(Layout(name="menu_layout", renderable=menu_panel),
+                                           Layout())
+        console.print(dash_layout)
 
     prompt = "'Shop' or view the 'menu'"
     primary_cmd, args = input_loop(prompt, ["shop", "menu"], bar=bar)
@@ -221,61 +269,13 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
         if isinstance(current_selection, type):
             if len(shop_tables) > 1:
-                async def update_display(live, shop_tables):
-                    for table in cycle(shop_tables):
-                        shop_panel.renderable = table
-                        live.update(shop_layout)
-                        await asyncio.sleep(0)
+                shop_layout["shop_screen"].split_column(Layout(name="footed_shop_screen"),
+                                                        Layout(name="footer", size=1,
+                                                               renderable=live_prompt))
+                shop_layout["footed_shop_screen"].split_row(Layout(name="bar", renderable=inv_panel),
+                                                            Layout(name="shop", renderable=shop_panel))
 
-                async def listen_for_keypress():
-                    while True:
-                        with keyboard.Listener(on_press=lambda key: asyncio.get_running_loop().stop()) as listener:
-                            listener.join(3)
-                        await asyncio.sleep(0)
-
-                async def play_live():
-
-                    with Live(console=console) as live:
-                        shop_layout["shop_screen"].split_column(Layout(name="footed_shop_screen"),
-                                                                Layout(name="footer", size=1,
-                                                                       renderable="[cmd]Press any key..."))
-                        shop_layout["footed_shop_screen"].split_row(Layout(name="bar", renderable=inv_panel),
-                                                                    Layout(name="shop", renderable=shop_panel))
-
-                        task1 = asyncio.create_task(update_display(live, shop_tables))
-                        task2 = asyncio.create_task(listen_for_keypress())
-                        await asyncio.gather(task1, task2)
-
-                def play_live_2():
-                    with Live(console=console, refresh_per_second=0.00001) as live:
-                        shop_layout["shop_screen"].split_column(Layout(name="footed_shop_screen"),
-                                                                Layout(name="footer", size=1,
-                                                                       renderable="[cmd]Press any key..."))
-                        shop_layout["footed_shop_screen"].split_row(Layout(name="bar", renderable=inv_panel),
-                                                                    Layout(name="shop", renderable=shop_panel))
-                        draw_sentinel = False
-                        for table in cycle(shop_tables):
-                            if draw_sentinel:
-                                break
-                            shop_panel.renderable = table
-                            live.update(shop_layout, refresh=False)
-                            live.refresh()
-
-                            def draw_sentinel_update(key):
-                                nonlocal draw_sentinel
-                                draw_sentinel = True
-                                raise keyboard.Listener.StopException()
-                            with keyboard.Listener(on_press=draw_sentinel_update) as listener:  # , suppress=True
-                                listener.join(3)
-
-                try:
-                    play_live_2()
-                except RuntimeError:
-                    pass
-
-
-
-
+                draw_live(tables=shop_tables, panel=shop_panel, layout=shop_layout, sec=3)
             else:
                 shop_panel.renderable = shop_tables[0]
                 console.print(shop_layout)
@@ -332,23 +332,24 @@ def menu_screen(bar):
     prompt = "'Back' to go back"
 
     while bar.screen == Screen.BAR_MENU:
-        menu_table, menu_list = bar.menu.table_menu(display_type=type_displaying, expanded=True)
-        bar_menu_panel = Panel(title=f"~*~ {bar.name} Menu ~*~", renderable=menu_table,
+        menu_tables, menu_list = bar.menu.table_menu(display_type=type_displaying, expanded=True)
+        bar_menu_panel = Panel(title=f"~*~ {bar.name} Menu ~*~", renderable="render failed",
                                border_style=styles.get("bar_menu"))
         bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
 
-        console.print(bar_menu_layout)
+        if len(menu_tables) > 1:
+            bar_menu_layout.split_column(Layout(name="bar_menu_panel", renderable=bar_menu_panel),
+                                         Layout(name="footer", size=1, renderable=live_prompt))
 
-        menu_commands = set()
+            draw_live(tables=menu_tables, panel=bar_menu_panel, layout=bar_menu_layout, sec=5)
+        else:
+            bar_menu_panel.renderable = menu_tables[0]
+            console.print(bar_menu_layout)
+
+        menu_commands = {"add", "remove", "markup", "markdown", "back", "menu"}
         # When viewing a section, don't add menu items as primary commands
         if type_displaying is None:
-            menu_commands = items_to_commands(menu_list)  # Categories
-        menu_commands.add("add")
-        menu_commands.add("remove")
-        menu_commands.add("markup")
-        menu_commands.add("markdown")
-        menu_commands.add("back")
-        menu_commands.add("menu")
+            menu_commands = menu_commands.union(items_to_commands(menu_list))
 
         typ = None if type_displaying is None else type_displaying
         primary_cmd, args = input_loop(prompt, menu_commands, ingredient=typ, bar=bar)
