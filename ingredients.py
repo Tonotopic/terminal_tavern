@@ -1,13 +1,20 @@
+import re
 from typing import override
 import sqlite3
 import inspect
 from rich.table import Table
-from rich.text import Text
 
 import rich_console
 from rich_console import console, styles, standardized_spacing
 
 all_ingredients = []
+
+special_formats = {
+    "Kolsch": "Kölsch",
+    "Rose": "Rosé",
+    "SkinContact": "Skin-Contact Wine",
+    "NonAlcohol": "Non-Alcoholic Drink"
+}
 
 
 class MenuItem:
@@ -57,7 +64,6 @@ class MenuItem:
         else:
             console.print(f"[error]Menu item {self.name} not triggering Recipe, Beer, or other Alcohol")
 
-
     def menu_pour(self):
         if hasattr(self, "r_ingredients"):
             pass
@@ -98,10 +104,27 @@ class Ingredient:
 
     def format_type(self, plural=False):
         type_name = type(self).__name__
-        if plural:
-            return f"{type_name}s"
+
+        # Check for special formats
+        if type_name in special_formats:
+            type_name = special_formats[type_name]
         else:
-            return type_name
+            # Add space before new word (except for first letter and "IPA")
+            type_name = re.sub(r'(?<!^)(?=[A-Z])', r' ', type_name)
+            type_name = type_name.replace("I P A", "IPA")
+
+        if plural:
+            if type_name.endswith("ey"):
+                type_name = type_name[:-2] + "ies"  # Replace "ey" with "ies"
+            elif type_name.endswith("y"):
+                type_name = type_name[:-1] + "ies"  # Replace "y" with "ies"
+            elif type_name.endswith("ch") or type_name.endswith("sh") or type_name.endswith("x") or type_name.endswith(
+                    "s") or type_name.endswith("z"):
+                type_name = f"{type_name}es"
+            else:
+                type_name = f"{type_name}s"
+
+        return type_name
 
     def notes_desc(self):
         if self.notes:
@@ -240,41 +263,17 @@ class MilkStout(Stout, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Milk Stout"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class OatmealStout(Stout, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Oatmeal Stout"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class ImperialStout(Stout, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        type_name = "Imperial Stout"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
 
 
 class Porter(Ale, MenuItem):
@@ -294,27 +293,11 @@ class SourAle(Ale, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Sour Ale"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class FruitTart(SourAle, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        type_name = "Fruit Tart Ale"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
 
 
 class PaleAle(Ale, MenuItem):
@@ -322,23 +305,11 @@ class PaleAle(Ale, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Pale Ale"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class IPA(PaleAle, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        return Ingredient.format_type(self, plural)
 
 
 class DoubleIPA(IPA, MenuItem):
@@ -346,27 +317,11 @@ class DoubleIPA(IPA, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Double IPA"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class BlackIPA(IPA, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        type_name = "Black IPA"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
 
 
 class Saison(PaleAle, MenuItem):
@@ -374,23 +329,11 @@ class Saison(PaleAle, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        return Ingredient.format_type(self, plural)
-
 
 class BlondeAle(Ale, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        type_name = "Blonde Ale"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
 
 
 class AmberAle(Ale, MenuItem):
@@ -398,27 +341,11 @@ class AmberAle(Ale, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Amber Ale"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class BrownAle(Ale, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        type_name = "Brown Ale"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
 
 
 class DarkAle(Ale, MenuItem):
@@ -426,27 +353,11 @@ class DarkAle(Ale, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Dark Ale"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class Kolsch(Beer, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        type_name = "Kölsch"
-        if plural:
-            return f"{type_name}es"
-        else:
-            return type_name
 
 
 # </editor-fold>
@@ -464,27 +375,11 @@ class RiceLager(Lager, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Rice Lager"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class PaleLager(Lager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        type_name = "Pale Lager"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
 
 
 class Helles(PaleLager, MenuItem):
@@ -492,19 +387,11 @@ class Helles(PaleLager, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        return Ingredient.format_type(self)
-
 
 class Pilsner(PaleLager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        return Ingredient.format_type(self, plural)
 
 
 class AmberLager(Lager, MenuItem):
@@ -512,43 +399,17 @@ class AmberLager(Lager, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Amber Lager"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class DarkLager(Lager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        # TODO: This is boilerplate
-        type_name = "Dark Lager"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class Schwarzbier(DarkLager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        # TODO: This is boilerplate
-        type_name = "Schwarzbier"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
 
 
 class Dunkel(DarkLager, MenuItem):
@@ -583,26 +444,11 @@ class WheatBeer(Beer, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Wheat Beer"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class Lambic(WheatBeer, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        if plural:
-            return f"{Ingredient.format_type(self)}s"
-        else:
-            return Ingredient.format_type(self)
 
 
 class Witbier(WheatBeer, MenuItem):
@@ -610,19 +456,11 @@ class Witbier(WheatBeer, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        return Ingredient.format_type(self, plural)
-
 
 class Hefeweizen(WheatBeer, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        return Ingredient.format_type(self, plural)
 
 
 # </editor-fold>
@@ -655,27 +493,11 @@ class RedWine(Wine, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Red Wine"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class WhiteWine(Wine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        type_name = "White Wine"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
 
 
 class Rose(Wine, MenuItem):
@@ -683,26 +505,11 @@ class Rose(Wine, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Rosé"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class Chardonnay(WhiteWine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        if plural:
-            return f"{Ingredient.format_type(self)}s"
-        else:
-            return Ingredient.format_type(self)
 
 
 class PinotNoir(RedWine, MenuItem):
@@ -710,26 +517,11 @@ class PinotNoir(RedWine, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Pinot Noir"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class Merlot(RedWine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        if plural:
-            return f"{Ingredient.format_type(self)}s"
-        else:
-            return Ingredient.format_type(self)
 
 
 class Riesling(WhiteWine, MenuItem):
@@ -737,40 +529,17 @@ class Riesling(WhiteWine, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        if plural:
-            return f"{Ingredient.format_type(self)}s"
-        else:
-            return Ingredient.format_type(self)
 
-
-class Sparkling(Wine, MenuItem):
+class SparklingWine(Wine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        type_name = "Sparkling Wine"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
 
 
 class SkinContact(WhiteWine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        type_name = "Skin-Contact Wine"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
 
 
 # </editor-fold>  # Wine
@@ -811,14 +580,6 @@ class Scotch(Whiskey):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = type(self).__name__
-        if plural:
-            return f"{type_name}es"
-        else:
-            return type_name
-
 
 class Rye(Whiskey):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
@@ -835,17 +596,10 @@ class Gin(Spirit):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
-class LondonDry(Gin):
+class LondonDryGin(Gin):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
-
-    def format_type(self, plural=False):
-        type_name = "London Dry Gin"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
 
 
 class Tequila(Spirit):
@@ -866,30 +620,25 @@ class WhiteRum(Rum):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "White Rum"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 class DarkRum(Rum):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        type_name = "Dark Rum"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
 
 # </editor-fold>  # Rum
+
+class Brandy(Spirit):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class Cognac(Brandy):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
 
 
 # </editor-fold>  # Spirits
@@ -935,14 +684,6 @@ class HardSoda(Alcohol):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
     @override
-    def format_type(self, plural=False):
-        type_name = "Hard Soda"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
-    @override
     def get_portions(self):
         return {"4oz": 4, "6oz": 6, "8oz": 8}
 
@@ -960,14 +701,6 @@ class NonAlcohol(Drink):
         return super().description().replace("non-alcoholic drink", "drink")
 
     @override
-    def format_type(self, plural=False):
-        type_name = "Non-Alcoholic Drink"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
-
-    @override
     def get_portions(self):
         return {"4oz": 4, "6oz": 6, "8oz": 8}
 
@@ -981,33 +714,17 @@ class Tea(NonAlcohol):
     def description(self):  # Skip Drink desc and go back to Ingredient to re-capitalize generics
         return Ingredient.description(self)
 
-    @override
-    def format_type(self, plural=False):
-        return Ingredient.format_type(self, plural)
-
 
 class Soda(NonAlcohol):
     def __init__(self, name=None, flavor=None, character=None, notes=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, volumes)
 
-    @override
-    def format_type(self, plural=False):
-        return Ingredient.format_type(self, plural)
-
 
 class EnergyDrink(NonAlcohol):
     def __init__(self, name=None, flavor=None, character=None, notes=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, volumes)
-
-    @override
-    def format_type(self, plural=False):
-        type_name = "Energy Drink"
-        if plural:
-            return f"{type_name}s"
-        else:
-            return type_name
 
 
 # </editor-fold>

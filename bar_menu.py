@@ -7,7 +7,7 @@ from rich.layout import Layout
 from ingredients import Beer, Cider, Wine, Mead, MenuItem
 from recipe import Recipe
 from rich_console import console, styles, standardized_spacing, Screen
-from commands import parse_input, items_to_commands, find_command, command_to_item
+from commands import items_to_commands, find_command, command_to_item, input_loop
 import ingredients
 
 
@@ -20,6 +20,7 @@ class BarMenu:
         self.wine: list[Wine] = []
         self.mead: list[Mead] = []
 
+    # <editor-fold desc="Sections">
     def full_menu(self):
         return self.cocktails + self.beer + self.cider + self.wine + self.mead
 
@@ -32,8 +33,11 @@ class BarMenu:
             if isinstance(item, menu_section[2]):
                 return menu_section[0]
 
+    # </editor-fold>
+
+    # <editor-fold desc="Display">
     def table_menu(self, display_type=None, expanded=False):
-        # @TODO: Multiple columns to save space
+        # @TODO: Multiple columns or live display to save space
         table = Table(show_header=False, box=box.MINIMAL, style=styles.get("bar_menu"))
         lst = []
 
@@ -75,66 +79,19 @@ class BarMenu:
                     lst.append(cocktail)
             else:
                 for item in display_section:
-                    listing, price = item.list_item()
-                    table.add_row(listing, price)
+                    listing = item.list_item()
+                    table.add_row(listing)
+                    table.add_row()
                     lst.append(item)
 
         return table, lst
 
-    def menu_screen(self):
-        self.bar.screen = Screen.BAR_MENU
-        global type_displaying
-        type_displaying = None
-        prompt = "'Back' to go back"
+    # </editor-fold>
 
-        while self.bar.screen == Screen.BAR_MENU:
-            menu_table, menu_list = self.table_menu(display_type=type_displaying, expanded=True)
-            bar_menu_panel = Panel(title=f"{self.bar.name} Menu", renderable=menu_table,
-                                   border_style=styles.get("bar_menu"))
-            bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
-
-            console.print(bar_menu_layout)
-
-            menu_commands = set()
-            # When viewing a section, don't add menu items as primary commands
-            if type_displaying is None:
-                menu_commands = items_to_commands(menu_list)  # Categories
-            menu_commands.add("add")
-            menu_commands.add("remove")
-            menu_commands.add("markup")
-            menu_commands.add("markdown")
-            menu_commands.add("back")
-            menu_commands.add("menu")
-
-            typ = None if type_displaying is None else type_displaying
-            primary_cmd, args = self.bar.bar_cmd.input_loop(prompt, menu_commands, ingredient=typ, bar=self.bar)
-
-            if primary_cmd == "back":
-                if type_displaying is None:  # At the full menu screen
-                    self.bar.screen = Screen.MAIN
-                else:  # Viewing beer menu, etc.
-                    type_displaying = None
-            elif primary_cmd == "menu":
-                self.bar.screen = Screen.MAIN
-            elif primary_cmd == "add":
-                # Add handled by input loop
-                continue
-            elif primary_cmd == "remove":
-                self.remove(args[0])
-            elif primary_cmd == "markup":
-                self.markup(args[0])
-            elif primary_cmd == "markdown":
-                self.markdown(args[0])
-            elif primary_cmd in menu_commands:  # beer, cider, wine, etc.
-                type_displaying = command_to_item(primary_cmd, menu_list)
-            elif self.bar.bar_cmd.onecmd(primary_cmd, args):
-                pass
-            else:
-                console.print("[error]No allowed command recognized.")
-
+    # <editor-fold desc="Modify">
     def add(self, add_typ, add_arg=""):
         self.bar.screen = Screen.BAR_MENU
-        inv_ingredients = ingredients.list_ingredients(self.bar.inventory, add_typ)
+        inv_ingredients = ingredients.list_ingredients(self.bar.stock.inventory, add_typ)
 
         if add_arg != "":
             ing_command = find_command(add_arg, items_to_commands(inv_ingredients))[0]
@@ -181,7 +138,7 @@ class BarMenu:
                     console.print(recipes_layout)
 
                     prompt = "Enter the name of a recipe, or 'new' to define a new recipe"
-                    recipe_cmd = self.bar.bar_cmd.input_loop(prompt, recipe_commands)[0]
+                    recipe_cmd = input_loop(prompt, recipe_commands, bar=self.bar)[0]
 
                     if recipe_cmd == "new":
                         self.bar.new_recipe()
@@ -194,7 +151,7 @@ class BarMenu:
                                 return True
 
             else:
-                add_tool_table, add_tool_list = self.bar.table_inv(add_typ, off_menu=True)
+                add_tool_table, add_tool_list = self.bar.stock.table_items(add_typ, off_menu=True)
                 add_tool_panel = Panel(add_tool_table, border_style=styles.get("bar_menu"))
                 add_tool_layout = Layout(add_tool_panel)
 
@@ -204,13 +161,13 @@ class BarMenu:
                 add_commands = items_to_commands(add_tool_list)
                 add_commands.add("back")
                 while adding:
-                    recipe_cmd, ing_args = self.bar.bar_cmd.input_loop("Type a name to add", add_commands)
+                    recipe_cmd, ing_args = input_loop("Type a name to add", add_commands, bar=self.bar)
                     if recipe_cmd == "back":
                         return True
                     else:
                         ingredient = command_to_item(recipe_cmd, inv_ingredients)
                         self.get_section(ingredient).append(ingredient)
-                        adding = False
+                        return True
 
     def remove(self, remove_arg):
         item_cmd = find_command(remove_arg, items_to_commands(self.full_menu()))
@@ -232,3 +189,4 @@ class BarMenu:
 
     def markdown(self, markdown_arg):
         pass
+    # </editor-fold>

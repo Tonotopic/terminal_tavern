@@ -1,15 +1,15 @@
+import math
+
 from rich.console import Console
 from rich.theme import Theme
 from rich.style import Style
 from enum import Enum
-import math
 
 
 class Screen(Enum):
     MAIN = 1
     SHOP = 2
-    INVENTORY = 3
-    BAR_MENU = 4
+    BAR_MENU = 3
 
 
 styles = {"abv": Style(color="#d40241"),

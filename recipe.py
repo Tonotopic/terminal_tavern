@@ -1,6 +1,6 @@
 from typing import override
 
-from rich_console import console, quarter_round, standardized_spacing
+from rich_console import console, standardized_spacing, quarter_round
 from ingredients import Ingredient, MenuItem
 
 
@@ -62,7 +62,7 @@ class Recipe(MenuItem):
         for index, ing_name in enumerate(r_ings):
             ingredients_string += f"{ing_name}, "
 
-        # Removes the comma+space if at the end
+        # Excludes the comma+space if at the end
         formatted_ing_string = ""
         for index, char in enumerate(ingredients_string):
             if index < len(ingredients_string) - 2:
