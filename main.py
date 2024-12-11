@@ -1,4 +1,5 @@
 from rich.layout import Layout
+
 import commands
 import bar
 import ingredients
@@ -12,8 +13,3 @@ bar = bar.Bar(1000)
 inpt = commands.find_command(console.input("Type 'shop' to shop: > "), commands.main_commands)
 if inpt == "shop":
     bar.shop()
-
-'''
-for ingredient in ingredients.all_ingredients.values():
-    console.print(ingredient.description())
-'''

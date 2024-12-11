@@ -1,6 +1,8 @@
 import commands
 import ingredients
+import rich_console
 from ingredients import Ingredient, list_ingredients, all_ingredients
+import rich.layout
 from rich.layout import Layout
 from rich_console import console
 from rich.text import Text
@@ -8,6 +10,9 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.style import Style
 from rich import box
+from unidecode import unidecode
+
+global prompt
 
 
 class Bar:
@@ -18,37 +23,59 @@ class Bar:
         self.menu = {}  # List of Recipe objects
 
     def shop(self, current_selection: type or Ingredient = Ingredient):
+        # TODO: Shop list goes off screen when larger than display
         # <editor-fold desc="Layout">
-        global prompt
+
         table_settings = {
             'title_style': "underline",
             'show_header': False,
             'expand': True,
             'leading': 2
         }
+
+        header_panel = Panel(renderable="render failed", box=box.DOUBLE_EDGE)
         shop_panel = Panel(box=box.DOUBLE_EDGE, renderable="render failed")
         inv_panel = Panel(box=box.DOUBLE_EDGE, renderable="render failed")
+
         shop_layout = Layout(name="shop_layout")
         shop_layout.split_column(
-            Layout(name="shop_header"),  # @TODO: Display current balance
+            Layout(name="shop_header", renderable=header_panel),  # Size is set later based on contents
             Layout(name="shop_screen")
         )
         shop_layout["shop_screen"].split_row(
             Layout(name="bar", renderable=inv_panel),
             Layout(name="shop", renderable=shop_panel)
         )
+        # </editor-fold>
 
+        # <editor-fold desc="Header">
+        global header_text
+        header_table = Table(title="[money]Shop", **table_settings)
+        header_table.show_header = True
+
+        header_table.add_column("Current balance:", justify="center", width=21)
+        header_table.add_column("Viewing:", justify="center", width=console.width - 40)
+
+        header_panel.renderable = header_table
+        header_panel.renderable.justify = "center"
         # </editor-fold>
 
         # <editor-fold desc="Populating shop panels">
         shop_commands = set("")
         shop_commands.add("back")  # Commands specific to the shop
-        # @TODO: Sort shop list display
+        # TODO: Sort shop list display
         shop_list = []
 
         # Category selected, not currently selecting an ingredient
         if isinstance(current_selection, type):
             prompt = "Type a category to view: > "
+            obj = current_selection()
+            if current_selection == Ingredient:
+                header_text = "All"
+            else:
+                style = rich_console.styles.get(obj.get_ing_style())
+                header_text = Text(f"{obj.format_type()}s", style=style)
+
             subclasses = current_selection.__subclasses__()  # Any more categories available
             for typ in subclasses:
                 shop_list.append(typ)
@@ -59,12 +86,12 @@ class Bar:
             tables = (shop_table, inv_table)
             for table in tables:
                 table.add_column("Category", justify="center")
-                container = self.inventory if table == inv_table else all_ingredients.values()
+                container = self.inventory if table == inv_table else all_ingredients
 
                 for category in subclasses:
                     obj = category()
                     style = obj.get_ing_style()
-                    shop_commands.add(f"{obj.format_type().lower()}s")
+                    shop_commands.add(unidecode(f"{obj.format_type().lower()}s"))
 
                     table.add_row(Text(f"{obj.format_type()}s "  # Pluralize
                                        f"({len(list_ingredients(container, category))})",  # Quantity
@@ -72,17 +99,18 @@ class Bar:
 
                 items = list_ingredients(container, current_selection)
                 if items:  # If there are ingredients in this category
-                    # @TODO: Don't show full descriptions in inv_table
-                    # @TODO: Placeholder for empty bar stock when all in shop_list are ingredients
                     prompt = "Type a category or product to view: > "
                     for item in items.values():
                         if type(item) is current_selection:
-                            # @TODO: Descriptions justified to center looks bad
-                            table.add_row(item.description())
-                            # @TODO: At-a-glance price comparison
+                            # TODO: Display volume of items in inv_table
+                            style = item.get_ing_style()
+                            table.add_row(f"[{style}][italic]{item.name}")
+                            # TODO: At-a-glance price comparison
                             shop_list.append(item)
-                            # @TODO: Remove accent markings from shop commands
-                            shop_commands.add(item.name.lower())
+                            shop_commands.add(unidecode(item.name.lower()))
+
+            if len(inv_table.rows) == 0:
+                inv_table.add_row(Text("[None]", rich_console.styles.get("dimmed")))
 
             shop_panel.renderable = shop_table
             inv_panel.renderable = inv_table
@@ -90,29 +118,30 @@ class Bar:
         elif isinstance(current_selection, Ingredient):
             shop_commands.add("buy")
             prompt = "Buy /[volume/], or go back: > "
-            ingredient = current_selection
-            style = ingredient.get_ing_style()
+            obj = current_selection
+            style = obj.get_ing_style()
+            header_text = obj.description()
 
             # <editor-fold desc="inv_table">
             inv_volume = 0
-            inv_table = Table(title=f"Your volume of [{style}][italic]{ingredient.name}[/{style}]", box=None,
+            inv_table = Table(title=f"Your volume of [{style}][italic]{obj.name}[/{style}]", box=None,
                               padding=(5, 0, 0, 0),
                               **table_settings)
             inv_table.add_column(justify="center")
-            if ingredient in self.inventory:
-                inv_volume = self.inventory.get(ingredient)
+            if obj in self.inventory:
+                inv_volume = self.inventory.get(obj)
             inv_table.add_row(Text(f"{inv_volume}oz", style))
             # </editor-fold>
 
             # <editor-fold desc="vol_table">
-            vol_table = Table(title=f"Available Volumes of [{style}][italic]{ingredient.name}[/{style}]",
+            vol_table = Table(title=f"Available Volumes of [{style}][italic]{obj.name}[/{style}]",
                               **table_settings)
             vol_table.add_column("Volume", justify="center")
             vol_table.add_column("Price", justify="center")
             vol_table.show_header = True
 
-            for volume, price in ingredient.volumes.items():
-                # @TODO: Sort volumes by price ascending
+            for volume, price in obj.volumes.items():
+                # TODO: Sort volumes by price ascending
                 vol_table.add_row(f"[{style}]{volume}oz[/{style}]",
                                   Text("${:.2f}".format(price), style=Style(color="#cfba02")))
             # </editor-fold>
@@ -122,6 +151,8 @@ class Bar:
             console.print("current category is not category or ingredient")
         # </editor-fold>
 
+        shop_layout["shop_header"].size = 9 if len(header_text) > header_table.columns[1].width else 8
+        header_table.add_row(Text(f"${self.balance}", rich_console.styles.get("money")), header_text)
         console.print(shop_layout)
 
         # <editor-fold desc="Input">
@@ -134,8 +165,7 @@ class Bar:
             force_beginning = True
 
         inpt = console.input(prompt).strip().lower()
-        # Group spaced words together if not a command, so "especial silver" can pass to find_command
-        # @TODO: As commands with args are added, skip them here
+        # TODO: As commands with args are added, skip them here
         if not inpt.startswith("buy"):
             inpt = f'"{inpt}"'
         inpt_cmd = commands.find_command(inpt, shop_commands, force_beginning)
@@ -154,7 +184,7 @@ class Bar:
                     self.shop(type(current_selection))  # Go back from the ingredient screen
             elif inpt_cmd == "back":
                 if current_selection == Ingredient:
-                    # @TODO Main menu
+                    # TODO Main menu
                     return
                 elif isinstance(current_selection, Ingredient):  # Ingredient selected, go back to category
                     self.shop(type(current_selection))
@@ -166,11 +196,11 @@ class Bar:
                     console.print("current_category is not category or ingredient")
             for entry in shop_list:
                 if isinstance(entry, type):  # Category commands
-                    if inpt_cmd == f"{entry().format_type().lower()}s":
+                    if inpt_cmd == f"{unidecode(entry().format_type().lower())}s":
                         self.shop(entry)
                         return
                 elif isinstance(entry, Ingredient):  # Ingredient commands
-                    if inpt_cmd == entry.name.lower():
+                    if inpt_cmd == unidecode(entry.name.lower()):
                         self.shop(entry)
                         return
         else:

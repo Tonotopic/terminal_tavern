@@ -10,7 +10,7 @@ all_commands = {"shop", "buy", "save", "quit"}
 main_commands = {"shop"}
 
 
-# @TODO: Help info on command logic
+# TODO: Help info on command logic
 class BarCmd(cmd.Cmd):
     intro = 'Welcome to the bar. Type help or ? to list commands.\n'
     prompt = '> '
@@ -112,13 +112,12 @@ class BarCmd(cmd.Cmd):
             return False
 
         if ingredient:
-            # Perform the purchase logic using quantity and selected_ingredient
-            # ... (e.g., update inventory, deduct balance, etc.)
             price = ingredient.volumes[oz]
             balance = self.bar.balance
             if balance >= price:
                 self.bar.balance -= price
                 self.bar.inventory[ingredient] = self.bar.inventory.get(ingredient, 0) + oz
+                # TODO: Give this return message a place on the fitted shop screen
                 console.print(
                     f"Bought {oz}oz of {ingredient.name}. Current stock: {self.bar.inventory[ingredient]}")
                 return True
@@ -142,8 +141,7 @@ class BarCmd(cmd.Cmd):
 
 
 def find_command(inpt, allowed_commands=None, force_beginning=False):
-    # @TODO: Make "especial silver" input match instead of just "especial" (allow spaces)
-    # @TODO: Make "jose silver" return "Jose Cuervo Especial Silver"
+    # TODO: Make "jose silver" return "Jose Cuervo Especial Silver"
     # Because "jose" and "silver" on their own will both return multiple products
     # Currently entire input match must be sequential so "especial silver" or "ial sil" is required
     inpt = inpt.strip().lower()
@@ -154,19 +152,19 @@ def find_command(inpt, allowed_commands=None, force_beginning=False):
     in_quotes = False
 
     for char in inpt:
-        if char == '"':
+        if char == '"':  # At quotes, flip space-allowing condition and end current part
             in_quotes = not in_quotes
             if not in_quotes:
                 parts.append(current_part)
                 current_part = ""
-        elif char == ' ' and not in_quotes:
+        elif char == ' ' and not in_quotes:  # When not inside quotes, end part at space
             if current_part:
                 parts.append(current_part)
                 current_part = ""
-        else:
+        else:  # Any other characters are part of the current part
             current_part += char
 
-    if current_part:  # Add the last part
+    if current_part:  # Add the last part at end of input
         parts.append(current_part)
     # </editor-fold>
 
@@ -180,7 +178,8 @@ def find_command(inpt, allowed_commands=None, force_beginning=False):
         if len(primary_command) < 4 or force_beginning:  # Short inputs likely to be only the beginning of a word
             if command.startswith(primary_command):
                 matching_commands.append(command)
-        else:  # Match to any part of command when input > 3, e.g. so "gold" can return "Jose Cuervo Especial Gold"
+        # Match to any part of command when input > 3, e.g. so "gold" can return "Jose Cuervo Especial Gold"
+        if not matching_commands:
             if primary_command in command:
                 matching_commands.append(command)
     # </editor-fold>
@@ -192,7 +191,7 @@ def find_command(inpt, allowed_commands=None, force_beginning=False):
         else:
             return matching_commands[0]
     elif len(matching_commands) == 0:
-        # @TODO: Sort valid commands
-        return find_command(console.input(f"Valid commands: {commands}"), commands)
+        # TODO: Sort valid commands
+        return find_command(console.input(f"Valid commands: {commands} > "), commands)
     else:  # found either no match or more than one
         return find_command(console.input(f"Command matches: {matching_commands}"), commands)

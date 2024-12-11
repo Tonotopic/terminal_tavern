@@ -1,7 +1,10 @@
 from typing import override
 import sqlite3
-from rich_console import ing_styles_dict
+from rich_console import styles
 import inspect
+import traceback
+
+all_ingredients = []
 
 
 # <editor-fold desc="Ingredients">
@@ -13,6 +16,8 @@ class Ingredient:
         self.character = character
         if volumes is None:
             self.volumes = {}
+        else:
+            self.volumes = volumes
 
     def a(self):
         """Determines whether "a" or "an" should be printed just before the character attribute."""
@@ -34,7 +39,7 @@ class Ingredient:
     def get_ing_style(self):
         """Gets the style for the given type or its nearest parent in the theme."""
         typ = self.format_type().lower()
-        if typ in ing_styles_dict:
+        if typ in styles:
             return typ
         else:
             for parent_class in type(self).__bases__:
@@ -42,7 +47,7 @@ class Ingredient:
                 style = parent_object.get_ing_style()
                 if style:
                     return style
-        return self.format_type().lower()
+        return ""
 
     def get_attributes(self):
         """Returns a list of attribute values in the correct order for the constructor."""
@@ -105,19 +110,27 @@ class Alcohol(Drink):
         return desc
 
 
+# <editor-fold desc="Beer">
 class Beer(Alcohol):
     def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
-class Stout(Beer):
+# <editor-fold desc="Ale">
+class Ale(Beer):
     def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
-class MilkStout(Beer):
+class Stout(Ale):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+
+class MilkStout(Stout):
     def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
@@ -127,7 +140,79 @@ class MilkStout(Beer):
         return "Milk Stout"
 
 
-class Ale(Beer):
+class OatmealStout(Stout):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Oatmeal Stout"
+
+
+class ImperialStout(Stout):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Imperial Stout"
+
+
+class Porter(Ale):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+
+class Dubbel(Ale):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+
+class SourAle(Ale):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Sour Ale"
+
+
+class PaleAle(Ale):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Pale Ale"
+
+
+class IPA(PaleAle):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return Ingredient.format_type(self)
+
+
+class DoubleIPA(IPA):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Double IPA"
+
+
+class Saison(PaleAle):
     def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
@@ -141,6 +226,173 @@ class BlondeAle(Ale):
     @override
     def format_type(self):
         return "Blonde Ale"
+
+
+class RedAle(Ale):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Red Ale"
+
+
+class AmberAle(Ale):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Amber Ale"
+
+
+class BrownAle(Ale):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Brown Ale"
+
+
+class DarkAle(Ale):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Dark Ale"
+
+
+class Kolsch(Beer):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Kölsch"
+
+
+# </editor-fold>
+
+
+# <editor-fold desc="Lagers">
+class Lager(Beer):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+
+class PaleLager(Lager):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Pale Lager"
+
+
+class Helles(PaleLager):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return Ingredient.format_type(self)
+
+
+class Pilsner(PaleLager):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return Ingredient.format_type(self)
+
+
+class AmberLager(Lager):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Amber Lager"
+
+
+class DarkLager(Lager):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Dark Lager"
+
+
+class Dunkel(DarkLager):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+
+class Bock(Lager):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+
+class Doppelbock(Bock):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+
+class Maibock(Bock):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+
+# </editor-fold>
+
+
+class WheatBeer(Beer):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+    @override
+    def format_type(self):
+        return "Wheat Beer"
+
+
+class Witbier(WheatBeer):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+
+class Hefeweizen(WheatBeer):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
+
+
+# </editor-fold>
+
+class Cider(Alcohol):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
 # <editor-fold desc="Wine">
@@ -270,7 +522,13 @@ class DarkRum(Rum):
 
 # </editor-fold>  # Spirits
 
+class Mead(Alcohol):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
+
+# <editor-fold desc="Liqueur">
 class Liqueur(Alcohol):
     def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
@@ -289,8 +547,12 @@ class Vermouth(Liqueur):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv, volumes)
 
 
+# </editor-fold>
+
+
 # </editor-fold>  # Alcohols
 
+# TODO: Change non-alcoholic drink description to just say drink
 class NonAlcohol(Drink):
     def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, volumes=None):
         super().__init__(ingredient_id, name, image, flavor, character, "", volumes)
@@ -320,6 +582,14 @@ class Soda(NonAlcohol):
     @override
     def format_type(self):
         return Ingredient.format_type(self)
+
+
+class EnergyDrink(NonAlcohol):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, volumes=None):
+        super().__init__(ingredient_id, name, image, flavor, character, volumes)
+
+    def format_type(self):
+        return "Energy Drink"
 
 
 # </editor-fold>  # Drinks
@@ -368,96 +638,80 @@ class Fruit(Additive):
 # </editor-fold>  # Additives
 # </editor-fold>  # Ingredients
 
-# @TODO:  Not sure that there is truly no way to extract this automatically
-class_arg_mapping = {
-    "Ingredient": ["ingredient_id", "name", "image", "character", "volumes"],
-    "Drink": ["ingredient_id", "name", "image", "flavor", "character", "notes", "volumes"],
-    "Alcohol": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Beer": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Stout": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "MilkStout": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Ale": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "BlondeAle": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Wine": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Chardonnay": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "PinotNoir": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Merlot": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Rose": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Riesling": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Spirit": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Vodka": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Whiskey": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Bourbon": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Scotch": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Gin": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Tequila": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Rum": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "WhiteRum": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "DarkRum": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Liqueur": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Bitter": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "Vermouth": ["ingredient_id", "name", "image", "flavor", "character", "notes", "abv", "volumes"],
-    "NonAlcohol": ["ingredient_id", "name", "image", "flavor", "character", "volumes"],
-    "Tea": ["ingredient_id", "name", "image", "flavor", "character", "volumes"],
-    "Soda": ["ingredient_id", "name", "image", "flavor", "character", "volumes"],
-    "Additive": ["ingredient_id", "name", "image", "character", "volumes"],
-    "Syrup": ["ingredient_id", "name", "image", "flavor", "character", "volumes"],
-    "Spice": ["ingredient_id", "name", "image", "character", "volumes"],
-    "Herb": ["ingredient_id", "name", "image", "character", "volumes"],
-    "Sweetener": ["ingredient_id", "name", "image", "character", "volumes"],
-    "Fruit": ["ingredient_id", "name", "image", "character", "volumes"]
-}
-
 # Database connection
 connection = sqlite3.connect('cocktailDB.db')
 cursor = connection.cursor()
 
 
-def create_ingredient(ingredient_type, **row_data):
-    try:
-        if ingredient_type is None:
-            return Ingredient(**{k: v for k, v in row_data.items() if k in class_arg_mapping.get("Ingredient", [])})
+def get_constructor_args(ingredient_type):
+    """Gets the constructor arguments for a given ingredient type.
 
-        required_args = class_arg_mapping.get(ingredient_type.__name__, [])
-        # Filter out unexpected keyword arguments
-        filtered_data = {key: value for key, value in row_data.items() if key in required_args}
-        ingredient = ingredient_type(**filtered_data)
-        return ingredient
-    except (KeyError, IndexError, TypeError) as e:
-        print(f"Error creating object of type {ingredient_type}: {e}")
-        # Return a default Ingredient object if creation fails
-        return Ingredient(**{k: v for k, v in row_data.items() if k in class_arg_mapping.get("Ingredient", [])})
+    Args:
+      ingredient_type: The type of ingredient.
+
+    Returns:
+      A list of constructor arguments.
+    """
+    ingredient_class = globals().get(ingredient_type)
+
+    # If the class object is not found, return the arguments for the base Ingredient class.
+    if ingredient_class is None:
+        return ["name", "image", "character"]
+
+    # Get the constructor parameters.
+    constructor_params = ingredient_class.__init__.__code__.co_varnames[1:]  # Exclude 'self'
+
+    # Return the constructor arguments.
+    return list(constructor_params)
 
 
-all_ingredients = {}
-product_volumes = {}
+def create_object(ingredient_type, row_data, column_names):
+    # Get the constructor arguments for the ingredient type.
+    constructor_args = get_constructor_args(ingredient_type)
+
+    # Create a dictionary mapping argument names to their values
+    arg_dict = {arg: row_data[arg] for arg in column_names if arg in constructor_args}
+    # If 'oz' is a constructor argument, and is in row_data, add it to the dictionary:
+    if 'oz' in constructor_args and 'oz' in row_data:
+        arg_dict['oz'] = row_data['oz']
+    # If 'id' is a constructor argument, and is in row_data, add it to the dictionary:
+    if 'ingredient_id' in constructor_args and 'ingredient_id' in row_data:
+        arg_dict['ingredient_id'] = row_data['ingredient_id']
+
+    # Extract the values for the constructor arguments (Updated line)
+    arg_values = [arg_dict.get(arg) for arg in constructor_args]
+
+    # Create the ingredient object
+    ingredient_class = globals()[ingredient_type]
+    ingredient = ingredient_class(*arg_values)
+
+    return ingredient
 
 
 def load_ingredients_from_db():
-    """Loads ingredients from the database and populates the global dictionary."""
-    global all_ingredients  # Declare global variable access
-
+    global all_ingredients
     cursor.execute("SELECT * FROM ingredients")
     column_names = [description[0] for description in cursor.description]
-
     for row in cursor.fetchall():
+        ingredient_type = dict(zip(column_names, row))["type"]
+        product_name = dict(zip(column_names, row))["name"]  # Get the product name
+
+        # Fetch volume data using product_name as the foreign key
+        cursor.execute("SELECT oz, price FROM product_volumes WHERE product_name=?", (product_name,))
+        volume_data = cursor.fetchall()  # Fetch all volumes and prices
+        volumes = {}
+
+        for vol in volume_data:
+            volumes[int(vol[0])] = vol[1]
+
+        # Pass volume data to the create_object function
         ingredient_data = dict(zip(column_names, row))
-        ingredient_type_name = ingredient_data.pop('type')  # Removes type before passing as parameters
-        ingredient_class = globals().get(ingredient_type_name) or Ingredient
-        ingredient = create_ingredient(ingredient_class, **ingredient_data)
-        all_ingredients[ingredient.name] = ingredient  # Use ingredient.name as key
+        ingredient_data['volumes'] = volumes  # Store volumes list in ingredient_data
 
-    cursor.execute("SELECT * FROM product_volumes")
-    column_names = [description[0] for description in cursor.description]
-    for row in cursor.fetchall():
-        volume_data = dict(zip(column_names, row))
-        product_name = volume_data["product_name"]
-        ingredient = all_ingredients.get(product_name)
+        ingredient = create_object(ingredient_type, ingredient_data, column_names + ['volumes'])
 
         if ingredient:
-            volume = volume_data["oz"]
-            price = volume_data["price"]
-            ingredient.volumes[volume] = price
+            all_ingredients.append(ingredient)
 
 
 def list_ingredients(container, typ):
@@ -474,4 +728,4 @@ def list_ingredients(container, typ):
 
 def get_ingredient(ingredient_name):
     """Returns the Ingredient object corresponding to the given name."""
-    return all_ingredients.get(ingredient_name)
+    return all_ingredients[ingredient_name]
