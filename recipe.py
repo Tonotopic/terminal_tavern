@@ -1,10 +1,34 @@
+from rich.text import Text
+
+from rich_console import console
 from ingredients import Ingredient
 
 
 class Recipe:
-    def __init__(self, name=None, r_ingredients: dict[type[Ingredient] | Ingredient, float] = None):
+    def __init__(self, name=None, r_ingredients: dict[type[Ingredient] or Ingredient, float] = None):
         self.name = name
         self.r_ingredients = r_ingredients
+
+    def format_ingredients(self):
+        r_ings = []
+        for entry in self.r_ingredients:
+            if isinstance(entry, type):
+                r_ings.append(f"[{entry().get_ing_style()}]{entry().format_type()}")
+            elif isinstance(entry, Ingredient):
+                r_ings.append(f"[{entry.get_ing_style()}]{entry.name}")
+            else:
+                console.print("[error]Recipe ingredients contains item not registering as ingredient or type")
+        ingredients_string = ""
+        for index, ing_name in enumerate(r_ings):
+            ingredients_string += f"{ing_name}, "
+
+        # Removes the comma+space if at the end
+        formatted_ing_string = ""
+        for index, char in enumerate(ingredients_string):
+            if index < len(ingredients_string) - 2:
+                formatted_ing_string += char
+
+        return formatted_ing_string
 
     def select_ingredients(self):
         for r_ingredient in self.r_ingredients:
@@ -52,3 +76,6 @@ class Recipe:
 
         abv = (total_alcohol_fl_oz / total_volume_fl_oz) * 100
         return abv
+
+
+
