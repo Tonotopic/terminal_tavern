@@ -1,4 +1,3 @@
-from typing import List
 from rich import box
 from rich.layout import Layout
 from rich.text import Text
@@ -6,24 +5,16 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.style import Style
 from unidecode import unidecode
-import warnings
 
+import bar_menu
 import commands
 import ingredients
-import recipe
-import rich_console
-from rich_console import console
+from rich_console import console, styles, Screen
 from ingredients import Ingredient, list_ingredients, all_ingredients
 from recipe import Recipe
 
-warnings.filterwarnings("ignore", category=SyntaxWarning)
 
 global prompt
-
-MAIN = 1
-SHOP = 2
-INVENTORY = 3
-BAR_MENU = 4
 
 
 class Bar:
@@ -32,10 +23,10 @@ class Bar:
         self.bar_cmd = commands.BarCmd(self)
         self.inventory = {}  # Dictionary: {ingredient_object: fluid_ounces}
         self.balance = balance  # Float: current balance in dollars
-        self.menu: List[List[Recipe | ingredients.Beer | ingredients.Cider | ingredients.Wine | ingredients.Mead]] = [
-            [], [], [], [], []]  # Cocktails, beer, cider, wine, mead
+        # self.menu: List[List[Recipe | ingredients.Beer | ingredients.Cider | ingredients.Wine | ingredients.Mead]] = [], [], [], [], []]  # Cocktails, beer, cider, wine, mead
         self.recipes = {}
-        self.screen = MAIN
+        self.menu = bar_menu.BarMenu()
+        self.screen = Screen.MAIN
 
     def dashboard(self):
         # <editor-fold desc="Layout">
@@ -61,10 +52,10 @@ class Bar:
               :param current_selection: The current category or product being displayed.
               :param msg: One-time specific prompt, such as confirming a successful purchase.
             """
-        self.screen = SHOP
+        self.screen = Screen.SHOP
         showing_flavored = False
 
-        while self.screen == SHOP:
+        while self.screen == Screen.SHOP:
             # <editor-fold desc="Layout">
             global prompt
             table_settings = {
@@ -75,7 +66,7 @@ class Bar:
             panel_settings = {
                 "renderable": "render failed",
                 "box": box.DOUBLE_EDGE,
-                "border_style": rich_console.styles.get("shop")
+                "border_style": styles.get("shop")
             }
 
             header_panel = Panel(**panel_settings, title=f"[money]Shop")
@@ -108,14 +99,10 @@ class Bar:
 
             # <editor-fold desc="Populating shop panels">
 
-            shop_commands = set(commands.persistent_commands)  # Commands specific to the shop
-            shop_commands.add("back")
-            shop_commands.remove("menu")
+            shop_commands = {"back", "shop", "buy"}
 
             # TODO: Sort shop list display
             shop_list = []
-            overflow_table = Table(**table_settings)
-            overflow_2 = Table(**table_settings)
 
             # Type selected, not currently selecting an ingredient
             if isinstance(current_selection, type):
@@ -130,7 +117,7 @@ class Bar:
                 if current_selection == Ingredient:
                     header_text = "[dimmed]All"
                 else:  # Show pluralized category name in its proper style
-                    style = rich_console.styles.get(obj.get_ing_style())
+                    style = styles.get(obj.get_ing_style())
                     if showing_flavored:
                         header_text = Text(f"Flavored {obj.format_type()}s", style=style)
                     else:
@@ -140,6 +127,8 @@ class Bar:
 
                 shop_tables, shop_list = self.show_inv(table_settings, current_selection, showing_flavored, shop=True)
                 inv_table, inv_list = self.show_inv(table_settings, current_selection, showing_flavored)
+                overflow_table = Table(**table_settings)
+                overflow_2 = Table(**table_settings)
 
                 # If there are overflow tables
                 if isinstance(shop_tables, tuple):
@@ -166,7 +155,7 @@ class Bar:
             # Specific ingredient currently selected, show volumes
             elif isinstance(current_selection, Ingredient):
                 shop_commands.add("buy")
-                prompt = "Buy \[volume], or go back"
+                prompt = "Buy \\[volume], or go back"
                 obj = current_selection
                 style = obj.get_ing_style()
                 header_text = obj.description()
@@ -201,7 +190,7 @@ class Bar:
 
             # 60 just appears to be the sweet spot here regardless of window size
             shop_layout["shop_header"].size = 8 if len(header_text) > header_table.columns[1].width + 60 else 7
-            header_table.add_row(Text(f"${self.balance}", rich_console.styles.get("money")), header_text)
+            header_table.add_row(Text(f"${self.balance}", styles.get("money")), header_text)
 
             # </editor-fold>
 
@@ -239,6 +228,7 @@ class Bar:
                         msg = (f"Bought {args[1]}oz of [{style}]{current_selection.name}[/{style}]. "
                                f"Current stock: {self.inventory[current_selection]}oz")
                         self.shop(type(current_selection), msg)  # Go back from the ingredient screen
+                        return
                     else:
                         primary_cmd = None
                 elif primary_cmd == "help":
@@ -247,7 +237,7 @@ class Bar:
 
             if primary_cmd == "back":
                 if current_selection == Ingredient:
-                    self.screen = MAIN
+                    self.screen = Screen.MAIN
                     return
                 elif isinstance(current_selection, Ingredient):  # Ingredient selected, go back to category
                     current_selection = type(current_selection)
@@ -259,77 +249,17 @@ class Bar:
                 else:
                     console.print("current_category is not category or ingredient")
             elif primary_cmd == "shop":  # exit the shop
-                self.screen = MAIN
+                self.screen = Screen.MAIN
                 return
             elif primary_cmd == "flavored":
                 showing_flavored = True
             elif commands.command_to_item(primary_cmd, shop_list):
-                self.shop(commands.command_to_item(primary_cmd, shop_list))
+                current_selection = commands.command_to_item(primary_cmd, shop_list)
             else:
                 # If no shop-specific command found
                 self.bar_cmd.onecmd(primary_cmd)  # Checks for quit
 
             # </editor-fold>
-
-    def show_menu(self, typ=None, expanded=False):
-        # @TODO: Multiple columns to save space
-        table = Table(show_header=False, box=box.MINIMAL, expand=expanded, style=rich_console.styles.get("bar_menu"))
-        lst = []
-        menu_cats = ["Cocktails", "Beer", "Cider", "Wine", "Mead"]
-        types_list = [recipe.Recipe, ingredients.Beer,
-                      ingredients.Cider, ingredients.Wine,
-                      ingredients.Mead]
-
-        # Menu overview
-        if typ is None:
-            table.add_column("Type")
-            table.add_column("Quantity")
-            for i in range(5):  # Menu categories
-                table.add_row(Text(menu_cats[i], style=rich_console.styles.get(f"{menu_cats[i].lower()}")),
-                              str(len(self.menu[i])), end_section=True)
-                command = menu_cats[i].lower() if menu_cats[i] == "Cocktails" else f"{menu_cats[i].lower()}s"
-                lst.append(commands.command_to_item(command, types_list))
-
-                if expanded:
-                    for index, menu_item in enumerate(self.menu[i]):
-                        if isinstance(menu_item, ingredients.Beer):
-                            beer_spacing = 50
-                            table.add_row(Text(f"{menu_item.name}"
-                                               f"{rich_console.standardized_spacing(menu_item.name, beer_spacing)}"
-                                               f"({menu_item.format_type()})",
-                                               style=menu_item.get_ing_style()))
-                        elif isinstance(menu_item, Recipe):
-                            cocktail_spacing = 30
-                            table.add_row(f"{menu_item.name}"
-                                          f"{rich_console.standardized_spacing(menu_item.name, cocktail_spacing)}"
-                                          f"{self.menu[i][index].format_ingredients()}")
-                        else:
-                            table.add_row(Text(menu_item.name, style=menu_item.get_ing_style()))
-                    table.add_row()
-
-        # Viewing specifically the Beer menu, Cocktail menu, etc
-        else:
-            table.expand = False
-            total_info_spacing = 20
-            for i in range(5):
-                if typ == types_list[i]:
-                    table.add_row(menu_cats[i], str(len(self.menu[i])), end_section=True)  # Cocktails     8
-                    if typ == recipe.Recipe:
-                        for index, recip in enumerate(self.menu[i]):
-                            table.add_row(f"{recip.name}"
-                                          f"{rich_console.standardized_spacing(recip.name, total_info_spacing)}"
-                                          f"{self.menu[i][index].format_ingredients()}")
-                            table.add_row()
-                    else:
-                        for ingredient in list_ingredients(self.menu[i], typ):
-                            table.add_row(f"[{typ().format_type().lower()}]{ingredient.name}", f"[{typ().format_type().lower()}]{ingredient.format_type()}")
-                            table.add_row()
-                            lst.append(ingredient)
-                        if len(table.rows) == 0:
-                            table.add_row(Text("[None]", rich_console.styles.get("dimmed")))
-                        break
-
-        return table, lst
 
     # @TODO: '2 whole maraschino cherry'
     def show_recipes(self, off_menu=False):
@@ -339,16 +269,16 @@ class Bar:
         recipes_table.add_column("ingredients")
         for recipe in self.recipes:
             if off_menu:
-                if self.recipes[recipe] in self.menu[0]:
+                if self.recipes[recipe] in self.menu.cocktails:
                     continue
             ingredients_string = self.recipes[recipe].format_ingredients()
-            recipes_table.add_row(Text(recipe, style=rich_console.styles.get("cocktails")), ingredients_string)
+            recipes_table.add_row(Text(recipe, style=styles.get("cocktails")), ingredients_string)
             recipes_list.append(self.recipes[recipe])
         return recipes_table, recipes_list
 
     def new_recipe(self):
         recipe_table = Table(show_header=False, box=None)
-        recipe_panel = Panel(recipe_table, title="New Recipe", border_style=rich_console.styles.get("cocktails"))
+        recipe_panel = Panel(recipe_table, title="New Recipe", border_style=styles.get("cocktails"))
         new_recipe_layout = Layout(recipe_panel)
 
         recipe_table.add_column("portion", vertical="middle")
@@ -418,7 +348,8 @@ class Bar:
             portions_table, portions_list = matching_obj.show_portions()
             portions_list.append("back")
 
-            portioning_panel = Panel(title=f"Portioning {ingredient}", renderable=portions_table, border_style=rich_console.styles.get("cocktails"))
+            portioning_panel = Panel(title=f"Portioning {ingredient}", renderable=portions_table,
+                                     border_style=styles.get("cocktails"))
             portioning_layout = Layout(portioning_panel)
 
             console.print(portioning_layout)
@@ -475,7 +406,7 @@ class Bar:
             flavored, unflavored = ingredients.categorize_spirits(items)
             if not showing_flavored:
                 table.add_row(Text(f"Flavored ({len(flavored)})",
-                                   style=rich_console.styles.get("additive")), end_section=True)
+                                   style=styles.get("additive")), end_section=True)
                 table.add_row()  # Manual space between rows
                 lst.append("Flavored")
                 items = unflavored
@@ -506,7 +437,7 @@ class Bar:
                 table_section.add_row()
 
         if len(table.rows) == 0:
-            table.add_row(Text("[None]", rich_console.styles.get("dimmed")))
+            table.add_row(Text("[None]", styles.get("dimmed")))
 
         if len(overflow_table.rows) != 0:
             if len(overflow_2.rows) != 0:
@@ -526,7 +457,7 @@ class Bar:
         row_ings = []
         for ingredient in inv_ingredients:
             if off_menu:
-                if ingredient in self.menu[ingredient.get_menu_section()]:
+                if ingredient in self.menu.get_section(ingredient):
                     continue
             lst.append(ingredient)
             row_ings.append(Text(ingredient.name, style=typ().get_ing_style()))

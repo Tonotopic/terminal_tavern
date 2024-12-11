@@ -2,7 +2,6 @@ import cmd
 import re
 import sys
 from typing import override, Iterable
-import warnings
 
 import rich.box
 from rich.layout import Layout
@@ -12,13 +11,10 @@ from unidecode import unidecode
 import ingredients
 from recipe import Recipe
 import rich_console
-from rich_console import console
-import bar
+from rich_console import console, Screen
 
 # TODO: Make "buy" work outside ingredient volumes screen
 # TODO: Help info on command logic
-
-warnings.filterwarnings("ignore")
 
 persistent_commands = {"shop", "buy", "menu"}
 help_panels = {
@@ -28,16 +24,32 @@ help_panels = {
             f"Command parsing will work the same for the help arg, i.e. [cmd]'fish pois'[/cmd]"
             f" can return [italic][beer]Little Fish Saison du Poisson.[/italic][/beer]",
 
-    "input": f"Input parsing is case-insensitive and allows for partial terms - "
+    "input": f"Input parsing is [highlight]case-insensitive[/highlight] and allows for partial terms - "
              f"[cmd]'rh b f h'[/cmd] is as effective as 'Rhinegeist Beer for Humans', and in the right context, "
              f"[cmd]'sh'[/cmd] will work as effectively as [cmd]'shop'[/cmd].\n"
+             f"An input of 3 or fewer characters will [highlight]priority match to the beginning[/highlight] of the term.\n"
              f"Generally, when partial input matches to multiple currently valid commands,"
              f"a message will print listing all matching commands, and the previous prompt will loop.\n"
              f"In cases where one valid command entirely contains another, i.e. [cmd]'lemonade'[/cmd] and [cmd]'lemon'[/cmd], "
-             f"or [cmd]'Crown Royal Black'[/cmd] and [cmd]'Crown Royal Blackberry'[/cmd], the most base command will be favored.\n"
+             f"or [cmd]'Crown Royal Black'[/cmd] and [cmd]'Crown Royal Blackberry'[/cmd], the [highlight]most base command[/highlight] will be favored.\n"
              f"However, mid-word matches are allowed in most cases, so the likes of [cmd]'onade'[/cmd] and [cmd]'yal blackb'[/cmd] "
              f"can be used instead of having to type all the way to [cmd]'crown royal blackb'[/cmd].",
 
+    # <editor-fold desc="Game Concepts">
+    "recipe": f"[highlight]Recipes[/highlight], the backbones of [cocktails]Cocktails[/cocktails], are made up of [highlight]Ingredients[/highlight], "
+              f"which may be spirits, liqueurs, syrups, fruits, spices, etc. as well as beer, wine, cider, and mead.\n"
+              f"View your bar's drink [cmd]'menu'[/cmd], [cmd]'add cocktail'[/cmd], and create a [cmd]'new'[/cmd] cocktail to write a recipe.\n"
+              f"You do [italic]not[/italic] need to have the ingredients in your inventory to write a new recipe.\n"
+              f"[cmd]'Help cocktails'[/cmd] to view more on cocktails.",
+
+    "price": f"A menu item's [highlight]price[/highlight] before [highlight]markup[/highlight] is based on its per-unit cost to you -\n "
+             f"[money]$3.75[/money] for drinks costing you less than [money]$1.25[/money] wholesale, \n"
+             f"3x wholesale costs between [money]$1.25[/money] and [money]$3.00[/money], \n"
+             f"or 2x wholesale costs over [money]$3.00[/money].\n"
+             f"[highlight]Markup[/highlight] or [highlight]markdown[/highlight] can then be applied per-item.",
+    # </editor-fold>
+
+    # <editor-fold desc="Commands">
     "shop": f"[cmd]'Shop'[/cmd] allows you to view available products by type, as well as to view your bar's stock in each section.\n"
             f"Type the name of a category or product from the current section (i.e. 'drinks', 'jameson') to view.\n"
             f"[cmd]'Shop'[/cmd] again to exit. [cmd]'Back'[/cmd] to go back to the parent category.\n"
@@ -49,23 +61,21 @@ help_panels = {
             f"or additionally for cocktails, to create a new recipe.",
 
     "buy": f"Syntax: [cmd]'buy \\[volume]'[/cmd]\n"
-            f"Buy the product currently being viewed, in the specified volume.\n"
-            f"[warn]Note: Buying a product does [italic]not[/italic] automatically add it to the menu.",
+           f"Buy the product currently being viewed, in the specified volume.\n"
+           f"[warn]Note: Buying a product does [italic]not[/italic] automatically add it to the menu.",
 
     "add": f"Syntax: [cmd]'add \\[category]'[/cmd]\n"
-            f"Used in the bar's drink menu to add products of the specified type.\n"
-            f"[cmd]'Add cocktails'[/cmd] allows both selecting from created recipes, and writing them ([cmd]'new'[/cmd]).",
+           f"Used in the bar's drink menu to add products of the specified type.\n"
+           f"[cmd]'Add cocktails'[/cmd] allows both selecting from created recipes, and writing them ([cmd]'new'[/cmd]).",
+    # </editor-fold>
 
-    "recipe": f"[highlight]Recipes[/highlight], the backbones of [highlight]Cocktails[/highlight], are made up of [highlight]Ingredients[/highlight], "
-            f"which may be spirits, liqueurs, syrups, fruits, spices, etc. as well as beer, wine, cider, and mead.\n"
-              f"View your bar's drink [cmd]'menu'[/cmd], [cmd]'add cocktail'[/cmd], and create a [cmd]'new'[/cmd] cocktail to write a recipe.\n"
-            f"[cmd]'Help cocktails'[/cmd] to view more on cocktails.",
+
 
 }
 
 
 def draw_help_panel(cmd):
-    panel = Panel(help_panels.get(cmd), title=f"Help: {cmd}", box=rich.box.ASCII2, width=100)
+    panel = Panel(help_panels.get(cmd), title=f"Help: {cmd}", box=rich.box.ASCII2, style=rich_console.styles.get("highlight"), width=100)
     console.print(panel)
 
 
@@ -200,7 +210,8 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
 
     # TODO: As commands with args are added, skip them here
     # If not a command with args
-    if not inpt.startswith("buy") and not inpt.startswith("ad") and not inpt.startswith("help") and not inpt.startswith("rem"):
+    if not inpt.startswith("buy") and not inpt.startswith("ad") and not inpt.startswith("help") and not inpt.startswith(
+            "rem"):
         inpt = f'"{inpt}"'  # Group spaced words together
 
     inpt_cmd = find_command(inpt, commands, force_beginning)
@@ -213,12 +224,15 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
 
     # Putting this here so that help functions the same anywhere input is taken
     if primary_command == "help":
+        ingredient_cmds = items_to_commands(ingredients.all_ingredients)
+        all_help_args = ingredient_cmds | help_panels.keys()
+
         arg_input = " ".join(args)
         if arg_input == "":
             draw_help_panel("help")
+            console.print(f"Help topics: {all_help_args}")
             return None
-        ingredient_cmds = items_to_commands(ingredients.all_ingredients)
-        all_help_args = ingredient_cmds | help_panels.keys()
+
         arg = find_command(f'"{arg_input}"', all_help_args)
         if arg in help_panels.keys():
             draw_help_panel(arg)
@@ -262,6 +276,9 @@ def command_to_item(cmd, lst):
                 return entry
         elif isinstance(entry, ingredients.Ingredient):
             if cmd == unidecode(entry.name.lower()):
+                return entry
+        elif isinstance(entry, str):
+            if cmd == entry:
                 return entry
         else:
             console.print("[error]command_to_item argument not registering as type or Ingredient")
@@ -314,89 +331,6 @@ class BarCmd(cmd.Cmd):
             return super().onecmd(cmd)
 
     # <editor-fold desc="Command Functions">
-    def do_add(self, add_typ, add_arg=""):
-        self.bar.screen = bar.BAR_MENU
-        inv_ingredients = ingredients.list_ingredients(self.bar.inventory, add_typ)
-
-        if add_arg != "":
-            ing_command = find_command(add_arg, items_to_commands(inv_ingredients))[0]
-            if ing_command is not None:
-                ingredient = command_to_item(ing_command, inv_ingredients)
-                if ingredient:
-                    self.bar.menu[ingredient.get_menu_section()].append(ingredient)
-                    # TODO: This isn't visible
-                    console.print(f"{ingredient.name} added to menu.")
-                    return True
-                else:
-                    console.print("[error]Ingredient arg given to add command, but ingredient not found")
-                    return False
-            else:
-                console.print("[error]Arg given to add method, but find_command returned None")
-                return False
-
-        else:  # No ingredient given
-            if add_typ is ingredients.Ingredient:
-                console.print("[error]No type or ingredient given to add command. Syntax: add beer | add guinness")
-                return False
-            elif add_typ == Recipe:
-                choosing_recipe = True
-                while choosing_recipe:
-                    recipes_table, recipes_list = self.bar.show_recipes(off_menu=True)
-                    recipes_panel = Panel(recipes_table, border_style=rich_console.styles.get("bar_menu"))
-                    recipes_layout = Layout(recipes_panel)
-
-                    recipe_commands = items_to_commands(recipes_list)
-                    recipe_commands.add("back")
-                    recipe_commands.add("new")
-
-                    console.print(recipes_layout)
-
-                    recipe_cmd = None
-                    while recipe_cmd is None:
-                        recipe_cmd = parse_input("Enter the name of a recipe, or 'new' to define a new recipe",
-                                                 recipe_commands)[0]
-                    if recipe_cmd == "new":
-                        self.bar.new_recipe()
-                    elif recipe_cmd == "back":
-                        return
-                    elif recipe_cmd == "quit":
-                        self.onecmd(recipe_cmd)
-                    else:
-                        for index, recipe in enumerate(recipes_list):
-                            if recipe_cmd == recipe.name.lower():
-                                self.bar.menu[0].append(recipes_list[index])
-                                return True
-
-            else:
-                add_tool_table, add_tool_list = self.bar.table_inv(add_typ, off_menu=True)
-                add_tool_panel = Panel(add_tool_table, border_style=rich_console.styles.get("bar_menu"))
-                add_tool_layout = Layout(add_tool_panel)
-
-                console.print(add_tool_layout)
-
-                adding = True
-                add_commands = items_to_commands(add_tool_list)
-                add_commands.add("back")
-                add_commands.add("quit")
-                while adding:
-                    recipe_cmd, ing_args = parse_input("Type a name to add", add_commands)
-                    if recipe_cmd:
-                        if recipe_cmd == "back":
-                            return
-                        else:
-                            ingredient = command_to_item(recipe_cmd, inv_ingredients)
-                            self.bar.menu[ingredient.get_menu_section()].append(ingredient)
-                            adding = False
-
-    '''def do_remove(self, remove_typ):
-        table, list = self.bar.show_menu(remove_typ)
-        panel = Panel(table)
-        layout = Layout(panel)
-        console.print(layout)
-        remove_cmd = None
-        while remove_cmd is None:
-            remove_cmd = parse_input("Select item to remove", items_to_commands(list))[0]
-            self.bar.'''
 
     def do_buy(self, ingredient: ingredients.Ingredient = None, arg=""):
         parts = arg.split()
@@ -438,70 +372,6 @@ class BarCmd(cmd.Cmd):
         else:
             console.print("[error]No ingredient selected. Please select an ingredient first.")
             return False
-
-    # def do_help(self, arg):
-
-    def do_menu(self, arg):
-        """Dostring for menu."""
-        self.bar.screen = bar.BAR_MENU
-        global type_displaying
-        type_displaying = None
-        prompt = "'Back' to go back"
-
-        while self.bar.screen == bar.BAR_MENU:
-            menu_table, menu_list = self.bar.show_menu(typ=type_displaying, expanded=True)
-            bar_menu_panel = Panel(title=f"{self.bar.name} Menu", renderable=menu_table,
-                                   border_style=rich_console.styles.get("bar_menu"))
-            bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
-
-            console.print(bar_menu_layout)
-
-            menu_commands = items_to_commands(menu_list)
-            if type_displaying is None:
-                menu_commands.add("add")
-            menu_commands.add("remove")
-            menu_commands.add("back")
-            menu_commands.add("menu")
-
-            primary_cmd = None
-            while primary_cmd is None:
-                inpt = parse_input(prompt, menu_commands)
-                if inpt is None:  # Help method returned
-                    continue  # Don't try to unpack and throw an error
-                primary_cmd, args = inpt
-                if primary_cmd == "add" and len(args) == 0:
-                    console.print("[error]Invalid args. Use: 'add cocktail', 'add beer', etc.")
-                    primary_cmd = None
-                '''elif primary_cmd == "help":
-                    self.onecmd(primary_cmd, args)
-                    primary_cmd = None'''
-
-            if primary_cmd == "back":
-                if type_displaying is None:  # At the full menu screen
-                    self.bar.screen = bar.MAIN
-                else:  # Viewing beer menu, etc.
-                    type_displaying = None
-            elif primary_cmd == "menu":
-                self.bar.screen = bar.MAIN
-            elif primary_cmd == "add":
-                typ_cmd = find_command(args[0], menu_commands)
-                if typ_cmd is not None:  # e.g. add beer
-                    add_typ = command_to_item(typ_cmd, menu_list)
-                    self.do_add(add_typ)
-            elif primary_cmd == "remove":
-                typ_cmd = find_command(args[0], menu_commands)
-                if typ_cmd is not None:
-                    remove_typ = command_to_item(typ_cmd, menu_list)
-                    self.do_remove(remove_typ)
-            elif primary_cmd in menu_commands:  # beer, cider, wine, etc.
-                type_displaying = command_to_item(primary_cmd, menu_list)
-            elif self.onecmd(primary_cmd + args):
-                pass
-            else:
-                console.print("[error]No allowed command recognized.")
-
-    def help_menu(self):
-        console.print("Help_menu function")
 
     def do_quit(self, arg):
         """Exit the application."""

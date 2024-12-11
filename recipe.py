@@ -1,21 +1,61 @@
-from rich.text import Text
+from typing import override
 
-from rich_console import console
-from ingredients import Ingredient
+from rich_console import console, quarter_round, standardized_spacing
+from ingredients import Ingredient, MenuItem
 
 
-class Recipe:
+class Recipe(MenuItem):
     def __init__(self, name=None, r_ingredients: dict[type[Ingredient] or Ingredient, float] = None):
         self.name = name
         self.r_ingredients = r_ingredients
+        self.price = "{:.2f}".format(quarter_round(self.profit_base()[0]))
 
-    def format_ingredients(self):
+    @override
+    def cost_value(self):
+        cost_value = 0
+        variable = False
+        for r_ingredient in self.r_ingredients:
+            if isinstance(r_ingredient, type):
+                cost_value += 0
+                variable = True
+            elif isinstance(r_ingredient, Ingredient):
+                portion = self.r_ingredients[r_ingredient]
+                cost_value += portion * r_ingredient.price_per_oz()
+            else:
+                console.print("[error]Recipe cost value received an ingredient not registering as type or ingredient")
+        return cost_value, variable
+
+    def profit_base(self):
+        cost_value, variable = self.cost_value()
+        profit_base = None
+        if cost_value <= 1.50:
+            profit_base = 4.50
+        elif 1.50 < cost_value <= 4:
+            profit_base = 3 * cost_value
+        elif cost_value > 4:
+            profit_base = 2.5 * cost_value
+        return profit_base, variable
+
+    def list_price(self):
+        profit_base, variable = self.profit_base()
+        if variable:
+            return f"[money]${self.price}+"
+        else:
+            return f"[money]${self.price}"
+
+    def format_ingredients(self, markup=True):
         r_ings = []
         for entry in self.r_ingredients:
             if isinstance(entry, type):
-                r_ings.append(f"[{entry().get_ing_style()}]{entry().format_type()}")
+                if markup:
+                    r_ings.append(f"[{entry().get_ing_style()}]{entry().format_type()}")
+                else:
+                    r_ings.append(entry().format_type())
             elif isinstance(entry, Ingredient):
-                r_ings.append(f"[{entry.get_ing_style()}]{entry.name}")
+                if markup:
+                    r_ings.append(f"[{entry.get_ing_style()}]{entry.name}")
+                else:
+                    r_ings.append(entry.name)
             else:
                 console.print("[error]Recipe ingredients contains item not registering as ingredient or type")
         ingredients_string = ""
@@ -29,6 +69,15 @@ class Recipe:
                 formatted_ing_string += char
 
         return formatted_ing_string
+
+    def list_item(self):
+        name = self.name
+        cocktail_spacing = 30
+        ingredient_spacing = 70
+        listing = (f"[cocktail]{name}[/cocktail]{standardized_spacing(name, cocktail_spacing)}{self.format_ingredients()}"
+                   f"{standardized_spacing(self.format_ingredients(markup=False), ingredient_spacing)}"
+                   f"{self.list_price()}")
+        return listing
 
     def select_ingredients(self):
         for r_ingredient in self.r_ingredients:
@@ -76,6 +125,3 @@ class Recipe:
 
         abv = (total_alcohol_fl_oz / total_volume_fl_oz) * 100
         return abv
-
-
-

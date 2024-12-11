@@ -2,10 +2,69 @@ from typing import override
 import sqlite3
 import inspect
 from rich.table import Table
+from rich.text import Text
 
-from rich_console import styles
+import rich_console
+from rich_console import console, styles, standardized_spacing
 
 all_ingredients = []
+
+
+class MenuItem:
+    def __init__(self):
+        self.price = "{:.2f}".format(rich_console.quarter_round(self.profit_base()[0])) if self.volumes else None
+
+    def cost_value(self):
+        variable = False
+        if hasattr(self, "r_ingredients"):
+            console.print("[error] Recipe cost_value should be overwritten")
+            '''cost_value = 0
+            for ingredient in self.r_ingredients:
+                cocktail_vol = self.r_ingredients[ingredient]
+                cost_value += self.price_per_oz() * cocktail_vol
+            return cost_value'''
+        elif isinstance(self, Alcohol):
+            if self.volumes:
+                cost_value = self.price_per_oz() * self.menu_pour()
+                return cost_value, variable
+            else:
+                console.print(f"[error]Ingredient {self.name} has no product volumes")
+
+    def profit_base(self):
+        cost_value, variable = self.cost_value()
+        profit_base = None
+        if cost_value < 1.25:
+            profit_base = 3.75
+        elif 1.25 <= cost_value < 3:
+            profit_base = cost_value * 3
+        elif cost_value >= 3:
+            profit_base = cost_value * 2
+        return profit_base, variable
+
+    def list_price(self):
+        return f"[money]${self.price}"
+
+    def list_item(self):
+        if isinstance(self, Beer):
+            name = self.name
+            beer_spacing = 50
+            price_spacing = 50
+            return (f"[beer]{name}{standardized_spacing(name, beer_spacing)}({self.format_type()})[/beer]"
+                    f"{standardized_spacing(self.format_type() + "()", price_spacing)}{self.list_price()}")
+        elif isinstance(self, Alcohol):
+            style = self.get_ing_style()
+            return f"[style]{self.name}[/style]{standardized_spacing(self.name, 100)}{self.list_price()}"
+        else:
+            console.print(f"[error]Menu item {self.name} not triggering Recipe, Beer, or other Alcohol")
+
+
+    def menu_pour(self):
+        if hasattr(self, "r_ingredients"):
+            pass
+        elif isinstance(self, Beer) or isinstance(self, Cider):
+            return 8
+        elif isinstance(self, Wine) or isinstance(self, Mead):
+            return 6
 
 
 # TODO: Soda water always available
@@ -82,15 +141,15 @@ class Ingredient:
         return attribute_values
 
     def get_menu_section(self):
-        menu_section = int()
+        menu_section = None
         if isinstance(self, Beer):
-            menu_section = 1
+            menu_section = Beer
         elif isinstance(self, Cider):
-            menu_section = 2
+            menu_section = Cider
         elif isinstance(self, Wine):
-            menu_section = 3
+            menu_section = Wine
         elif isinstance(self, Mead):
-            menu_section = 4
+            menu_section = Mead
         else:
             return None
         return menu_section
@@ -106,9 +165,18 @@ class Ingredient:
 
         portions = self.get_portions()
         for portion_key in portions:
-            portions_table.add_row(portion_key, f"{portions[portion_key]} fl oz")
+            portions_table.add_row(portion_key, f"{round(portions[portion_key], 2)} fl oz")
             portions_list.append(portion_key.lower())
         return portions_table, portions_list
+
+    def price_per_oz(self):
+        if self.volumes:
+            shop_vol = list(self.volumes)[0]
+            vol_price = list(self.volumes.values())[0]
+            price_per_oz = vol_price / shop_vol
+            return price_per_oz
+        else:
+            console.print(f"[error]self.volumes not present for {self.name}")
 
 
 # <editor-fold desc="Drinks">
@@ -143,10 +211,11 @@ class Alcohol(Drink):
 
 
 # <editor-fold desc="Beer">
-class Beer(Alcohol):
+class Beer(Alcohol, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
+        MenuItem.__init__(self)
 
     @override
     def get_portions(self):
@@ -154,19 +223,19 @@ class Beer(Alcohol):
 
 
 # <editor-fold desc="Ale">
-class Ale(Beer):
+class Ale(Beer, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
-class Stout(Ale):
+class Stout(Ale, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
-class MilkStout(Stout):
+class MilkStout(Stout, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -180,7 +249,7 @@ class MilkStout(Stout):
             return type_name
 
 
-class OatmealStout(Stout):
+class OatmealStout(Stout, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -194,7 +263,7 @@ class OatmealStout(Stout):
             return type_name
 
 
-class ImperialStout(Stout):
+class ImperialStout(Stout, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -208,19 +277,19 @@ class ImperialStout(Stout):
             return type_name
 
 
-class Porter(Ale):
+class Porter(Ale, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
-class Dubbel(Ale):
+class Dubbel(Ale, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
-class SourAle(Ale):
+class SourAle(Ale, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -234,7 +303,7 @@ class SourAle(Ale):
             return type_name
 
 
-class FruitTart(SourAle):
+class FruitTart(SourAle, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -248,7 +317,7 @@ class FruitTart(SourAle):
             return type_name
 
 
-class PaleAle(Ale):
+class PaleAle(Ale, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -262,7 +331,7 @@ class PaleAle(Ale):
             return type_name
 
 
-class IPA(PaleAle):
+class IPA(PaleAle, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -272,7 +341,7 @@ class IPA(PaleAle):
         return Ingredient.format_type(self, plural)
 
 
-class DoubleIPA(IPA):
+class DoubleIPA(IPA, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -286,7 +355,7 @@ class DoubleIPA(IPA):
             return type_name
 
 
-class BlackIPA(IPA):
+class BlackIPA(IPA, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -300,7 +369,7 @@ class BlackIPA(IPA):
             return type_name
 
 
-class Saison(PaleAle):
+class Saison(PaleAle, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -310,7 +379,7 @@ class Saison(PaleAle):
         return Ingredient.format_type(self, plural)
 
 
-class BlondeAle(Ale):
+class BlondeAle(Ale, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -324,7 +393,7 @@ class BlondeAle(Ale):
             return type_name
 
 
-class AmberAle(Ale):
+class AmberAle(Ale, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -338,7 +407,7 @@ class AmberAle(Ale):
             return type_name
 
 
-class BrownAle(Ale):
+class BrownAle(Ale, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -352,7 +421,7 @@ class BrownAle(Ale):
             return type_name
 
 
-class DarkAle(Ale):
+class DarkAle(Ale, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -366,7 +435,7 @@ class DarkAle(Ale):
             return type_name
 
 
-class Kolsch(Beer):
+class Kolsch(Beer, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -384,13 +453,13 @@ class Kolsch(Beer):
 
 
 # <editor-fold desc="Lagers">
-class Lager(Beer):
+class Lager(Beer, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
-class RiceLager(Lager):
+class RiceLager(Lager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -404,7 +473,7 @@ class RiceLager(Lager):
             return type_name
 
 
-class PaleLager(Lager):
+class PaleLager(Lager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -418,7 +487,7 @@ class PaleLager(Lager):
             return type_name
 
 
-class Helles(PaleLager):
+class Helles(PaleLager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -428,7 +497,7 @@ class Helles(PaleLager):
         return Ingredient.format_type(self)
 
 
-class Pilsner(PaleLager):
+class Pilsner(PaleLager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -438,7 +507,7 @@ class Pilsner(PaleLager):
         return Ingredient.format_type(self, plural)
 
 
-class AmberLager(Lager):
+class AmberLager(Lager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -452,7 +521,7 @@ class AmberLager(Lager):
             return type_name
 
 
-class DarkLager(Lager):
+class DarkLager(Lager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -467,13 +536,14 @@ class DarkLager(Lager):
             return type_name
 
 
-class Schwarzbier(DarkLager):
+class Schwarzbier(DarkLager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
     @override
     def format_type(self, plural=False):
+        # TODO: This is boilerplate
         type_name = "Schwarzbier"
         if plural:
             return f"{type_name}s"
@@ -481,25 +551,25 @@ class Schwarzbier(DarkLager):
             return type_name
 
 
-class Dunkel(DarkLager):
+class Dunkel(DarkLager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
-class Bock(Lager):
+class Bock(Lager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
-class Doppelbock(Bock):
+class Doppelbock(Bock, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
-class Maibock(Bock):
+class Maibock(Bock, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -508,7 +578,7 @@ class Maibock(Bock):
 # </editor-fold>
 
 
-class WheatBeer(Beer):
+class WheatBeer(Beer, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -522,7 +592,7 @@ class WheatBeer(Beer):
             return type_name
 
 
-class Lambic(WheatBeer):
+class Lambic(WheatBeer, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -535,7 +605,7 @@ class Lambic(WheatBeer):
             return Ingredient.format_type(self)
 
 
-class Witbier(WheatBeer):
+class Witbier(WheatBeer, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -545,7 +615,7 @@ class Witbier(WheatBeer):
         return Ingredient.format_type(self, plural)
 
 
-class Hefeweizen(WheatBeer):
+class Hefeweizen(WheatBeer, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -557,10 +627,11 @@ class Hefeweizen(WheatBeer):
 
 # </editor-fold>
 
-class Cider(Alcohol):
+class Cider(Alcohol, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
+        MenuItem.__init__(self)
 
     @override
     def get_portions(self):
@@ -568,17 +639,18 @@ class Cider(Alcohol):
 
 
 # <editor-fold desc="Wine">
-class Wine(Alcohol):
+class Wine(Alcohol, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
+        MenuItem.__init__(self)
 
     @override
     def get_portions(self):
         return {"Glass Pour": 6, "Spritzer Pour": 4, "Shot": 2}
 
 
-class RedWine(Wine):
+class RedWine(Wine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -592,7 +664,7 @@ class RedWine(Wine):
             return type_name
 
 
-class WhiteWine(Wine):
+class WhiteWine(Wine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -606,7 +678,7 @@ class WhiteWine(Wine):
             return type_name
 
 
-class Rose(Wine):
+class Rose(Wine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -620,7 +692,7 @@ class Rose(Wine):
             return type_name
 
 
-class Chardonnay(WhiteWine):
+class Chardonnay(WhiteWine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -633,7 +705,7 @@ class Chardonnay(WhiteWine):
             return Ingredient.format_type(self)
 
 
-class PinotNoir(RedWine):
+class PinotNoir(RedWine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -647,7 +719,7 @@ class PinotNoir(RedWine):
             return type_name
 
 
-class Merlot(RedWine):
+class Merlot(RedWine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -660,7 +732,7 @@ class Merlot(RedWine):
             return Ingredient.format_type(self)
 
 
-class Riesling(WhiteWine):
+class Riesling(WhiteWine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -673,7 +745,7 @@ class Riesling(WhiteWine):
             return Ingredient.format_type(self)
 
 
-class Sparkling(Wine):
+class Sparkling(Wine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -687,7 +759,7 @@ class Sparkling(Wine):
             return type_name
 
 
-class SkinContact(WhiteWine):
+class SkinContact(WhiteWine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -822,10 +894,11 @@ class DarkRum(Rum):
 
 # </editor-fold>  # Spirits
 
-class Mead(Alcohol):
+class Mead(Alcohol, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
+        MenuItem.__init__(self)
 
     def get_portions(self):
         return {"Glass Pour": 6, "Spritzer Pour": 4, "Shot": 2}
@@ -1003,6 +1076,7 @@ class Fruit(Additive):
 
 # </editor-fold>  # Additives
 # </editor-fold>  # Ingredients
+
 
 # Database connection
 connection = sqlite3.connect('cocktailDB.db')
