@@ -13,14 +13,17 @@ for ingredient in all_ingredients:
         except AttributeError as e:
             console.print(ingredient.name)
 
-console.print(console.size)
-console.print(int(console.size[0] / 2))
-console.print(int(console.size[0] % 2))
-console.print(int(console.size[0] / 3))
-console.print(int(console.size[0] % 3))
-
 
 current_bar = ui.startup_screen()
+
+for recipe in current_bar.recipes:
+    console.print(recipe)
+    taste_profile = (current_bar.recipes[recipe].generate_taste_profile())
+    sorted_taste_profile = sorted(taste_profile.items(), key=lambda x: x[1], reverse=True)
+
+    # Print the sorted taste profile
+    for taste, points in sorted_taste_profile:
+        console.print(f"{taste}: {points}")
 
 
 while True:

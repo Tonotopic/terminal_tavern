@@ -119,14 +119,16 @@ class BarMenu:
             description_panel = Panel(renderable=item.description(), border_style=item.get_style())
             stock_rem = self.bar.stock.inventory[item]
             pours_left = math.floor(stock_rem / item.pour_vol())
-            stock_panel = Panel(renderable=f"[panel]{stock_rem}[/panel]oz in stock ([panel]{pours_left}[/panel] full pours)",
-                                border_style=styles.get("panel"))
+            stock_panel = Panel(
+                renderable=f"[panel]{stock_rem}[/panel]oz in stock ([panel]{pours_left}[/panel] full pours)",
+                border_style=styles.get("panel"))
             overview_layout = Layout(name="overview_layout")
             overview_layout.split_column(Layout(name="description", renderable=description_panel, size=3),
                                          Layout(name="stock", renderable=stock_panel, size=3))
 
         elif isinstance(item, recipe.Recipe):
-            ingredients_panel = Panel(renderable=item.breakdown_ingredients(), title=item.name, border_style=styles.get("cocktails"))
+            ingredients_panel = Panel(renderable=item.breakdown_ingredients(), title=item.name,
+                                      border_style=styles.get("cocktails"))
 
             overview_layout = Layout(name="overview_layout")
             overview_layout.split_row(Layout(name="ingredients", renderable=ingredients_panel))
@@ -135,6 +137,7 @@ class BarMenu:
         primary_cmd = input_loop("'Back' to go back", ["back"])
         if primary_cmd == "back":
             return
+
     # </editor-fold>
 
     # <editor-fold desc="Modify">
@@ -226,7 +229,7 @@ class BarMenu:
         else:
             category_strings = [cat[1].lower() for cat in self.menu_sections()]
             menu_args = items_to_commands(self.full_menu()).union(set(category_strings))
-            cmd = find_command(mark_arg, menu_args) # TODO redundant i_t_c call?
+            cmd = find_command(mark_arg, menu_args)
             if cmd in menu_args:
                 item = command_to_item(cmd, self.full_menu() + [section[2] for section in self.menu_sections()])
                 if isinstance(item, type):
@@ -298,6 +301,7 @@ class BarMenu:
     def check_stock(self):
         for menu_item in self.full_menu():
             if not self.bar.stock.has_enough(menu_item):
-                console.print(f"[error] Not enough {menu_item.name}! Restock or remove from the menu before proceeding.")
+                console.print(
+                    f"[error] Not enough {menu_item.name}! Restock or remove from the menu before proceeding.")
                 return False
         return True

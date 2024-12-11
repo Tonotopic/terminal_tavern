@@ -875,7 +875,9 @@ class Fruit(Additive):
         portions = {"Slice": 1 / 8, "Juice": 1 / 2, "Crushed": 1, "Whole": 1}
         if self.name in unsliceable:
             portions.pop("Slice")
-        elif self.name in flavors.citruses:
+            for portion in portions:
+                portions[portion] = (portions[portion]) / 8
+        elif self.name in flavors.citrus:
             portions["Rind"] = 1 / 8
             portions["Zest"] = 1 / 8
 

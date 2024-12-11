@@ -1,7 +1,11 @@
+from collections import defaultdict
 from typing import override
 from rich.table import Table
 from rich.text import Text
 
+import flavors
+import ingredients
+import logger
 import rich_console
 from rich_console import console, standardized_spacing, styles
 from ingredients import Ingredient, MenuItem, Fruit
@@ -177,3 +181,50 @@ class Recipe(MenuItem):
 
         abv = (total_alcohol_fl_oz / total_volume_fl_oz) * 100
         return abv
+
+    def generate_taste_profile(self):
+        logger.log(f"Generating taste profile for {self.name}:")
+        taste_profile = {}
+
+        for ingredient in self.r_ingredients:
+
+            obj = ingredient() if isinstance(ingredient, type) else ingredient
+            volume = obj.get_portions()[self.r_ingredients[ingredient]]
+
+            if isinstance(ingredient, ingredients.Bitter) or (isinstance(ingredient, type) and ingredient == ingredients.Bitter):
+                volume = volume * 100
+            if isinstance(ingredient, Ingredient):
+                name = ingredient.name
+                for taste in flavors.tastes:
+                    taste_name = taste[0]
+                    points = 0
+                    for word in taste:
+                        if ingredient.flavor != "":
+                            if word in ingredient.flavor:
+                                points += round(4 * volume, 2)
+                        if word in ingredient.character:
+                            points += round(3 * volume, 2)
+                        if ingredient.notes:
+                            if word in ingredient.notes:
+                                points += round(1 * volume, 2)
+                    if points > 0:
+                        try:
+                            taste_profile[taste_name] += points
+                        except KeyError:
+                            taste_profile[taste_name] = points
+                        logger.log(f"{points} points in {taste_name} from {ingredient.name}")
+
+            elif isinstance(ingredient, type):
+                name = obj.format_type()
+
+            type_name = obj.format_type()
+            if type_name in flavors.types:
+                for taste in flavors.types[type_name]:
+                    points = round(flavors.types[type_name][taste] * volume, 2)
+                    try:
+                        taste_profile[taste] += points
+                    except KeyError:
+                        taste_profile[taste] = points
+                    logger.log(f"{points} points in {taste} from {type_name} ({name})")
+
+        return taste_profile
