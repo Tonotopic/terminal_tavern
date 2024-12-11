@@ -407,8 +407,8 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             return
         elif primary_cmd == "flavored":
             showing_flavored = True
-        elif command_to_item(primary_cmd, shop_list):
-            current_selection = command_to_item(primary_cmd, shop_list)
+        elif command_to_item(cmd=primary_cmd, lst=shop_list, plural=True):
+            current_selection = command_to_item(primary_cmd, shop_list, plural=True)
         else:
             console.print("[error]Command not handled")
 

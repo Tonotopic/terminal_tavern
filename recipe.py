@@ -54,16 +54,11 @@ class Recipe(MenuItem):
                         true_str_index += 1
 
                 formatted_ingredients = formatted_ingredients[:(f_trunc_index)] + "[dimmed]..."
-
-            console.print(f"total spacing = {total_spacing}")
-            console.print(f"cocktail spacing = {cocktail_spacing}")
-            console.print(f"ingredient spacing = {ingredient_spacing}")
             return (
                 f"[cocktails]{name}[/cocktails]{standardized_spacing(name, cocktail_spacing)}{formatted_ingredients}"
                 f"{standardized_spacing(ingredients[:trunc_index], ingredient_spacing)}"
                 f"{self.list_price(expanded=True)}")
         else:
-            console.print(f"total spacing = {total_spacing}")
             return (f"[cocktails]{name}[/cocktails]{standardized_spacing(name, total_spacing)}"
                     f"{self.list_price(expanded=False)}")
 

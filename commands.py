@@ -88,7 +88,7 @@ help_panels = {
 }
 
 
-# TODO: "shop fr" goes to fruit tarts, not fruit
+# TODO: "j c s" returns Calico Jack Spiced Rum, should only return Jose Cuervo Especial Silver (maintain word order)
 
 def draw_help_panel(term):
     """Print a panel to the user containing help info for the given term."""
@@ -118,7 +118,7 @@ def items_to_commands(lst: Iterable[ingredients.Ingredient]):
     return commands
 
 
-def command_to_item(cmd, lst):
+def command_to_item(cmd, lst, plural=False):
     """Match a string command to an ingredient or type from the given list."""
     if cmd is None:
         return None
@@ -127,7 +127,7 @@ def command_to_item(cmd, lst):
             if entry == Recipe:
                 if cmd == "cocktails":
                     return Recipe
-            elif f"{unidecode(entry().format_type().lower())}s".startswith(cmd):
+            elif f"{unidecode(entry().format_type(plural).lower())}" == cmd:
                 return entry
         elif isinstance(entry, ingredients.Ingredient):
             if cmd == unidecode(entry.name.lower()):
@@ -251,16 +251,19 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
                 logger.log(f"Valid commands: {sorted_commands}")
         return None
     elif len(matching_commands) > 1:  # found more than one match
-        most_base_cmd = None
+        base_cmd = None
         for cmd in matching_commands:
             for ref_cmd in matching_commands:
                 if cmd in ref_cmd and cmd != ref_cmd:
-                    most_base_cmd = cmd
+                    if base_cmd is not None:
+                        base_cmd = cmd if len(ref_cmd) > len(cmd) else ref_cmd
+                    else:
+                        base_cmd = cmd
                 elif ref_cmd in cmd and cmd != ref_cmd:
-                    most_base_cmd = ref_cmd
-        if most_base_cmd is not None:
-            logger.log("Most base command: " + most_base_cmd)
-            return most_base_cmd
+                    base_cmd = ref_cmd
+        if base_cmd is not None:
+            logger.log("Most base command: " + base_cmd)
+            return base_cmd
         else:
             if feedback:
                 msg = f"Matching commands : {matching_commands}"
@@ -268,7 +271,7 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
                 logger.log(msg)
 
 
-def parse_input(prompt, commands=None, force_beginning: bool = False):
+def parse_input(prompt=None, commands=None, force_beginning: bool = False, inpt=None):
     """
     Gather, standardize, and validate input, handling multi-word logic and distinguishing primary commands from arguments.
 
@@ -277,19 +280,24 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
           :param commands: Optional list of commands to pass to find_command.
           :param force_beginning: Can be set to True to disallow matching to the middle of a command.
         """
-    inpt = ""
-    while inpt == "":
+    while inpt is None:
         inpt = console.input(f"[prompt]{prompt}:[/prompt][white] > ").strip().lower()
 
     # TODO: As commands with args are added, skip them here
     # If not a command with args, group spaced words together
     arg_commands = ["shop", "buy", "add", "remove", "load", "markup", "markdown"]  # help is added by find_command
-    arg_cmd = find_command(inpt.split()[0], arg_commands, feedback=False)
+    parts = inpt.split()
+    arg_cmd = find_command(parts[0], arg_commands, feedback=False)
     while True:
         if arg_cmd is None:
             inpt = f'"{inpt}"'
+        elif len(parts) > 1 and not parts[1].startswith('"'):
+            parts[1] = '"' + parts[1]
+            parts[len(parts) - 1] = parts[len(parts) - 1] + '"'
+            inpt = " ".join(parts)
 
-        inpt_cmd = find_command(inpt, commands, force_beginning)
+        inpt_cmd = find_command(inpt=inpt, commands=commands, force_beginning=force_beginning)
+
         # Start over parsing with input wrapped in quotes if the potential arg command we detected isn't accurate
         if arg_cmd:
             if inpt_cmd is None or inpt_cmd[0] != arg_cmd:
@@ -298,6 +306,12 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
 
         if isinstance(inpt_cmd, tuple):  # If find_command returned args
             primary_command, args = inpt_cmd  # Unpack the tuple
+            for i, arg in enumerate(args):
+                try:
+                    int(arg)
+                except ValueError:
+                    args[i] = f'"{arg}"'
+
         else:
             primary_command = inpt_cmd  # The entire input is one part
             args = []
@@ -319,7 +333,7 @@ def input_loop(prompt: str, commands, force_beginning=False, skip: str = None, i
     :return: The primary command and any args, whether or not a command checker has executed
     """
     while True:
-        inpt = parse_input(prompt, commands, force_beginning)
+        inpt = parse_input(prompt=prompt, commands=commands, force_beginning=force_beginning)
         if inpt[0] is None:
             continue
         primary_cmd, args = inpt
@@ -339,7 +353,9 @@ def input_loop(prompt: str, commands, force_beginning=False, skip: str = None, i
                 console.print(f"Help topics: {list(help_panels.keys())}")
                 continue
 
-            arg = find_command(f'"{arg_input}"', help_args)
+            if not arg_input.startswith('"'):
+                arg_input = f'"{arg_input}"'
+            arg = find_command(arg_input, help_args)
             if arg in help_panels.keys():
                 draw_help_panel(arg)
                 continue
@@ -371,7 +387,8 @@ def check_add(args, bar, ingredient):
     type_displaying = ingredient
     if type_displaying is None:
         typ = command_to_item(find_command(args[0], ["cocktails", "beers", "ciders", "wines", "meads"]),
-                              [Recipe, ingredients.Beer, ingredients.Cider, ingredients.Wine, ingredients.Mead])
+                              [Recipe, ingredients.Beer, ingredients.Cider, ingredients.Wine, ingredients.Mead],
+                              plural=True)
         if bar.menu.select_to_add(typ):
             return "add", args
     else:
@@ -446,10 +463,10 @@ def check_remove(args, bar, ingredient):
 def check_shop(args, bar, ingredient):
     if len(args) > 0:
         all_ingredient_types = ingredients.all_ingredient_types()
-        cmd_lst = [typ().format_type().lower() for typ in all_ingredient_types]
+        cmd_lst = [typ().format_type(plural=True).lower() for typ in all_ingredient_types]
         shop_arg = find_command(args[0], cmd_lst)
         if shop_arg:
-            shop_typ = command_to_item(shop_arg, all_ingredient_types)
+            shop_typ = command_to_item(shop_arg, all_ingredient_types, plural=True)
             bar.set_screen("SHOP")
             ui.shop_screen(bar, shop_typ)
         else:

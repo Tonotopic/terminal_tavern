@@ -103,10 +103,6 @@ class MenuItem:
                 hidden_chars = int(len(self.format_type() + abv_str + "()") - (price_spacing))
                 formatted_type = formatted_type[:-(hidden_chars + 2)] + ".."
 
-            console.print(f"total spacing = {total_spacing}")
-            console.print(f"price spacing = {price_spacing}")
-            console.print(f"beer spacing = {beer_spacing}")
-
             return (f"[beer]{name}{standardized_spacing(name, beer_spacing)}"
                     f"({formatted_type})[/beer][abv]{abv_str}[/abv]"
                     f"{standardized_spacing(self.format_type() + abv_str + "()", price_spacing)}"
@@ -117,7 +113,6 @@ class MenuItem:
 
             if len(name) > total_spacing:
                 name = name[:-3] + "..."
-            console.print(f"total spacing = {total_spacing}")
             return f"[{style}]{name}[/{style}]{standardized_spacing(name, total_spacing)}{self.list_price()}"
 
         else:
