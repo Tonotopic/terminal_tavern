@@ -1,5 +1,6 @@
 import rich.pretty
 
+import commands
 from ingredients import Ingredient, list_ingredients, all_ingredients
 from rich.layout import Layout
 from rich_console import console
@@ -16,46 +17,72 @@ class Bar:
         self.menu = {}  # List of Recipe objects
 
     def purchase(self):
-        purchase_layout = Layout(name="purchase_layout")
-        purchase_layout.split_column(
-            Layout(name="purchase_header"),
-            Layout(name="purchase_screen")
-        )
+        shop_commands = set()
+        current_category = Ingredient
 
-        # <editor-fold desc="populating shop panels">
-        shop_list = []
-        subclasses = Ingredient.__subclasses__()
-        for typ in subclasses:
-            shop_list.append(typ)
+        while True:
 
-        # Create a table to display the shop list
-        shop_table = Table(title="Available for Purchase",
-                           title_style="underline", show_header=False, expand=True, leading=2)
-        inv_table = Table(title="Bar Stock",
-                          title_style="underline", show_header=False, expand=True, leading=2)
+            purchase_layout = Layout(name="purchase_layout")
+            purchase_layout.split_column(
+                Layout(name="purchase_header"),
+                Layout(name="purchase_screen")
+            )
 
-        tables = (shop_table, inv_table)
-        for table in tables:
-            table.add_column("Category", justify="center")
-            for category in shop_list:
-                obj = category()
-                style = obj.get_ing_style()
-                container = self.inventory if table == inv_table else all_ingredients
-                table.add_row(Text(f"{obj.format_type()}s "  # Pluralize
-                                   f"({len(list_ingredients(container, category))})",  # Quantity
-                                   style=style))
+            # <editor-fold desc="populating shop panels">
+            shop_list = []
+            subclasses = current_category.__subclasses__()
+            for typ in subclasses:
+                shop_list.append(typ)
 
-        # Embed the table in a panel for better visual presentation
-        shop_panel = Panel(shop_table, box=box.DOUBLE_EDGE, style="#c2af02")
-        inv_panel = Panel(inv_table, box=box.DOUBLE_EDGE, style="#c2af02")
-        # </editor-fold>
+            # Create a table to display the shop list
+            shop_table = Table(title="Available for Purchase",
+                               title_style="underline", show_header=False, expand=True, leading=2)
+            inv_table = Table(title="Bar Stock",
+                              title_style="underline", show_header=False, expand=True, leading=2)
 
-        purchase_layout["purchase_screen"].split_row(
-            Layout(name="bar", renderable=inv_panel),
-            Layout(name="shop", renderable=shop_panel)
-        )
+            tables = (shop_table, inv_table)
+            for table in tables:
+                table.add_column("Category", justify="center")
+                for category in shop_list:
+                    obj = category()
+                    style = obj.get_ing_style()
+                    shop_commands.add(f"{obj.format_type().lower()}s")
+                    container = self.inventory if table == inv_table else all_ingredients
+                    table.add_row(Text(f"{obj.format_type()}s "  # Pluralize
+                                       f"({len(list_ingredients(container, category))})",  # Quantity
+                                       style=style))
 
-        console.print(purchase_layout)
+            # Embed the table in a panel for better visual presentation
+            shop_panel = Panel(shop_table, box=box.DOUBLE_EDGE, style="#c2af02")
+            inv_panel = Panel(inv_table, box=box.DOUBLE_EDGE, style="#c2af02")
+            # </editor-fold>
+
+            purchase_layout["purchase_screen"].split_row(
+                Layout(name="bar", renderable=inv_panel),
+                Layout(name="shop", renderable=shop_panel)
+            )
+
+            console.print(purchase_layout)
+            inpt = (commands.find_command(console.input("Type a category to view:"), shop_commands)
+                    .lower())
+            match inpt:
+                case "quit":
+                    break
+                case "back":
+                    if current_category != Ingredient:
+                        current_category = current_category.__base__
+                    else:
+                        # @TODO Main menu
+                        break
+                case _: # wildcard case
+                    if inpt in shop_commands:
+                        for category in shop_list:
+                            if inpt == f"{category().format_type().lower()}s":
+                                current_category = category
+                            break
+                    else:
+                        console.print("No matching commands found.")
+
 
 
 class Recipe:

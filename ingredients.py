@@ -36,10 +36,7 @@ class Ingredient:
             return typ
         else:
             for parent_class in type(self).__bases__:
-                attributes = self.get_attributes()
-                if isinstance(self, Syrup):
-                    attributes.pop()
-                parent_object = parent_class(*attributes)
+                parent_object = parent_class()
                 style = parent_object.get_ing_style()
                 if style:
                     return style
@@ -86,7 +83,7 @@ class Drink(Ingredient):
 
 # <editor-fold desc="Alcohols">
 class Alcohol(Drink):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes)
         self.abv = abv
 
@@ -105,17 +102,17 @@ class Alcohol(Drink):
 
 
 class Beer(Alcohol):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class Stout(Beer):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class MilkStout(Beer):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
     @override
@@ -124,12 +121,12 @@ class MilkStout(Beer):
 
 
 class Ale(Beer):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class BlondeAle(Ale):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
     @override
@@ -139,17 +136,17 @@ class BlondeAle(Ale):
 
 # <editor-fold desc="Wine">
 class Wine(Alcohol):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class Chardonnay(Wine):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class PinotNoir(Wine):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
     @override
@@ -158,12 +155,12 @@ class PinotNoir(Wine):
 
 
 class Merlot(Wine):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class Rose(Wine):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
     @override
@@ -172,7 +169,7 @@ class Rose(Wine):
 
 
 class Riesling(Wine):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
@@ -181,28 +178,28 @@ class Riesling(Wine):
 
 # <editor-fold desc="Spirits">
 class Spirit(Alcohol):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class Vodka(Spirit):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 # <editor-fold desc="Whiskey">
 class Whiskey(Spirit):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class Bourbon(Whiskey):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class Scotch(Whiskey):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
@@ -210,23 +207,23 @@ class Scotch(Whiskey):
 
 
 class Gin(Spirit):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class Tequila(Spirit):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 # <editor-fold desc="Rum">
 class Rum(Spirit):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class WhiteRum(Rum):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
     @override
@@ -235,7 +232,7 @@ class WhiteRum(Rum):
 
 
 class DarkRum(Rum):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
     @override
@@ -250,17 +247,17 @@ class DarkRum(Rum):
 
 
 class Liqueur(Alcohol):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class Bitter(Liqueur):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
 class Vermouth(Liqueur):
-    def __init__(self, ingredient_id, name, image, flavor, character, notes, abv):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None, notes=None, abv=None):
         super().__init__(ingredient_id, name, image, flavor, character, notes, abv)
 
 
@@ -268,7 +265,7 @@ class Vermouth(Liqueur):
 
 
 class Tea(Drink):
-    def __init__(self, ingredient_id, name, image, flavor, character):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None):
         super().__init__(ingredient_id, name, image, flavor, character, "")
 
     @override
@@ -277,7 +274,7 @@ class Tea(Drink):
 
 
 class Soda(Drink):
-    def __init__(self, ingredient_id, name, image, flavor, character):
+    def __init__(self, ingredient_id=None, name=None, image=None, flavor=None, character=None):
         super().__init__(ingredient_id, name, image, flavor, character, "")
 
 
@@ -291,28 +288,30 @@ class Additive(Ingredient):
 
 
 class Syrup(Additive):
-    def __init__(self, ingredient_id, name, image, character, flavor=""):
+    def __init__(self, ingredient_id, name, image, character, flavor=None):
         super().__init__(ingredient_id, name, image, character)
+        if flavor is None:
+            flavor = ""
         self.flavor = flavor
 
 
 class Spice(Additive):
-    def __init__(self, ingredient_id, name, image, character):
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None):
         super().__init__(ingredient_id, name, image, character)
 
 
 class Herb(Additive):
-    def __init__(self, ingredient_id, name, image, character):
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None):
         super().__init__(ingredient_id, name, image, character)
 
 
 class Sweetener(Additive):
-    def __init__(self, ingredient_id, name, image, character):
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None):
         super().__init__(ingredient_id, name, image, character)
 
 
 class Fruit(Additive):
-    def __init__(self, ingredient_id, name, image, character):
+    def __init__(self, ingredient_id=None, name=None, image=None, character=None):
         super().__init__(ingredient_id, name, image, character)
 
     def crush(self):
