@@ -1,10 +1,11 @@
-from pyplayscii import playscii
-import bar
-
-from rich_console import console
-import ingredients
 from rich.layout import Layout
+from colorama import just_fix_windows_console
 
+import bar
+import ingredients
+from rich_console import console
+
+just_fix_windows_console()
 main_layout = Layout()
 
 bar = bar.Bar(1000)

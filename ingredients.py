@@ -1,8 +1,7 @@
 from typing import override
 import sqlite3
-from rich.style import Style
-from rich_console import ing_styles_dict, get_attributes
-from rich.theme import Theme
+from rich_console import ing_styles_dict
+import inspect
 
 
 # <editor-fold desc="Ingredients">
@@ -12,18 +11,17 @@ class Ingredient:
         self.name = name
         self.image = image
         self.character = character
-        # self.ing_style = ingredient_styles.get(self.format_type(), Style())
 
     def a(self):
-        #  Determines whether "a" or "an" should be printed just before the character attribute
+        """Determines whether "a" or "an" should be printed just before the character attribute."""
         if self.character[0] in "aeiou" or self.character.startswith("herb"):
             return "an"
         else:
             return "a"
 
-    def description(self):
+    def description(self):  # {Name} is a/an {character} {type}.
         style = self.get_ing_style()
-        desc = (f"[{style}][underline]{self.name.capitalize()}[/{style}][/underline] "
+        desc = (f"[{style}][italic]{self.name.capitalize()}[/{style}][/italic] "
                 f"is {self.a()} {self.character} "
                 f"[{style}]{self.format_type().lower()}[/{style}].")
         return desc
@@ -38,7 +36,7 @@ class Ingredient:
             return typ
         else:
             for parent_class in type(self).__bases__:
-                attributes = get_attributes(self)
+                attributes = self.get_attributes()
                 if isinstance(self, Syrup):
                     attributes.pop()
                 parent_object = parent_class(*attributes)
@@ -46,6 +44,17 @@ class Ingredient:
                 if style:
                     return style
         return self.format_type().lower()
+
+    def get_attributes(self):
+        """Returns a list of attribute values in the correct order for the constructor."""
+        signature = inspect.signature(type(self).__init__)
+        parameters = signature.parameters
+        attribute_values = [
+            repr(getattr(self, param.name))
+            for param in parameters.values()
+            if param.kind == param.POSITIONAL_OR_KEYWORD and param.name != 'self'
+        ]
+        return attribute_values
 
     def __rich__(self):
         return
@@ -60,17 +69,16 @@ class Drink(Ingredient):
             self.flavor = ""
         self.notes = notes
 
-    def format_flavor(self):
-        #  Add the necessary space after flavor if there is one
+    def format_flavor(self):  # Add the necessary space after flavor if there is one
         if self.flavor:
             return f"{self.flavor} "
         else:
             return ""
 
     @override
-    def description(self):
+    def description(self):  # Add flavor when applicable
         style = self.get_ing_style()
-        desc = (f"[{style}][underline]{self.name}[/{style}][/underline] "
+        desc = (f"[{style}][italic]{self.name}[/{style}][/italic] "
                 f"is {self.a()} {self.character} "
                 f"[{style}]{self.format_flavor()}{self.format_type().lower()}[/{style}].")
         return desc
@@ -90,9 +98,9 @@ class Alcohol(Drink):
             return f"It is [abv]{self.abv}% ABV[/abv]"
 
     @override
-    def description(self):
-        desc = super().description()
-        desc += f" {self.abv_desc()}."
+    def description(self):  # Remove the punctuation and add notes and ABV
+        desc = super().description()[:-1]
+        desc += f"{self.notes_desc()}. {self.abv_desc()}."
         return desc
 
 
@@ -264,12 +272,8 @@ class Tea(Drink):
         super().__init__(ingredient_id, name, image, flavor, character, "")
 
     @override
-    def description(self):
-        style = self.get_ing_style()
-        desc = (f"[{style}][underline]{self.name.capitalize()}[/{style}][underline] "
-                f"is {self.a()} {self.character} "
-                f"[{style}]{self.format_type().lower()}[/{style}].")
-        return desc
+    def description(self):  # Skip Drink desc and go back to Ingredient to re-capitalize generics
+        return Ingredient.description(self)
 
 
 class Soda(Drink):
@@ -321,6 +325,7 @@ class Fruit(Additive):
 # </editor-fold>  # Additives
 # </editor-fold>  # Ingredients
 
+# @TODO:  Not sure that there is truly no way to extract this automatically
 class_arg_mapping = {
     "Ingredient": ["ingredient_id", "name", "image", "character"],
     "Drink": ["ingredient_id", "name", "image", "flavor", "character", "notes"],
@@ -364,23 +369,18 @@ connection = sqlite3.connect('cocktailDB.db')
 cursor = connection.cursor()
 
 
-def create_ingredient(ingredient_type, **row_data):  # add **
+def create_ingredient(ingredient_type, **row_data):
     try:
-
         if ingredient_type is None:
-            # Handle case where ingredient type is not found
             return Ingredient(**{k: v for k, v in row_data.items() if k in class_arg_mapping.get("Ingredient", [])})
 
-        # Get required arguments for the class
-        required_args = class_arg_mapping.get(ingredient_type.__name__, [])  # changed here
+        required_args = class_arg_mapping.get(ingredient_type.__name__, [])
         # Filter out unexpected keyword arguments
         filtered_data = {key: value for key, value in row_data.items() if key in required_args}
-
-        # Create the Ingredient object
         ingredient = ingredient_type(**filtered_data)
         return ingredient
     except (KeyError, IndexError, TypeError) as e:
-        print(f"Error creating object of type {ingredient_type}: {e}")  # Print error message for debugging
+        print(f"Error creating object of type {ingredient_type}: {e}")
         # Return a default Ingredient object if creation fails
         return Ingredient(**{k: v for k, v in row_data.items() if k in class_arg_mapping.get("Ingredient", [])})
 

@@ -52,16 +52,16 @@ class Recipe:
     def check_ingredients(self, provided_ingredients: dict[ingredients.Ingredient, float]):
         """Checks if provided ingredients satisfy the recipe requirements."""
         for required_ingredient, quantity in self.r_ingredients.items():
-            if isinstance(required_ingredient, type):  # Check if it's a type
+            if isinstance(required_ingredient, type):  # Check if requirement is a type (accepts any)
                 found_match = False
                 for provided_ingredient in provided_ingredients:
                     if isinstance(provided_ingredient,
-                                  required_ingredient):  # if provided ingredient is an instance of the required type
+                                  required_ingredient):
                         found_match = True
                         break  # Stop checking further for this ingredient
                 if not found_match:
-                    return False  # Missing required ingredient type
-            else:  # It's a specific ingredient
+                    return False  # No ingredient of the right type provided
+            else:  # Specific ingredient required
                 if required_ingredient not in provided_ingredients:
                     return False  # Missing specific ingredient
                 # Add quantity check if needed
@@ -69,15 +69,17 @@ class Recipe:
         return True  # All ingredients are valid
 
     def make(self):
-        pass
+        provided_ingredients = {}
+        if self.check_ingredients(provided_ingredients):
+            pass
 
     def calculate_abv(self):
         """Calculates the ABV of the recipe using ingredient ABVs."""
         total_alcohol_fl_oz = 0
         total_volume_fl_oz = 0
 
-        for ingredient, fluid_ounces in self.r_ingredients.items():  # Iterate through Ingredient objects
-            if hasattr(ingredient, "abv"):  # Check if ingredient has ABV
+        for ingredient, fluid_ounces in self.r_ingredients.items():
+            if hasattr(ingredient, "abv"):
                 alcohol_fl_oz = fluid_ounces * (ingredient.abv / 100)
                 total_alcohol_fl_oz += alcohol_fl_oz
 

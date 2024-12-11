@@ -1,7 +1,6 @@
 from rich.console import Console
 from rich.theme import Theme
 from rich.style import Style
-import inspect
 
 ing_styles_dict = {"abv": Style(color="#8395fc"),
                    "fruit": Style(color="#ff66bb"),
@@ -23,16 +22,6 @@ ingredient_styles = Theme(ing_styles_dict)
 console = Console(theme=ingredient_styles)
 
 
-def get_attributes(ingredient):
-    """Returns a list of attribute values in the correct order for the constructor."""
-    signature = inspect.signature(type(ingredient).__init__)
-    parameters = signature.parameters
-    attribute_values = [
-        repr(getattr(ingredient, param.name))
-        for param in parameters.values()
-        if param.kind == param.POSITIONAL_OR_KEYWORD and param.name != 'self'
-    ]
-    return attribute_values
 
 
 
