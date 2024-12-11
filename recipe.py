@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import override
 from rich.table import Table
 from rich.text import Text
@@ -188,43 +187,51 @@ class Recipe(MenuItem):
 
         for ingredient in self.r_ingredients:
 
-            obj = ingredient() if isinstance(ingredient, type) else ingredient
-            volume = obj.get_portions()[self.r_ingredients[ingredient]]
-
-            if isinstance(ingredient, ingredients.Bitter) or (isinstance(ingredient, type) and ingredient == ingredients.Bitter):
-                volume = volume * 100
             if isinstance(ingredient, Ingredient):
                 name = ingredient.name
-                for taste in flavors.tastes:
-                    taste_name = taste[0]
-                    points = 0
-                    for word in taste:
-                        if ingredient.flavor != "":
-                            if word in ingredient.flavor:
-                                points += round(4 * volume, 2)
-                        if word in ingredient.character:
-                            points += round(3 * volume, 2)
-                        if ingredient.notes:
-                            if word in ingredient.notes:
-                                points += round(1 * volume, 2)
-                    if points > 0:
-                        try:
-                            taste_profile[taste_name] += points
-                        except KeyError:
-                            taste_profile[taste_name] = points
-                        logger.log(f"{points} points in {taste_name} from {ingredient.name}")
-
+                obj = ingredient
             elif isinstance(ingredient, type):
+                obj = ingredient()
                 name = obj.format_type()
 
-            type_name = obj.format_type()
-            if type_name in flavors.types:
-                for taste in flavors.types[type_name]:
-                    points = round(flavors.types[type_name][taste] * volume, 2)
+            volume = round(obj.get_portions()[self.r_ingredients[ingredient]], 2)
+
+            for typ in [ingredients.Liqueur, ingredients.Spice]:
+                if isinstance(ingredient, typ) or (isinstance(ingredient, type) and ingredient == typ):
+                    if volume < 1:
+                        volume = volume * 50
+
+            for taste in flavors.tastes:
+                points = 0
+
+                name_to_type = {typ().format_type(): typ for typ in ingredients.all_ingredient_types()}
+                for word in flavors.tastes[taste]:
+                    desc_weight = 0
+                    if word in name_to_type:
+                        typ = name_to_type[word]
+                        if isinstance(obj, typ):
+                            logger.log(f"      {name} is a {word} - adds {taste}")
+                            desc_weight += 3
+                    if obj.flavor != "":
+                        if word in obj.flavor:
+                            desc_weight += 5
+                    if obj.character:
+                        if word in obj.character:
+                            desc_weight += 2
+                    if obj.notes:
+                        if word in obj.notes:
+                            desc_weight += 0.75
+                    term_weight = flavors.tastes[taste][word]
+                    points_added = round(term_weight * desc_weight * volume, 2)
+                    points += points_added
+                    if desc_weight > 0:
+                        logger.log(f"        {term_weight}(term) * {desc_weight}(desc) * {volume}(vol) = {points_added} points in {taste} from \"{word}\" in {name}")
+
+                if points > 0:
                     try:
                         taste_profile[taste] += points
                     except KeyError:
                         taste_profile[taste] = points
-                    logger.log(f"{points} points in {taste} from {type_name} ({name})")
+                    logger.log(f"    {points} points in {taste} from {name}")
 
         return taste_profile

@@ -9,9 +9,10 @@ import ingredients
 import logger
 import ui
 import utils
-from recipe import Recipe
 import rich_console
 from rich_console import console
+
+from recipe import Recipe
 
 persistent_commands = {"shop", "buy", "menu"}
 help_panels = {

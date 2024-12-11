@@ -1,3 +1,5 @@
+import flavors
+import rich_console
 from ingredients import load_ingredients_from_db, all_ingredients, MenuItem
 import ui
 from rich_console import console
@@ -17,7 +19,7 @@ for ingredient in all_ingredients:
 current_bar = ui.startup_screen()
 
 for recipe in current_bar.recipes:
-    console.print(recipe)
+    console.print(recipe, style=rich_console.styles.get("cocktails"))
     taste_profile = (current_bar.recipes[recipe].generate_taste_profile())
     sorted_taste_profile = sorted(taste_profile.items(), key=lambda x: x[1], reverse=True)
 

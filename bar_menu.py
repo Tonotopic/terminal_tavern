@@ -6,6 +6,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+import ingredients
 import logger
 import recipe
 from ingredients import Beer, Cider, Wine, Mead, MenuItem, list_ingredients, Ingredient
@@ -67,7 +68,7 @@ class BarMenu:
 
             table_section = table_1
             for menu_section, sect_name, sect_typ in self.menu_sections():
-                if sect_typ is (recipe.Recipe or Beer) or len(menu_section) > 0:
+                if sect_typ in (recipe.Recipe, ingredients.Beer) or len(menu_section) > 0:
                     table_section.add_row()
                     table_section.add_row(Text(sect_name, style=styles.get(sect_name.lower())),
                                           str(len(menu_section)), end_section=True)

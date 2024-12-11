@@ -666,6 +666,12 @@ class LondonDryGin(Gin):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
+class OldTomGin(Gin):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
 # </editor-fold>
 
 
@@ -744,7 +750,7 @@ class Liqueur(Alcohol):
 
     @override
     def get_portions(self):
-        return {"Dash": 1 / 48, "Generous Dash": 1 / 24, "Shot": 2, "Double": 4, }
+        return {"Dash": 1 / 48, "Generous Dash": 1 / 24, "Splash": 1, "Shot": 2, "Double": 4, }
 
 
 class Bitter(Liqueur):
@@ -875,9 +881,9 @@ class Fruit(Additive):
         portions = {"Slice": 1 / 8, "Juice": 1 / 2, "Crushed": 1, "Whole": 1}
         if self.name in unsliceable:
             portions.pop("Slice")
-            for portion in portions:
-                portions[portion] = (portions[portion]) / 8
-        elif self.name in flavors.citrus:
+            '''for portion in portions:
+                portions[portion] = (portions[portion]) / 8'''
+        elif self.name in flavors.tastes["citrus"]:
             portions["Rind"] = 1 / 8
             portions["Zest"] = 1 / 8
 
@@ -886,11 +892,6 @@ class Fruit(Additive):
 
 # </editor-fold>  # Additives
 # </editor-fold>  # Ingredients
-
-
-# Database connection
-connection = sqlite3.connect('cocktailDB.db')
-cursor = connection.cursor()
 
 
 # <editor-fold desc="Functions">
@@ -934,6 +935,9 @@ def create_object(ingredient_type, row_data, column_names):
 
 def load_ingredients_from_db():
     #  Populates all_ingredients with ingredients from the database, including their available volumes and prices
+    # Database connection
+    connection = sqlite3.connect('cocktailDB.db')
+    cursor = connection.cursor()
     global all_ingredients
     cursor.execute("SELECT * FROM ingredients")
     column_names = [description[0] for description in cursor.description]
@@ -957,6 +961,7 @@ def load_ingredients_from_db():
 
         if ingredient:
             all_ingredients.append(ingredient)
+    connection.close()
 
 
 def list_ingredients(container, typ, type_specific=False):
