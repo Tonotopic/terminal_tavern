@@ -1,14 +1,20 @@
+import time
+import asyncio
+from pynput import keyboard
+from itertools import cycle
 from rich.layout import Layout
 from rich import box
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
+from rich.live import Live
 
 import utils
 from rich_console import console, Screen, styles
 from commands import items_to_commands, input_loop, command_to_item
 from ingredients import Ingredient, list_ingredients, Drink
 from bar import Bar
+
 
 
 def startup_screen():
@@ -51,7 +57,8 @@ def dashboard(bar):
     bar_name_panel = Panel(renderable=f"Welcome to [underline]{bar.name}!")
     balance_panel = Panel(renderable=f"Balance: [money]${str(bar.balance)}[/money]  "
                                      f"Reputation: Lvl {bar.rep_level}")
-    menu_panel = Panel(title="~*~ Menu ~*~", renderable=bar.menu.table_menu(expanded=False)[0], border_style=styles.get("bar_menu"))
+    menu_panel = Panel(title="~*~ Menu ~*~", renderable=bar.menu.table_menu(expanded=False)[0],
+                       border_style=styles.get("bar_menu"))
 
     dash_layout = Layout(name="dash_layout")
     dash_layout.split_column(Layout(name="dash_header", size=3),
@@ -158,30 +165,17 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             shop_tables, shop_list = bar.stock.show_stock(table_settings, current_selection, showing_flavored,
                                                           shop=True)
             inv_table, inv_list = bar.stock.show_stock(table_settings, current_selection, showing_flavored)
-            overflow_table = Table(**table_settings)
-            overflow_2 = Table(**table_settings)
-
-            # If there are overflow tables
-            if isinstance(shop_tables, tuple):
-                shop_table = shop_tables[0]
-                shop_table.columns[0].footer = "continued..."
-                overflow_table = shop_tables[1]
-                if len(shop_tables) == 3:
-                    overflow_2 = shop_tables[2]
-
-            else:
-                shop_table = shop_tables
+            inv_table = inv_table[0]
 
             items = list_ingredients(shop_list, current_selection, type_specific=True)
             if items:  # If there are ingredients in this category
                 if not msg:
                     prompt = "Type a category or product to view"
 
-            shop_panel.renderable = shop_table
-            inv_panel.renderable = inv_table
-
             for command in items_to_commands(shop_list):
                 shop_commands.add(command)
+
+            inv_panel.renderable = inv_table
 
         # Specific ingredient currently selected, show volumes
         elif isinstance(current_selection, Ingredient):
@@ -225,16 +219,68 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
         # </editor-fold>
 
-        console.print(shop_layout)
+        if isinstance(current_selection, type):
+            if len(shop_tables) > 1:
+                async def update_display(live, shop_tables):
+                    for table in cycle(shop_tables):
+                        shop_panel.renderable = table
+                        live.update(shop_layout)
+                        await asyncio.sleep(0)
 
-        if len(overflow_table.rows) != 0:
-            console.input("Press 'enter' to continue to next page...")
-            shop_panel.renderable = overflow_table
-            console.print(shop_layout)
-            if len(overflow_2.rows) != 0:
-                console.input("Press 'enter' to continue to next page...")
-                shop_panel.renderable = overflow_2
+                async def listen_for_keypress():
+                    while True:
+                        with keyboard.Listener(on_press=lambda key: asyncio.get_running_loop().stop()) as listener:
+                            listener.join(3)
+                        await asyncio.sleep(0)
+
+                async def play_live():
+
+                    with Live(console=console) as live:
+                        shop_layout["shop_screen"].split_column(Layout(name="footed_shop_screen"),
+                                                                Layout(name="footer", size=1,
+                                                                       renderable="[cmd]Press any key..."))
+                        shop_layout["footed_shop_screen"].split_row(Layout(name="bar", renderable=inv_panel),
+                                                                    Layout(name="shop", renderable=shop_panel))
+
+                        task1 = asyncio.create_task(update_display(live, shop_tables))
+                        task2 = asyncio.create_task(listen_for_keypress())
+                        await asyncio.gather(task1, task2)
+
+                def play_live_2():
+                    with Live(console=console, refresh_per_second=0.00001) as live:
+                        shop_layout["shop_screen"].split_column(Layout(name="footed_shop_screen"),
+                                                                Layout(name="footer", size=1,
+                                                                       renderable="[cmd]Press any key..."))
+                        shop_layout["footed_shop_screen"].split_row(Layout(name="bar", renderable=inv_panel),
+                                                                    Layout(name="shop", renderable=shop_panel))
+                        draw_sentinel = False
+                        for table in cycle(shop_tables):
+                            if draw_sentinel:
+                                break
+                            shop_panel.renderable = table
+                            live.update(shop_layout, refresh=False)
+                            live.refresh()
+
+                            def draw_sentinel_update(key):
+                                nonlocal draw_sentinel
+                                draw_sentinel = True
+                                raise keyboard.Listener.StopException()
+                            with keyboard.Listener(on_press=draw_sentinel_update) as listener:  # , suppress=True
+                                listener.join(3)
+
+                try:
+                    play_live_2()
+                except RuntimeError:
+                    pass
+
+
+
+
+            else:
+                shop_panel.renderable = shop_tables[0]
                 console.print(shop_layout)
+        else:
+            console.print(shop_layout)
 
         # <editor-fold desc="Input">
 

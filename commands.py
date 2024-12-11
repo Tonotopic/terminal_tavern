@@ -285,7 +285,7 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
 
     # TODO: As commands with args are added, skip them here
     # If not a command with args, group spaced words together
-    arg_commands = ["buy", "add", "help", "remove", "load", "markup", "markdown"]
+    arg_commands = ["buy", "add", "remove", "load", "markup", "markdown"]  # help is added by find_command
     if not find_command(inpt.split()[0], arg_commands, feedback=False):
         logger.log(f"Not a command with args - wrapping {inpt} in quotes")
         inpt = f'"{inpt}"'

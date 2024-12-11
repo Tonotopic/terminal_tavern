@@ -56,7 +56,7 @@ class Recipe(MenuItem):
     @override
     def list_item(self, expanded=False):
         name = self.name
-        total_spacing = console.size[0] - 21 if expanded else int(console.size[0] / 2) - 12
+        total_spacing = console.size[0] - 21 if expanded else int(console.size[0] / 2) - 13
         if expanded:
             cocktail_spacing = int(0.3 * total_spacing)
             ingredient_spacing = int(0.7 * total_spacing) - 6

@@ -145,10 +145,10 @@ class BarStock:
 
         if len(overflow_table.rows) != 0:
             if len(overflow_2.rows) != 0:
-                return (table, overflow_table, overflow_2), lst
-            return (table, overflow_table), lst
+                return [table, overflow_table, overflow_2], lst
+            return [table, overflow_table], lst
         else:
-            return table, lst
+            return [table], lst
 
     def check_ingredients(self, recipe):
         """Checks if there are enough ingredients in stock to make the recipe."""

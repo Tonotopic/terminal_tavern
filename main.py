@@ -1,17 +1,17 @@
-from ingredients import load_ingredients_from_db
+from ingredients import load_ingredients_from_db, all_ingredients, MenuItem
 import ui
-from rich_console import Screen
+from rich_console import Screen, console
 
 load_ingredients_from_db()
 
-'''for ingredient in ingredients.all_ingredients:
-    if isinstance(ingredient, ingredients.MenuItem):
+for ingredient in all_ingredients:
+    if isinstance(ingredient, MenuItem):
         try:
             console.print(ingredient.name, ingredient.list_price())
         except IndexError as e:
             console.print(ingredient.name)
         except AttributeError as e:
-            console.print(ingredient.name)'''
+            console.print(ingredient.name)
 
 current_bar = ui.startup_screen()
 while True:
