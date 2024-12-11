@@ -54,19 +54,13 @@ class Bar:
                     continue
             ingredients_string = self.recipes[recipe].format_ingredients()
             recipes_table.add_row(Text(recipe, style=styles.get("cocktails")), ingredients_string)
+            recipes_table.add_row()
             recipes_list.append(self.recipes[recipe])
         return recipes_table, recipes_list
 
     def new_recipe(self):
         logger.log("Drawing new recipe screen...")
-        recipe_table = Table(show_header=False, box=None)
-        recipe_panel = Panel(recipe_table, title="New Recipe", border_style=styles.get("cocktails"))
-        new_recipe_layout = Layout(recipe_panel)
-
-        recipe_table.add_column("portion", vertical="middle")
-        recipe_table.add_column("of")
-        recipe_table.add_column("ingredient/type")
-        recipe_table.add_row()  # Spacing
+        recipe_table = Table()
 
         type_args = set()
         type_lst = set()
@@ -81,6 +75,12 @@ class Bar:
         writing_recipe = True
         recipe_dict = {}
         while writing_recipe:
+            recipe = Recipe(name="in-progress", r_ingredients=recipe_dict)
+            recipe_table = recipe.breakdown_ingredients()
+
+            recipe_panel = Panel(title="New Recipe", border_style=styles.get("cocktails"), renderable=recipe_table)
+            new_recipe_layout = Layout(recipe_panel)
+
             console.print(new_recipe_layout)
 
             rcp_write_prompt = "Enter a type (e.g. bourbon), an ingredient (e.g. lemon, patron silver), or 'finish'"
@@ -102,9 +102,8 @@ class Bar:
             elif cmd == "back":
                 writing_recipe = False
 
-            matching_obj = None
             matching_typ = None
-            name = ""
+            matching_obj = None
             for type_arg in type_args:
                 if cmd == type_arg:
                     matching_typ = commands.command_to_item(type_arg, type_lst)
@@ -136,16 +135,10 @@ class Bar:
                 continue
             for portion in matching_obj.get_portions():
                 if portion_command == portion.lower():
-                    of = "" if isinstance(matching_obj, ingredients.Fruit) and portion_command != "slice" else "of"
-                    if matching_typ is not None:
-                        recipe_dict[matching_typ] = matching_obj.get_portions()[portion]
-                        recipe_table.add_row(f"-   {portion}", of, Text(matching_typ().format_type(),
-                                                                        matching_obj.get_ing_style()))
+                    if matching_typ:
+                        recipe_dict[type(matching_obj)] = portion
                     else:
-                        recipe_dict[matching_obj] = matching_obj.get_portions()[portion]
-                        recipe_table.add_row(f"-   {portion}", of, Text(matching_obj.name,
-                                                                        matching_obj.get_ing_style()))
-                    recipe_table.add_row()  # Spacing
+                        recipe_dict[matching_obj] = portion
 
     # </editor-fold>
 

@@ -13,6 +13,13 @@ for ingredient in all_ingredients:
         except AttributeError as e:
             console.print(ingredient.name)
 
+console.print(console.size)
+console.print(int(console.size[0] / 2))
+console.print(int(console.size[0] % 2))
+console.print(int(console.size[0] / 3))
+console.print(int(console.size[0] % 3))
+
+
 current_bar = ui.startup_screen()
 
 

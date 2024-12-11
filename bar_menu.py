@@ -1,3 +1,5 @@
+import math
+
 from rich import box
 from rich.layout import Layout
 from rich.panel import Panel
@@ -5,6 +7,7 @@ from rich.table import Table
 from rich.text import Text
 
 import logger
+import recipe
 from ingredients import Beer, Cider, Wine, Mead, MenuItem, list_ingredients, Ingredient
 from recipe import Recipe
 from rich_console import console, styles
@@ -65,20 +68,21 @@ class BarMenu:
 
             table_section = table_1
             for menu_section, sect_name, sect_typ in self.menu_sections():
-                table_section.add_row()
-                table_section.add_row(Text(sect_name, style=styles.get(sect_name.lower())),
-                                      str(len(menu_section)), end_section=True)
-                lst.append(sect_typ)
-
-                for menu_item in menu_section:
-                    if len(table_1.rows) > console.height - 8:
-                        if len(table_2.rows) > console.height - 8:
-                            table_section = table_3
-                        else:
-                            table_section = table_2
-                    table_section.add_row(menu_item.list_item(expanded=expanded))
+                if sect_typ is (recipe.Recipe or Beer) or len(menu_section) > 0:
                     table_section.add_row()
-                    lst.append(menu_item)
+                    table_section.add_row(Text(sect_name, style=styles.get(sect_name.lower())),
+                                          str(len(menu_section)), end_section=True)
+                    lst.append(sect_typ)
+
+                    for menu_item in menu_section:
+                        if len(table_1.rows) > console.height - 8:
+                            if len(table_2.rows) > console.height - 8:
+                                table_section = table_3
+                            else:
+                                table_section = table_2
+                        table_section.add_row(menu_item.list_item(expanded=expanded))
+                        table_section.add_row()
+                        lst.append(menu_item)
 
         # Viewing specifically the Beer menu, Cocktail menu, etc
         else:
@@ -111,6 +115,27 @@ class BarMenu:
         filled_tables = [table for table in [table_1, table_2, table_3] if len(table.rows) > 0]
         return filled_tables, lst
 
+    def overview(self, item):
+        if isinstance(item, Ingredient):
+            description_panel = Panel(renderable=item.description(), border_style=item.get_ing_style())
+            stock_rem = self.bar.stock.inventory[item]
+            pours_left = math.floor(stock_rem / item.pour_vol())
+            stock_panel = Panel(renderable=f"[panel]{stock_rem}[/panel]oz in stock ([panel]{pours_left}[/panel] full pours)",
+                                border_style=styles.get("panel"))
+            overview_layout = Layout(name="overview_layout")
+            overview_layout.split_column(Layout(name="description", renderable=description_panel, size=3),
+                                         Layout(name="stock", renderable=stock_panel, size=3))
+
+        elif isinstance(item, recipe.Recipe):
+            ingredients_panel = Panel(renderable=item.breakdown_ingredients(), title=item.name, border_style=styles.get("cocktails"))
+
+            overview_layout = Layout(name="overview_layout")
+            overview_layout.split_row(Layout(name="ingredients", renderable=ingredients_panel))
+
+        console.print(overview_layout)
+        primary_cmd = input_loop("'Back' to go back", ["back"])
+        if primary_cmd == "back":
+            return
     # </editor-fold>
 
     # <editor-fold desc="Modify">
@@ -155,7 +180,8 @@ class BarMenu:
             while adding:
                 if add_typ == Recipe:
                     add_tool_table, add_tool_list = self.bar.show_recipes(off_menu=True)
-                    add_commands.append("new")
+                    if "new" not in add_commands:
+                        add_commands.append("new")
                 else:
                     add_tool_table, add_tool_list = self.bar.stock.table_items(add_typ, off_menu=True)
 

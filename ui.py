@@ -9,6 +9,7 @@ from rich.text import Text
 from rich.live import Live
 
 import logger
+import recipe
 import utils
 from rich_console import console, styles
 from commands import items_to_commands, command_to_item, input_loop
@@ -164,6 +165,7 @@ def menu_screen(bar):
             logger.log("Bar menu screen drawn - viewing All")
             menu_commands = menu_commands.union(items_to_commands(menu_list))
         else:
+            menu_commands = menu_commands.union(items_to_commands(bar.menu.get_section(type_displaying())))
             logger.log("Bar menu screen drawn - viewing " + type_displaying().format_type())
 
         typ = None if type_displaying is None else type_displaying
@@ -178,10 +180,16 @@ def menu_screen(bar):
             bar.set_screen("MAIN")
         elif primary_cmd in ["add", "remove", "markup", "markdown"]:
             pass  # Handled by input loop
-        elif primary_cmd in menu_commands:  # beer, cider, wine, etc.
-            type_displaying = command_to_item(primary_cmd, menu_list)
+        elif primary_cmd in ["cocktails", "beers", "ciders", "wines", "meads"]:
+            item = command_to_item(primary_cmd, menu_list)
+            type_displaying = item
         else:
-            console.print("[error]No allowed command recognized.")
+            section = bar.menu.full_menu() if type_displaying is None else bar.menu.get_section(type_displaying())
+            if primary_cmd in [menu_item.name.lower() for menu_item in section]:
+                item = command_to_item(primary_cmd, menu_list)
+                bar.menu.overview(item)
+            else:
+                console.print("[error]No allowed command recognized.")
 
 
 def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=None):

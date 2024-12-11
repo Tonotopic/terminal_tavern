@@ -22,14 +22,13 @@ help_panels = {
 
     "input": f"Input parsing is [highlight]case-insensitive[/highlight] and allows for partial terms - "
              f"[cmd]'rh b f h'[/cmd] is as effective as 'Rhinegeist Beer for Humans', and in the right context, "
-             f"[cmd]'sh'[/cmd] will work as effectively as [cmd]'shop'[/cmd].\n"
+             f"[cmd]'sh'[/cmd] will work as effectively as [cmd]'shop'[/cmd].\n\n"
              f"An input of 3 or fewer characters will [highlight]priority match to the beginning[/highlight] of the term.\n"
-             f"Generally, when partial input matches to multiple currently valid commands,"
-             f"a message will print listing all matching commands, and the previous prompt will loop.\n"
+             f"Generally, when partial input matches to multiple currently valid commands, "
+             f"a message will print listing all matching commands, and the previous prompt will loop.\n\n"
              f"In cases where one valid command entirely contains another, i.e. [cmd]'lemonade'[/cmd] and [cmd]'lemon'[/cmd], "
-             f"or [cmd]'Crown Royal Black'[/cmd] and [cmd]'Crown Royal Blackberry'[/cmd], the [highlight]most base command[/highlight] will be favored.\n"
-             f"However, mid-word matches are allowed in most cases, so the likes of [cmd]'onade'[/cmd] and [cmd]'yal blackb'[/cmd] "
-             f"can be used instead of having to type all the way to [cmd]'crown royal blackb'[/cmd].",
+             f"or [cmd]'Crown Royal Black'[/cmd] and [cmd]'Crown Royal Blackberry'[/cmd], the [highlight]most base command[/highlight] will be favored.\n\n"
+             f"Mid-word matches are allowed in most cases ([cmd]'berri'[/cmd] can return [cmd]'Raspberri'[/cmd]), and words may be skipped ([cmd]'capy pun'[/cmd] can return [beer]Urban Artifact Capy Snacks Fruit Punch[/beer]).",
 
     # <editor-fold desc="Game Concepts">
     "recipe": f"[highlight]Recipes[/highlight], the backbones of [cocktails]Cocktails[/cocktails], are made up of [highlight]Ingredients[/highlight], "
@@ -38,10 +37,15 @@ help_panels = {
               f"You do [italic]not[/italic] need to have the ingredients in your inventory to write a new recipe.\n"
               f"[cmd]'Help cocktails'[/cmd] to view more on cocktails.",
 
-    "price": f"A menu item's [highlight]price[/highlight] before [highlight]markup[/highlight] is based on its per-unit cost to you -\n "
+    "price": f"A menu item's [highlight]price[/highlight] before [highlight]markup[/highlight] is based on its per-unit cost to you.\n\n"
+             f"For cocktails:\n"
+             f"[money]$4.50[/money] for drinks costing you less than [money]$1.50[/money] wholesale, \n"
+             f"3x wholesale costs between [money]$1.50[/money] and [money]$4.00[/money], \n"
+             f"or 2.5x wholesale costs over [money]$4.00[/money].\n\n"
+             "For other drinks:\n"
              f"[money]$3.75[/money] for drinks costing you less than [money]$1.25[/money] wholesale, \n"
              f"3x wholesale costs between [money]$1.25[/money] and [money]$3.00[/money], \n"
-             f"or 2x wholesale costs over [money]$3.00[/money].\n"
+             f"or 2x wholesale costs over [money]$3.00[/money].\n\n"
              f"[highlight]Markup[/highlight] or [highlight]markdown[/highlight] can then be applied per-item.",
     # </editor-fold>
 
@@ -236,6 +240,7 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
         else:
             if feedback:
                 console.print(f"[error]No matching term found for [cmd]{inpt}")
+                logger.log(f"Valid commands: {sorted_commands}")
         return None
     elif len(matching_commands) > 1:  # found more than one match
         most_base_cmd = None
@@ -308,7 +313,7 @@ def input_loop(prompt, commands, force_beginning=False, ingredient=None, bar=Non
             arg_input = " ".join(args)
             if arg_input == "":
                 draw_help_panel("help")
-                console.print(f"Help topics: {help_args}")
+                console.print(f"Help topics: {list(help_panels.keys())}")
                 continue
 
             arg = find_command(f'"{arg_input}"', help_args)

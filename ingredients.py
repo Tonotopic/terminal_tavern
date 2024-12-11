@@ -6,6 +6,7 @@ from rich.table import Table
 
 from rich_console import console, styles, standardized_spacing
 from utils import quarter_round
+import flavors
 
 all_ingredients = []
 
@@ -85,19 +86,34 @@ class MenuItem:
 
     def list_item(self, expanded=False):
         # Layout offset (12) and markdown offset (15)
-        total_spacing = console.size[0] - 12 - 15 if expanded else int(console.size[0] / 2) - 18
+        total_spacing = console.size[0] - 12 - 14 if expanded else int(console.size[0] / 2) - 19
 
         if isinstance(self, Beer):
             name = self.name
             price_spacing = total_spacing / 3
             beer_spacing = 2 * price_spacing
+            if console.size[0] % 3 > 0:
+                price_spacing -= 1
 
+            formatted_type = self.format_type()
+            abv_str = str(self.abv)
             if len(name) > beer_spacing:
                 hidden_chars = int(len(name) - beer_spacing)
                 name = name[:-(hidden_chars + 3)] + "..."
+            if len(self.format_type() + str(self.abv) + "() (%)") > price_spacing:
+                if console.size[0] % 3 > 0:
+                    price_spacing += 1
+                hidden_chars = int(len(self.format_type() + str(self.abv) + "() (%)") - (price_spacing))
+                formatted_type = formatted_type[:-(hidden_chars + 2)] + ".."
+            else:
+                price_spacing += 1
 
-            return (f"[beer]{name}{standardized_spacing(name, beer_spacing)}({self.format_type()})[/beer]"
-                    f"{standardized_spacing(self.format_type() + "()", price_spacing)}{self.list_price(expanded=expanded)}")
+
+            # TODO cut off
+            return (f"[beer]{name}{standardized_spacing(name, beer_spacing)}"
+                    f"({formatted_type})[/beer] [abv]({self.abv}%)[/abv]"
+                    f"{standardized_spacing(self.format_type() + str(self.abv) + "() (%)", price_spacing)}"
+                    f"{self.list_price(expanded=expanded)}")
 
         elif isinstance(self, Alcohol):
             name = self.name
@@ -137,7 +153,7 @@ class Ingredient:
 
     def format_flavor(self):  # Add the necessary space after flavor if there is one
         if self.flavor:
-            return f"{self.flavor} "
+            return f"[fruit]{self.flavor}[/fruit] "
         else:
             return ""
 
@@ -222,14 +238,13 @@ class Ingredient:
         return {}
 
     def show_portions(self):
-        portions_table = Table()
+        portions_table = Table(show_header=False)
         portions_list = []
-        portions_table.add_column("portion title")
-        portions_table.add_column("fl oz")
 
         portions = self.get_portions()
         for portion_key in portions:
-            portions_table.add_row(portion_key, f"{round(portions[portion_key], 2)} fl oz")
+            portions_table.add_row(portion_key, f"{round(portions[portion_key], 2)} oz")
+            portions_table.add_row()
             portions_list.append(portion_key.lower())
         return portions_table, portions_list
 
@@ -862,9 +877,11 @@ class Fruit(Additive):
         portions = {"Slice": 1 / 8, "Juice": 1 / 2, "Crushed": 1, "Whole": 1}
         if self.name in unsliceable:
             portions.pop("Slice")
-            return portions
-        else:
-            return portions
+        elif self.name in flavors.citruses:
+            portions["Rind"] = 1 / 8
+            portions["Zest"] = 1 / 8
+
+        return portions
 
 
 # </editor-fold>  # Additives
