@@ -92,9 +92,10 @@ def startup_screen():
     if startup_cmd == "new":
         # Name input and checking handled by input loop
         bar = Bar(args[0])
-        utils.save_game(bar)
+        utils.save_bar(bar)
     elif startup_cmd == "load":
-        bar = utils.load_game(int(args[0]) - 1)
+        # TODO: Handle returns None case
+        bar = utils.load_bar(int(args[0]) - 1)
 
     return bar
 

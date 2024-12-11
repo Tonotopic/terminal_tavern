@@ -306,7 +306,7 @@ def input_loop(prompt, commands, force_beginning=False, ingredient=None, bar=Non
         if primary_cmd == "quit":
             if bar:
                 bar.set_screen("main")
-                utils.save_game(bar)
+                utils.save_bar(bar)
             utils.quit()
         elif primary_cmd == "help":
             ingredient_cmds = items_to_commands(ingredients.all_ingredients)

@@ -16,7 +16,6 @@ from recipe import Recipe
 
 global prompt
 
-
 class Screen(Enum):
     MAIN = 1
     SHOP = 2
@@ -43,6 +42,7 @@ class Bar:
 
     # <editor-fold desc="Recipes">
     # @TODO: '2 whole maraschino cherry'
+    # TODO: fix "on the rim of salt"
     def show_recipes(self, off_menu=False):
         recipes_list = []
         recipes_table = Table()
@@ -139,6 +139,21 @@ class Bar:
                         recipe_dict[type(matching_obj)] = portion
                     else:
                         recipe_dict[matching_obj] = portion
+
+    def regen_recipes(self):
+        new_recipes = {}
+        for cocktail_name in self.recipes:
+            recip = self.recipes[cocktail_name]
+            new_ings = {}
+
+            for r_ing in recip.r_ingredients:
+                for db_ing in ingredients.all_ingredients:
+                    if isinstance(r_ing, ingredients.Ingredient) and r_ing.name == db_ing.name:
+                        new_ings[db_ing] = recip.r_ingredients[r_ing]
+
+            new_recipes[cocktail_name] = Recipe(name=cocktail_name, r_ingredients=new_ings)
+
+            recip.taste_profile = recip.generate_taste_profile()
 
     # </editor-fold>
 

@@ -18,6 +18,7 @@ class Recipe(MenuItem):
         super().__init__()
         self.name = name
         self.r_ingredients = r_ingredients
+        self.taste_profile = self.generate_taste_profile() if name else None
         self.markup = 0.0
         self.markdown = 0.0
         self.formatted_markdown = ""
@@ -255,5 +256,18 @@ class Recipe(MenuItem):
                         taste_profile[taste] += points
                     logger.log(f"    {points} points in {taste} from {name}")
 
-        return taste_profile
+        sorted_taste_profile = sorted(taste_profile.items(), key=lambda x: x[1], reverse=True)
+        return sorted_taste_profile
+
+    def print_taste_profile(self):
+        taste_spacing = 15
+
+        string = ""
+        for taste, points in self.taste_profile:
+            # points = points.normalize()
+            style = rich_console.taste_styles.get(taste)
+            string = string + (
+                f"[{style}]{taste}[/{style}]{rich_console.standardized_spacing(taste, taste_spacing)}=    "
+                f"{points}\n")
+        return string
     # </editor-fold>

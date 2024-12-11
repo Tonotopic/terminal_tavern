@@ -130,12 +130,15 @@ class BarMenu:
         elif isinstance(item, recipe.Recipe):
             ingredients_panel = Panel(renderable=item.breakdown_ingredients(), title=item.name,
                                       border_style=styles.get("cocktails"))
+            taste_panel = Panel(renderable=item.print_taste_profile(), title="Taste Profile",
+                                border_style=styles.get("panel"))
 
             overview_layout = Layout(name="overview_layout")
-            overview_layout.split_row(Layout(name="ingredients", renderable=ingredients_panel))
+            overview_layout.split_row(Layout(name="ingredients", renderable=ingredients_panel),
+                                      Layout(name="taste_profile", renderable=taste_panel))
 
         console.print(overview_layout)
-        primary_cmd = input_loop("'Back' to go back", ["back"])
+        primary_cmd = input_loop("'Back' to go back", ["back"], bar=self.bar)
         if primary_cmd == "back":
             return
 

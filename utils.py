@@ -3,11 +3,12 @@ import sys
 import os
 import pickle
 
+import ingredients
 import logger
 from rich_console import console
 
 
-def save_game(bar_obj):
+def save_bar(bar_obj):
     """Saves the game state to a file.
 
     Args:
@@ -27,7 +28,7 @@ def list_saves():
     return file_names
 
 
-def load_game(index):
+def load_bar(index):
     """Loads the game state from a file.
 
     Returns:
@@ -38,6 +39,10 @@ def load_game(index):
         with open(filename, "rb") as f:
             bar_obj = pickle.load(f)
             logger.log(f"Game loaded from {filename}")
+
+            ingredients.load_ingredients_from_db()
+            bar_obj.regen_recipes()
+
             return bar_obj
     except Exception as e:
         console.print(f"Error loading save file: {e}")
