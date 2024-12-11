@@ -1,11 +1,12 @@
-import flavors
-import rich_console
 import utils
 from ingredients import load_ingredients_from_db, all_ingredients, MenuItem
 import ui
 from rich_console import console
 
 load_ingredients_from_db()
+if utils.debugging():
+    width, height = console.size
+    console.size = 120, height
 
 for ingredient in all_ingredients:
     if isinstance(ingredient, MenuItem):

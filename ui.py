@@ -93,7 +93,7 @@ def startup_screen():
         # Name input and checking handled by input loop
         new_bar = Bar(args[0])
         utils.save_bar(new_bar)
-        utils.load_bar(new_bar)
+        utils.load_bar(len(utils.list_saves()) - 1)
     elif startup_cmd == "load":
         utils.load_bar(int(args[0]) - 1)
 

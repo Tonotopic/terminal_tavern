@@ -31,16 +31,32 @@ class Recipe(MenuItem):
         if expanded:
             cocktail_spacing = int(0.3 * total_spacing)
             ingredient_spacing = int(0.7 * total_spacing) - 5
+            trunc_index = ingredient_spacing
 
             ingredients = self.format_ingredients(markup=False)
             formatted_ingredients = self.format_ingredients()
             if len(ingredients) > ingredient_spacing:
-                hidden_chars = len(ingredients) - ingredient_spacing
-                formatted_ingredients = formatted_ingredients[:-(hidden_chars + 3)] + "..."
+                trunc_index -= 2
+                f_trunc_index = -2
+                true_str_index = 0
+                in_markup = False
+                for i, char in enumerate(formatted_ingredients):
+                    f_trunc_index += 1
+                    if true_str_index >= ingredient_spacing - 4:
+                        break
+                    if not in_markup and char == "[":
+                        in_markup = True
+                    elif in_markup:
+                        if char == "]":
+                            in_markup = False
+                    elif not in_markup:
+                        true_str_index += 1
+
+                formatted_ingredients = formatted_ingredients[:(f_trunc_index)] + "[dimmed]..."
 
             return (
                 f"[cocktails]{name}[/cocktails]{standardized_spacing(name, cocktail_spacing)}{formatted_ingredients}"
-                f"{standardized_spacing(ingredients, ingredient_spacing)}"
+                f"{standardized_spacing(ingredients[:trunc_index], ingredient_spacing)}"
                 f"{self.list_price(expanded=True)}")
         else:
             return (f"[cocktails]{name}[/cocktails]{standardized_spacing(name, total_spacing - 5)}"

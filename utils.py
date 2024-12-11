@@ -8,6 +8,18 @@ from rich_console import console
 
 current_bar = None
 
+
+def debugging():
+    """Returns True if running in the PyCharm debugger."""
+    from sys import gettrace
+    if gettrace():
+        return True
+    elif sys.monitoring.get_tool(sys.monitoring.DEBUGGER_ID) is not None:
+        return True
+    else:
+        return False
+
+
 def save_bar(bar_obj):
     """Saves the game state to a file.
 

@@ -289,9 +289,10 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
 
         inpt_cmd = find_command(inpt, commands, force_beginning)
         # Start over parsing with input wrapped in quotes if the potential arg command we detected isn't accurate
-        if arg_cmd and inpt_cmd[0] != arg_cmd:
-            arg_cmd = None
-            continue
+        if arg_cmd:
+            if inpt_cmd is None or inpt_cmd[0] != arg_cmd:
+                arg_cmd = None
+                continue
 
         if isinstance(inpt_cmd, tuple):  # If find_command returned args
             primary_command, args = inpt_cmd  # Unpack the tuple

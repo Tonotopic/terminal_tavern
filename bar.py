@@ -16,6 +16,7 @@ from recipe import Recipe
 
 global prompt
 
+
 class Screen(Enum):
     MAIN = 1
     SHOP = 2
@@ -146,9 +147,12 @@ class Bar:
             new_ings = {}
 
             for r_ing in recip.r_ingredients:
-                for db_ing in ingredients.all_ingredients:
-                    if isinstance(r_ing, ingredients.Ingredient) and r_ing.name == db_ing.name:
-                        new_ings[db_ing] = recip.r_ingredients[r_ing]
+                if isinstance(r_ing, type):
+                    new_ings[r_ing] = recip.r_ingredients[r_ing]
+                elif isinstance(r_ing, ingredients.Ingredient):
+                    for db_ing in ingredients.all_ingredients:
+                        if r_ing.name == db_ing.name:
+                            new_ings[db_ing] = recip.r_ingredients[r_ing]
 
             new_recipe = Recipe(name=cocktail_name, r_ingredients=new_ings)
             new_recipe.markup = recip.markup

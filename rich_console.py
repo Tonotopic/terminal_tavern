@@ -2,7 +2,6 @@ from rich.console import Console
 from rich.theme import Theme
 from rich.style import Style
 
-
 styles = {"abv": Style(color="#d40241"),
           "money": Style(color="#cfba02"),
           "shop": Style(color="#628260"),
