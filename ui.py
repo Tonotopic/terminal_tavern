@@ -142,7 +142,7 @@ def menu_screen(bar):
     bar.set_screen("BAR_MENU")
     global type_displaying
     type_displaying = None
-    prompt = "'Back' to go back"
+    prompt = "Category/item name, 'add \\[type]', 'remove \\[item]', 'markup \\[item]', 'markdown \\[item]', or go back"
 
     while bar.get_screen() == "BAR_MENU":
         menu_tables, menu_list = bar.menu.table_menu(display_type=type_displaying, expanded=True)

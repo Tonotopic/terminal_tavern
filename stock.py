@@ -1,6 +1,7 @@
 from rich.table import Table
 from rich.text import Text
 
+import commands
 import ingredients
 import logger
 from rich_console import console, styles
@@ -144,6 +145,14 @@ class BarStock:
 
         return tables, lst
 
+    def list_type(self, typ, min_vol=0):
+        lst = []
+        for item in self.inventory:
+            if type(item) is typ and self.inventory[item] >= min_vol:
+                lst.append(item)
+        return lst
+
+
     def check_ingredients(self, recipe):
         """Checks if there are enough ingredients in stock to make the recipe."""
         ing_missing = False
@@ -200,9 +209,25 @@ class BarStock:
 
         return False
 
+    def select_ingredients(self, recipe):
+        final_ings = {}
+        for r_ingredient in recipe.r_ingredients:
+            vol = recipe.r_ingredients[r_ingredient]
+            if isinstance(r_ingredient, type):
+                available_ings = self.list_type(r_ingredient, min_vol=vol)
+                console.print([ing.name for ing in available_ings])
+                cmd = commands.input_loop(f"Select {r_ingredient().format_type()}",
+                                          commands.items_to_commands(available_ings))
+                final_ings[commands.command_to_item(cmd, available_ings)] = vol
+            else:
+                final_ings[r_ingredient] = vol
+        return final_ings
+
+
     def pour(self, menu_item: MenuItem):
         if isinstance(menu_item, Recipe):
-            for ingredient, volume in menu_item.r_ingredients:
+            r_ingredients = self.select_ingredients(menu_item)
+            for ingredient, volume in r_ingredients:
                 self.inventory[ingredient] -= volume
                 logger.log(f"Pouring {volume} of {ingredient.name} - stock now at {self.inventory[ingredient]}")
         else:

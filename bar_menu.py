@@ -279,3 +279,10 @@ class BarMenu:
                         return item.mark_down(value, percent)
 
     # </editor-fold>
+
+    def check_stock(self):
+        for menu_item in self.full_menu():
+            if not self.bar.stock.has_enough(menu_item):
+                console.print(f"[error] Not enough {menu_item.name}! Restock or remove from the menu before proceeding.")
+                return False
+        return True

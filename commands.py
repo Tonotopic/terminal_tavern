@@ -55,10 +55,12 @@ help_panels = {
             f"[cmd]'Shop'[/cmd] again to exit. [cmd]'Back'[/cmd] to go back to the parent category.\n"
             f"While viewing a product, [cmd]'buy \\[volume]'",
 
-    "menu": f"[cmd]'Menu'[/cmd] shows the expanded drink menu currently made available at your bar, and allows you to manage it.\n"
-            f"From the menu overview, type a category (i.e. beer) to expand the category.\n"
-            f"[cmd]'Add \\[category]'[/cmd], i.e. [cmd]'add cocktail'[/cmd], to view drinks that can be added to the menu,"
-            f"or additionally for cocktails, to create a new recipe.",
+    "menu": f"[cmd]'Menu'[/cmd] shows the expanded drink menu currently made available at your bar, and allows you to manage it.\n\n"
+            f"From the menu overview, type a category (i.e. beer) to expand the category.\n\n"
+            f"[cmd]'Add \\[type]'[/cmd], i.e. [cmd]'add cocktail'[/cmd], to view drinks that can be added to the menu, "
+            f"or additionally for cocktails, to create a new recipe.\n"
+            f"[cmd]'Remove \\[item]'[/cmd] to remove an item from the menu. Cocktail recipes will not be lost.\n\n"
+            f"[cmd]'markup \\[item]'[/cmd] and [cmd]'markdown \\[item]'[/cmd] work slightly differently; [cmd]'help markup'[/cmd] to read more.",
 
     "buy": f"Syntax: [cmd]'buy \\[volume]'[/cmd]\n, e.g. [cmd]'buy 96'[/cmd]"
            f"Buy the product currently being viewed, in the specified volume.\n"

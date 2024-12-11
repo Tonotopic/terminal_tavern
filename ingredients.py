@@ -108,8 +108,6 @@ class MenuItem:
             else:
                 price_spacing += 1
 
-
-            # TODO cut off
             return (f"[beer]{name}{standardized_spacing(name, beer_spacing)}"
                     f"({formatted_type})[/beer] [abv]({self.abv}%)[/abv]"
                     f"{standardized_spacing(self.format_type() + str(self.abv) + "() (%)", price_spacing)}"

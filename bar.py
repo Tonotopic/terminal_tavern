@@ -152,12 +152,17 @@ class Bar:
                 self.screen = screen
                 break
 
-    def open(self):
-        for recipe in self.recipes:
-            if not self.stock.check_ingredients(recipe):
-                return None
+    def start_day(self):
+        if self.menu.check_stock():
+            return True
+        else:
+            return False
 
     def make_sale(self, menu_item: ingredients.MenuItem):
         if self.stock.has_enough(menu_item):
             self.stock.pour(menu_item)
             self.balance += menu_item.current_price()
+            logger.log(f"Balance +${menu_item.current_price()} ({self.balance})")
+            self.reputation += 1
+            logger.log(f"Reputation +1 ({self.reputation})")
+            return True

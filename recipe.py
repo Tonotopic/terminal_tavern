@@ -17,6 +17,35 @@ class Recipe(MenuItem):
         self.formatted_markdown = ""
 
     @override
+    def list_item(self, expanded=False):
+        name = self.name
+        total_spacing = console.size[0] - 20 if expanded else int(console.size[0] / 2) - 14
+        if expanded:
+            cocktail_spacing = int(0.3 * total_spacing)
+            ingredient_spacing = int(0.7 * total_spacing) - 5
+
+            ingredients = self.format_ingredients(markup=False)
+            formatted_ingredients = self.format_ingredients()
+            if len(ingredients) > ingredient_spacing:
+                hidden_chars = len(ingredients) - ingredient_spacing
+                formatted_ingredients = formatted_ingredients[:-(hidden_chars + 3)] + "..."
+
+            return (
+                f"[cocktails]{name}[/cocktails]{standardized_spacing(name, cocktail_spacing)}{formatted_ingredients}"
+                f"{standardized_spacing(ingredients, ingredient_spacing)}"
+                f"{self.list_price(expanded=True)}")
+        else:
+            return (f"[cocktails]{name}[/cocktails]{standardized_spacing(name, total_spacing - 5)}"
+                    f"{self.list_price(expanded=False)}")
+
+    def format_type(self, plural=False):
+        if plural:
+            return "Cocktails"
+        else:
+            return "Cocktail"
+
+    # <editor-fold desc="Price">
+    @override
     def cost_value(self):
         cost_value = 0
         variable = False
@@ -55,28 +84,35 @@ class Recipe(MenuItem):
             return formatted_price
         else:
             return f"{formatted_price} ({self.formatted_markdown})"
+    # </editor-fold>
 
-    @override
-    def list_item(self, expanded=False):
-        name = self.name
-        total_spacing = console.size[0] - 20 if expanded else int(console.size[0] / 2) - 14
-        if expanded:
-            cocktail_spacing = int(0.3 * total_spacing)
-            ingredient_spacing = int(0.7 * total_spacing) - 5
+    # <editor-fold desc="Ingredients">
+    def format_ingredients(self, markup=True):
+        r_ings = []
+        for entry in self.r_ingredients:
+            if isinstance(entry, type):
+                if markup:
+                    r_ings.append(f"[{entry().get_ing_style()}]{entry().format_type()}")
+                else:
+                    r_ings.append(entry().format_type())
+            elif isinstance(entry, Ingredient):
+                if markup:
+                    r_ings.append(f"[{entry.get_ing_style()}]{entry.name}")
+                else:
+                    r_ings.append(entry.name)
+            else:
+                console.print("[error]Recipe ingredients contains item not registering as ingredient or type")
+        ingredients_string = ""
+        for index, ing_name in enumerate(r_ings):
+            ingredients_string += f"{ing_name}, "
 
-            ingredients = self.format_ingredients(markup=False)
-            formatted_ingredients = self.format_ingredients()
-            if len(ingredients) > ingredient_spacing:
-                hidden_chars = len(ingredients) - ingredient_spacing
-                formatted_ingredients = formatted_ingredients[:-(hidden_chars + 3)] + "..."
+        # Excludes the comma+space if at the end
+        formatted_ing_string = ""
+        for index, char in enumerate(ingredients_string):
+            if index < len(ingredients_string) - 2:
+                formatted_ing_string += char
 
-            return (
-                f"[cocktails]{name}[/cocktails]{standardized_spacing(name, cocktail_spacing)}{formatted_ingredients}"
-                f"{standardized_spacing(ingredients, ingredient_spacing)}"
-                f"{self.list_price(expanded=True)}")
-        else:
-            return (f"[cocktails]{name}[/cocktails]{standardized_spacing(name, total_spacing - 5)}"
-                    f"{self.list_price(expanded=False)}")
+        return formatted_ing_string
 
     def breakdown_ingredients(self):
         recipe_table = Table(show_header=False, box=None)
@@ -117,43 +153,8 @@ class Recipe(MenuItem):
 
         return recipe_table
 
-    def format_type(self, plural=False):
-        if plural:
-            return "Cocktails"
-        else:
-            return "Cocktail"
 
-    def format_ingredients(self, markup=True):
-        r_ings = []
-        for entry in self.r_ingredients:
-            if isinstance(entry, type):
-                if markup:
-                    r_ings.append(f"[{entry().get_ing_style()}]{entry().format_type()}")
-                else:
-                    r_ings.append(entry().format_type())
-            elif isinstance(entry, Ingredient):
-                if markup:
-                    r_ings.append(f"[{entry.get_ing_style()}]{entry.name}")
-                else:
-                    r_ings.append(entry.name)
-            else:
-                console.print("[error]Recipe ingredients contains item not registering as ingredient or type")
-        ingredients_string = ""
-        for index, ing_name in enumerate(r_ings):
-            ingredients_string += f"{ing_name}, "
-
-        # Excludes the comma+space if at the end
-        formatted_ing_string = ""
-        for index, char in enumerate(ingredients_string):
-            if index < len(ingredients_string) - 2:
-                formatted_ing_string += char
-
-        return formatted_ing_string
-
-    def select_ingredients(self):
-        for r_ingredient in self.r_ingredients:
-            if isinstance(r_ingredient, type):
-                pass
+    # </editor-fold>
 
     def calculate_abv(self):
         """Calculates the ABV of the recipe using ingredient ABVs."""
