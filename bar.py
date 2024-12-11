@@ -61,7 +61,6 @@ class Bar:
               :param current_selection: The current category or product being displayed.
               :param msg: One-time specific prompt, such as confirming a successful purchase.
             """
-        # TODO: Shop list goes off screen when larger than display
         self.screen = SHOP
         showing_flavored = False
 
@@ -226,19 +225,27 @@ class Bar:
                 # Force match to the beginning of the word so "alco"+ doesn't return both commands
                 force_beginning = True
 
+            # There's probably a better way to custom loop the input
             primary_cmd = None
             while primary_cmd is None:
-                primary_cmd, args = commands.parse_input(prompt, shop_commands, force_beginning)
+                inpt = commands.parse_input(prompt, shop_commands, force_beginning)
+                if inpt is None:
+                    continue
+                primary_cmd, args = inpt
+                if primary_cmd == "buy":  # Inside the loop so error messages with buy can be shown on same screen
+                    # Inject ingredient from menu into buy command
+                    args.insert(0, current_selection)
+                    if self.bar_cmd.onecmd([primary_cmd, args], return_result=True):
+                        msg = (f"Bought {args[1]}oz of [{style}]{current_selection.name}[/{style}]. "
+                               f"Current stock: {self.inventory[current_selection]}oz")
+                        self.shop(type(current_selection), msg)  # Go back from the ingredient screen
+                    else:
+                        primary_cmd = None
+                elif primary_cmd == "help":
+                    self.bar_cmd.onecmd(primary_cmd, args)
+                    primary_cmd = None
 
-            if primary_cmd == "buy":
-                # Inject ingredient from menu into buy command
-                args.insert(0, current_selection)
-                if self.bar_cmd.onecmd([primary_cmd, args], return_result=True):
-                    msg = (f"Bought {args[1]}oz of [{style}]{current_selection.name}[/{style}]. "
-                           f"Current stock: {self.inventory[current_selection]}oz")
-
-                    self.shop(type(current_selection), msg)  # Go back from the ingredient screen
-            elif primary_cmd == "back":
+            if primary_cmd == "back":
                 if current_selection == Ingredient:
                     self.screen = MAIN
                     return
@@ -273,34 +280,45 @@ class Bar:
                       ingredients.Cider, ingredients.Wine,
                       ingredients.Mead]
 
-        if typ is None:  # Menu overview
+        # Menu overview
+        if typ is None:
             table.add_column("Type")
             table.add_column("Quantity")
-            for i in range(5):
+            for i in range(5):  # Menu categories
                 table.add_row(Text(menu_cats[i], style=rich_console.styles.get(f"{menu_cats[i].lower()}")),
                               str(len(self.menu[i])), end_section=True)
                 command = menu_cats[i].lower() if menu_cats[i] == "Cocktails" else f"{menu_cats[i].lower()}s"
                 lst.append(commands.command_to_item(command, types_list))
+
                 if expanded:
                     for index, menu_item in enumerate(self.menu[i]):
                         if isinstance(menu_item, ingredients.Beer):
-                            table.add_row(Text(f"{menu_item.name}       ({menu_item.format_type()})",
+                            beer_spacing = 50
+                            table.add_row(Text(f"{menu_item.name}"
+                                               f"{rich_console.standardized_spacing(menu_item.name, beer_spacing)}"
+                                               f"({menu_item.format_type()})",
                                                style=menu_item.get_ing_style()))
                         elif isinstance(menu_item, Recipe):
-                            table.add_row(f"{menu_item.name}       {self.menu[i][index].format_ingredients()}")
+                            cocktail_spacing = 30
+                            table.add_row(f"{menu_item.name}"
+                                          f"{rich_console.standardized_spacing(menu_item.name, cocktail_spacing)}"
+                                          f"{self.menu[i][index].format_ingredients()}")
                         else:
                             table.add_row(Text(menu_item.name, style=menu_item.get_ing_style()))
                     table.add_row()
 
+        # Viewing specifically the Beer menu, Cocktail menu, etc
         else:
             table.expand = False
+            total_info_spacing = 20
             for i in range(5):
                 if typ == types_list[i]:
                     table.add_row(menu_cats[i], str(len(self.menu[i])), end_section=True)  # Cocktails     8
                     if typ == recipe.Recipe:
                         for index, recip in enumerate(self.menu[i]):
-                            # @TODO: Standardize spacing
-                            table.add_row(f"{recip.name}       {self.menu[i][index].format_ingredients()}")
+                            table.add_row(f"{recip.name}"
+                                          f"{rich_console.standardized_spacing(recip.name, total_info_spacing)}"
+                                          f"{self.menu[i][index].format_ingredients()}")
                             table.add_row()
                     else:
                         for ingredient in list_ingredients(self.menu[i], typ):

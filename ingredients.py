@@ -9,7 +9,6 @@ all_ingredients = []
 
 
 # TODO: Soda water always available
-# TODO: Better solution for "Crown Royal Black" vs "Blackberry"
 # <editor-fold desc="Ingredients">
 class Ingredient:
     def __init__(self, name=None, flavor=None, character=None, notes=None,
@@ -136,7 +135,11 @@ class Alcohol(Drink):
 
     def abv_desc(self):
         if self.abv is not None:
-            return f"It is [abv]{self.abv}% ABV[/abv]"
+            return f" It is [abv]{self.abv}% ABV.[/abv]"
+
+    @override
+    def description(self):
+        return super().description() + self.abv_desc()
 
 
 # <editor-fold desc="Beer">
@@ -463,6 +466,7 @@ class DarkLager(Lager):
         else:
             return type_name
 
+
 class Schwarzbier(DarkLager):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
@@ -470,7 +474,6 @@ class Schwarzbier(DarkLager):
 
     @override
     def format_type(self, plural=False):
-        # TODO: This is boilerplate
         type_name = "Schwarzbier"
         if plural:
             return f"{type_name}s"
@@ -858,7 +861,6 @@ class HardSoda(Alcohol):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-
     @override
     def format_type(self, plural=False):
         type_name = "Hard Soda"
@@ -866,10 +868,10 @@ class HardSoda(Alcohol):
             return f"{type_name}s"
         else:
             return type_name
+
     @override
     def get_portions(self):
         return {"4oz": 4, "6oz": 6, "8oz": 8}
-
 
 
 # </editor-fold>  # Alcohols
@@ -1102,13 +1104,8 @@ def get_ingredient(ingredient_name):
 
 def categorize_spirits(spirits):
     """Categorizes spirits into 'Flavored' and 'Unflavored' groups."""
-    flavored = []
-    unflavored = []
-    for spirit in spirits:
-        if spirit.flavor:  # Check if the spirit has a flavor attribute
-            flavored.append(spirit)
-        else:
-            unflavored.append(spirit)
+    flavored = [spirit for spirit in spirits if spirit.flavor]
+    unflavored = [spirit for spirit in spirits if not spirit.flavor]
     return flavored, unflavored
 
 # </editor-fold>

@@ -18,7 +18,10 @@ while True:
     prompt = "'Shop' or view the 'menu'"
     primary_cmd = None
     while primary_cmd is None:
-        primary_cmd, args = commands.parse_input(prompt, commands.main_commands)
+        inpt = commands.parse_input(prompt, ["shop", "menu"])
+        if inpt is None:
+            continue
+        primary_cmd, args = inpt
     bar.bar_cmd.onecmd(primary_cmd)
 
 

@@ -2,7 +2,6 @@ from rich.console import Console
 from rich.theme import Theme
 from rich.style import Style
 
-
 styles = {"abv": Style(color="#d40241"),
           "money": Style(color="#cfba02"),
           "shop": Style(color="#628260"),
@@ -10,6 +9,9 @@ styles = {"abv": Style(color="#d40241"),
           "panel": Style(color="#3c8fc2"),
           "bar_menu": Style(color="#9c0834"),
           "prompt": Style(color="#429e45"),
+          "cmd": Style(color="#429e45"),
+          "warn": Style(color="#fcba03"),
+          "highlight": Style(color="#a3bfff"),
           "error": Style(color="#ba2318"),
           # Ingredients
           "cocktails": Style(color="#5de3c1"),
@@ -44,3 +46,11 @@ console = Console(theme=theme)
 # Make room for the prompt line when anything renders using display size
 width, height = console.size
 console.size = width, height - 1
+
+
+def standardized_spacing(preceding_string, total_spacing):
+    item_info_spacing = total_spacing - len(preceding_string)
+    info_spacing_string = ""
+    for spacing_index in range(item_info_spacing):
+        info_spacing_string += " "
+    return info_spacing_string
