@@ -203,7 +203,7 @@ def menu_screen(bar):
         elif primary_cmd in ["add", "remove", "markup", "markdown"]:
             pass  # Handled by input loop
         elif primary_cmd in ["cocktails", "beers", "ciders", "wines", "meads"]:
-            item = command_to_item(primary_cmd, menu_list)
+            item = command_to_item(primary_cmd, menu_list, plural=True)
             type_displaying = item
         else:
             section = bar.menu.full_menu() if type_displaying is None else bar.menu.get_section(type_displaying())
