@@ -296,7 +296,7 @@ class Beer(Alcohol, MenuItem):
 
     @override
     def get_portions(self):
-        return {"8oz": 8, "6oz": 6, "4oz": 4}
+        return {"8oz": 8, "5oz": 5, "2oz": 2, "1oz": 1}
 
     def pour_vol(self):
         return 12
@@ -530,7 +530,7 @@ class Cider(Alcohol, MenuItem):
 
     @override
     def get_portions(self):
-        return {"8oz": 8, "6oz": 6, "4oz": 4}
+        return {"8oz": 8, "5oz": 5, "2oz": 2, "1oz": 1}
 
     def pour_vol(self):
         return 12
@@ -545,7 +545,7 @@ class Wine(Alcohol, MenuItem):
 
     @override
     def get_portions(self):
-        return {"Glass Pour": 6, "Spritzer Pour": 4, "Shot": 2}
+        return {"Glass Pour": 6, "Spritzer Pour": 4, "Shot": 2, "1oz": 1, "Splash": 0.5}
 
     def pour_vol(self):
         return 6
@@ -616,7 +616,7 @@ class Spirit(Alcohol):
 
     @override
     def get_portions(self):
-        return {"Splash": 1, "Shot": 2, "Double": 4}
+        return {"Splash": 0.5, "1oz": 1, "Shot": 2, "Double": 4}
 
 
 class Vodka(Spirit):
@@ -736,7 +736,7 @@ class Mead(Alcohol, MenuItem):
 
     @override
     def get_portions(self):
-        return {"Glass Pour": 6, "Spritzer Pour": 4, "Shot": 2}
+        return {"Glass Pour": 6, "Spritzer Pour": 4, "Shot": 2, "1oz": 1, "Splash": 0.5}
 
     def pour_vol(self):
         return 6
@@ -750,7 +750,7 @@ class Liqueur(Alcohol):
 
     @override
     def get_portions(self):
-        return {"Dash": 1 / 48, "Generous Dash": 1 / 24, "Splash": 1, "Shot": 2, "Double": 4, }
+        return {"Dash": 1 / 48, "Generous Dash": 1 / 24, "Splash": 0.5, "1oz": 1, "Shot": 2, "Double": 4, }
 
 
 class Bitter(Liqueur):
@@ -780,7 +780,7 @@ class HardSoda(Alcohol):
 
     @override
     def get_portions(self):
-        return {"4oz": 4, "6oz": 6, "8oz": 8}
+        return {"1oz": 1, "2oz": 2, "4oz": 4, "6oz": 6, "8oz": 8}
 
 
 # </editor-fold>  # Alcohols
@@ -797,7 +797,7 @@ class NonAlcohol(Drink):
 
     @override
     def get_portions(self):
-        return {"Splash": 1, "2oz": 2, "4oz": 4, "6oz": 6, "8oz": 8}
+        return {"Splash": 0.5, "1oz": 1, "2oz": 2, "4oz": 4, "6oz": 6, "8oz": 8}
 
 
 class Tea(NonAlcohol):
@@ -836,7 +836,7 @@ class Additive(Ingredient):
 
     @override
     def get_portions(self):
-        return {"1oz": 1, "2oz": 2, "3oz": 3, "4oz": 4}
+        return {"Half ounce": 0.5, "1oz": 1, "2oz": 2, "3oz": 3, "4oz": 4}
 
 
 class Syrup(Additive):
