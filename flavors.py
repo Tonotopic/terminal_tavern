@@ -28,5 +28,6 @@ hoppy = ["hoppy", "hops", "beer"]
 
 # Creamy reduces dark
 # Dull reduces complex, exotic, balanced
+# High abv reduces easy-drinking
 
 # Vegetal clashes with sweet

@@ -160,7 +160,6 @@ class Bar:
         logger.log("Recipes regenerated.")
         self.menu.regen()
 
-
     # </editor-fold>
 
     def get_screen(self):

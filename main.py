@@ -5,6 +5,8 @@ from ingredients import load_ingredients_from_db, all_ingredients, MenuItem
 import ui
 from rich_console import console
 
+load_ingredients_from_db()
+
 for ingredient in all_ingredients:
     if isinstance(ingredient, MenuItem):
         try:

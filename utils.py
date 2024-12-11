@@ -3,7 +3,6 @@ import sys
 import os
 import pickle
 
-import ingredients
 import logger
 from rich_console import console
 
@@ -42,7 +41,6 @@ def load_bar(index):
             current_bar = pickle.load(f)
             logger.log(f"Game loaded from {filename}")
 
-            ingredients.load_ingredients_from_db()
             current_bar.regen_recipes()
 
             return current_bar
