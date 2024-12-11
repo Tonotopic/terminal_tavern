@@ -2,6 +2,7 @@ import sys
 import os
 import pickle
 
+import logger
 from rich_console import console
 
 
@@ -42,5 +43,6 @@ def load_game(index):
 
 def quit():
     """Exit the application."""
-    print("Exiting...")  # Optional: Print a message before exiting
-    sys.exit(0)  # Terminate the application with exit code 0 (success)
+    logger.close_log()
+    print("Exiting...")
+    sys.exit(0)

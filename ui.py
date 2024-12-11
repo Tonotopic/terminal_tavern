@@ -49,16 +49,20 @@ def dashboard(bar):
     # <editor-fold desc="Layout">
 
     bar_name_panel = Panel(renderable=f"Welcome to [underline]{bar.name}!")
-    balance_panel = Panel(renderable=f"Balance: [money]${str(bar.balance)}")
+    balance_panel = Panel(renderable=f"Balance: [money]${str(bar.balance)}[/money]  "
+                                     f"Reputation: Lvl {bar.rep_level}")
+    menu_panel = Panel(title="~*~ Menu ~*~", renderable=bar.menu.table_menu(expanded=False)[0], border_style=styles.get("bar_menu"))
 
-    bar_layout = Layout(name="bar_layout")
-    bar_layout.split_column(Layout(name="bar_header", size=3),
-                            Layout(name="bar_body"))
-    bar_layout["bar_header"].split_row(Layout(name="bar_name", renderable=bar_name_panel),
-                                       Layout(name="balance", renderable=balance_panel))
+    dash_layout = Layout(name="dash_layout")
+    dash_layout.split_column(Layout(name="dash_header", size=3),
+                             Layout(name="dash_body"))
+    dash_layout["dash_header"].split_row(Layout(name="bar_name", renderable=bar_name_panel),
+                                         Layout(name="balance", renderable=balance_panel))
+    dash_layout["dash_body"].split_row(Layout(name="menu_layout", renderable=menu_panel),
+                                       Layout())
     # </editor-fold>
 
-    console.print(bar_layout)
+    console.print(dash_layout)
 
     prompt = "'Shop' or view the 'menu'"
     primary_cmd, args = input_loop(prompt, ["shop", "menu"], bar=bar)
@@ -74,6 +78,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
     The user can view and buy products in their available quantities.
 
         Args:
+          :param bar: Active bar object.
           :param current_selection: The current category or product being displayed.
           :param msg: One-time specific prompt, such as confirming a successful purchase.
         """
@@ -238,11 +243,15 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
         primary_cmd, args = input_loop(prompt, shop_commands, force_beginning, current_selection, bar=bar)
 
+        if msg:
+            msg = None
+
         if primary_cmd == "buy":
             # Buy has been executed in input loop
             msg = (f"Bought {args[0]}oz of [{style}]{current_selection.name}[/{style}]. "
                    f"Current stock: {bar.stock.inventory[current_selection]}oz")
-            shop_screen(bar=bar, current_selection=type(current_selection), msg=msg)  # Go back from the ingredient screen
+            shop_screen(bar=bar, current_selection=type(current_selection),
+                        msg=msg)  # Go back from the ingredient screen
             return
         elif primary_cmd == "back":
             if current_selection == Ingredient:
@@ -278,7 +287,7 @@ def menu_screen(bar):
 
     while bar.screen == Screen.BAR_MENU:
         menu_table, menu_list = bar.menu.table_menu(display_type=type_displaying, expanded=True)
-        bar_menu_panel = Panel(title=f"{bar.name} Menu", renderable=menu_table,
+        bar_menu_panel = Panel(title=f"~*~ {bar.name} Menu ~*~", renderable=menu_table,
                                border_style=styles.get("bar_menu"))
         bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
 
@@ -305,15 +314,8 @@ def menu_screen(bar):
                 type_displaying = None
         elif primary_cmd == "menu":
             bar.screen = Screen.MAIN
-        elif primary_cmd == "add":
-            # Add handled by input loop
-            continue
-        elif primary_cmd == "remove":
-            bar.remove(args[0])
-        elif primary_cmd == "markup":
-            bar.markup(args[0])
-        elif primary_cmd == "markdown":
-            bar.markdown(args[0])
+        elif primary_cmd in ["add", "remove", "markup", "markdown"]:
+            pass  # Handled by input loop
         elif primary_cmd in menu_commands:  # beer, cider, wine, etc.
             type_displaying = command_to_item(primary_cmd, menu_list)
         else:

@@ -1,10 +1,8 @@
-import commands
-import bar
-import ingredients
+from ingredients import load_ingredients_from_db
 import ui
-from rich_console import console, Screen
+from rich_console import Screen
 
-ingredients.load_ingredients_from_db()
+load_ingredients_from_db()
 
 '''for ingredient in ingredients.all_ingredients:
     if isinstance(ingredient, ingredients.MenuItem):

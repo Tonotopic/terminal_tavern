@@ -1,19 +1,56 @@
-from rich import box
 from rich.table import Table
 from rich.text import Text
-from rich.panel import Panel
-from rich.layout import Layout
-from rich.style import Style
 
-from rich_console import console, styles, Screen
-import commands
-from ingredients import all_ingredients, list_ingredients, Ingredient, Spirit, Liqueur, categorize_spirits, Drink
+import ingredients
+import logger
+from rich_console import console, styles
+from recipe import Recipe
+from ingredients import all_ingredients, list_ingredients, Ingredient, Spirit, Liqueur, categorize_spirits, get_ingredient, MenuItem, Beer, Cider, Wine, Mead
+
 
 # TODO: "Shop beer"
 class BarStock:
     def __init__(self, bar):
         self.bar = bar
         self.inventory = {}  # Dictionary: {ingredient_object: fluid_ounces}
+
+    def buy(self, ingredient: Ingredient = None, arg=""):
+        parts = arg.split()
+
+        if len(parts) == 2:  # i.e. buy 24
+            ingredient = get_ingredient(str(parts[0]))
+            volume = parts[1]
+
+        elif len(parts) == 1:
+            volume = arg
+
+        else:
+            console.print("[error]Incorrect number of arguments. Usage: buy <quantity>")
+            return False
+
+        try:
+            volume = int(volume)
+        except ValueError:
+            console.print("[error]Invalid quantity. Please enter a number.")
+            return False
+
+        if ingredient:
+            if volume in ingredient.volumes:
+                price = ingredient.volumes[volume]
+                balance = self.bar.balance
+                if balance >= price:
+                    self.bar.balance -= price
+                    self.inventory[ingredient] = self.inventory.get(ingredient, 0) + volume
+                    return True
+                else:
+                    console.print(f"[error]Insufficient funds. Bar balance: [money]${balance}")
+                    return False
+            else:
+                console.print(f"[error]Invalid volume. Available: {[oz for oz in ingredient.volumes.keys()]}")
+                return False
+        else:
+            console.print("[error]No ingredient selected. Please select an ingredient first.")
+            return False
 
     def table_items(self, typ, off_menu=False):
         inv_ingredients = list_ingredients(self.inventory, typ)
@@ -113,23 +150,69 @@ class BarStock:
         else:
             return table, lst
 
-
-
     def check_ingredients(self, recipe):
-        """Checks if there are ingredients in the inventory to make the recipe."""
-        for required_ingredient, quantity in recipe.r_ingredients.items():
-            if isinstance(required_ingredient, type):  # Check if requirement is a type (accepts any)
+        """Checks if there are enough ingredients in stock to make the recipe."""
+        ing_missing = False
+        for req_ingredient, req_quantity in recipe.r_ingredients.items():
+            if isinstance(req_ingredient, type):  # Check if requirement is a type (accepts any)
                 found_match = False
                 for inv_ingredient in self.inventory:
                     if isinstance(inv_ingredient,
-                                  required_ingredient):
-                        found_match = True
-                        break  # Stop checking further for this ingredient
+                                  req_ingredient):
+
+                        if self.inventory[inv_ingredient] >= req_quantity:
+                            found_match = True
+                            logger.log(f"{inv_ingredient.name} in quantity {self.inventory[inv_ingredient]} satisfies "
+                                       f"{req_ingredient().format_type()} requirement")
+                            break
+                        else:
+                            logger.log(f"{inv_ingredient.name} in quantity {self.inventory[inv_ingredient]} "
+                                       f"not enough for {req_ingredient().format_type()} requirement")
                 if not found_match:
-                    return False  # No ingredient of the right type provided
+                    if not ing_missing:
+                        ing_missing = True
+                        console.print(f"[error]Ingredients missing for {recipe.name}:")
+                    console.print(f"[error] Not enough {req_ingredient().format_type()}!")
+                    # Continue looping so all missing ingredients are printed
             else:  # Specific ingredient required
-                if required_ingredient not in self.inventory:
+                if req_ingredient in self.inventory:
+                    if self.inventory[req_ingredient] >= req_quantity:
+                        logger.log(f"{req_ingredient.name} in quantity {self.inventory[req_ingredient]} "
+                                   f"satisfies requirement")
+                        break
+                    else:
+                        logger.log(
+                            f"{req_ingredient.name} in quantity {self.inventory[req_ingredient]} "
+                            f"not enough to satisfy requirement of {req_quantity}")
+                        console.print(f"[error] Not enough {req_ingredient.name}!")
+                else:
+                    console.print(f"[error] No {req_ingredient.name}!")
                     return False  # Missing specific ingredient
                 # Add quantity check if needed
+        if ing_missing:
+            return False
+        else:
+            return True  # All ingredients present
 
-        return True  # All ingredients are valid
+    def has_enough(self, menu_item: MenuItem):
+        if isinstance(menu_item, Recipe):
+            if self.check_ingredients(menu_item):
+                return True
+        else:
+            if self.inventory[menu_item] >= menu_item.pour_vol():
+                return True
+            else:
+                console.print(f"[error]Not enough {menu_item.name}!")
+
+        return False
+
+    def pour(self, menu_item: MenuItem):
+        if isinstance(menu_item, Recipe):
+            for ingredient, volume in menu_item.r_ingredients:
+                self.inventory[ingredient] -= volume
+                logger.log(f"Pouring {volume} of {ingredient.name} - stock now at {self.inventory[ingredient]}")
+        else:
+            self.inventory[menu_item] -= menu_item.pour_vol()
+            logger.log(f"Pouring {menu_item.pour_vol()} of {menu_item.name} - stock now at {self.inventory[menu_item]}")
+
+

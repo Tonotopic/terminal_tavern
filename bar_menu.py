@@ -28,7 +28,15 @@ class BarMenu:
         return [(self.cocktails, "Cocktails", Recipe), (self.beer, "Beer", Beer), (self.cider, "Cider", Cider),
                 (self.wine, "Wine", Wine), (self.mead, "Mead", Mead)]
 
-    def get_section(self, item: MenuItem):
+    def get_section(self, item: str | MenuItem):
+        if isinstance(item, str):
+            for category in self.menu_sections():
+                if item == category[1].lower():
+                    return category[0]
+            menu_item = find_command(item, items_to_commands(self.full_menu()))
+            if menu_item:
+                item = command_to_item(menu_item, self.full_menu())
+
         for menu_section in self.menu_sections():
             if isinstance(item, menu_section[2]):
                 return menu_section[0]
@@ -43,7 +51,8 @@ class BarMenu:
 
         # Menu overview
         if display_type is None:
-            table.add_column("Type", width=115)
+            width = console.size[0] if expanded else int(console.size[0]/2)
+            table.add_column("Type", width=width - 12)
             table.add_column("Quantity")
             for menu_section, sect_name, sect_typ in self.menu_sections():
                 table.add_row()
@@ -51,11 +60,10 @@ class BarMenu:
                               str(len(menu_section)), end_section=True)
                 lst.append(sect_typ)
 
-                if expanded:
-                    for menu_item in menu_section:
-                        table.add_row(menu_item.list_item())
-                        table.add_row()
-                        lst.append(menu_item)
+                for menu_item in menu_section:
+                    table.add_row(menu_item.list_item(expanded=expanded))
+                    table.add_row()
+                    lst.append(menu_item)
 
         # Viewing specifically the Beer menu, Cocktail menu, etc
         else:
@@ -71,18 +79,11 @@ class BarMenu:
             table.add_row(Text(sect_name, style=styles.get(sect_name.lower())), str(len(display_section)),
                           end_section=True)
 
-            if display_section == self.cocktails:
-                for cocktail in display_section:
-                    listing = cocktail.list_item()
-                    table.add_row(listing)
-                    table.add_row()
-                    lst.append(cocktail)
-            else:
-                for item in display_section:
-                    listing = item.list_item()
-                    table.add_row(listing)
-                    table.add_row()
-                    lst.append(item)
+            for item in display_section:
+                listing = item.list_item(expanded=expanded)
+                table.add_row(listing)
+                table.add_row()
+                lst.append(item)
 
         return table, lst
 
@@ -110,10 +111,7 @@ class BarMenu:
         else:  # No ingredient given
             if isinstance(add_typ, str):
                 typ_cmd = find_command(add_typ, [section[1].lower() for section in self.menu_sections()])
-                add_typ = None
-                if typ_cmd:
-                    pass
-                else:
+                if not typ_cmd:
                     console.print(f"[error]{typ_cmd} did not match to a menu category")
                     return False
                 add_typ = command_to_item(typ_cmd, [Recipe, ingredients.Beer, ingredients.Cider, ingredients.Wine,
@@ -138,15 +136,18 @@ class BarMenu:
                     console.print(recipes_layout)
 
                     prompt = "Enter the name of a recipe, or 'new' to define a new recipe"
-                    recipe_cmd = input_loop(prompt, recipe_commands, bar=self.bar)[0]
+                    add_cmd = input_loop(prompt, recipe_commands, bar=self.bar)[0]
 
-                    if recipe_cmd == "new":
+                    if add_cmd == "new":
                         self.bar.new_recipe()
-                    elif recipe_cmd == "back":
+                    elif add_cmd == "back":
+                        return True
+                    elif add_cmd == "menu":
+                        self.bar.screen = Screen.MAIN
                         return True
                     else:
                         for index, recipe in enumerate(recipes_list):
-                            if recipe_cmd == recipe.name.lower():
+                            if add_cmd == recipe.name.lower():
                                 self.cocktails.append(recipes_list[index])
                                 return True
 
@@ -160,12 +161,16 @@ class BarMenu:
                 adding = True
                 add_commands = items_to_commands(add_tool_list)
                 add_commands.add("back")
+                add_commands.add("menu")
                 while adding:
-                    recipe_cmd, ing_args = input_loop("Type a name to add", add_commands, bar=self.bar)
-                    if recipe_cmd == "back":
+                    add_cmd, ing_args = input_loop("Type a name to add", add_commands, bar=self.bar)
+                    if add_cmd == "back":
+                        return True
+                    elif add_cmd == "menu":
+                        self.bar.screen = Screen.MAIN
                         return True
                     else:
-                        ingredient = command_to_item(recipe_cmd, inv_ingredients)
+                        ingredient = command_to_item(add_cmd, inv_ingredients)
                         self.get_section(ingredient).append(ingredient)
                         return True
 
@@ -180,13 +185,60 @@ class BarMenu:
             console.print(f"[error]'{remove_arg}' did not match to a current menu item")
             return False
 
-    def markup(self, markup_arg):
-        if markup_arg == "":
-            console.print("[error]Syntax: 'markup \\[menu item]'")
+    def mark(self, direction, mark_arg):
+        if mark_arg == "":
+            console.print("[error]Syntax: 'markup \\[menu item/category]'")
             return False
         else:
-            pass
+            category_strings = [cat[1] for cat in self.menu_sections()]
+            menu_args = items_to_commands(self.full_menu()).union(set(category_strings))
+            cmd = find_command(mark_arg, items_to_commands(menu_args))
+            if cmd:
+                item = command_to_item(cmd, self.full_menu() + [section[2] for section in self.menu_sections()])
+                if isinstance(item, Recipe):
+                    style = styles.get("cocktails")
+                else:
+                    style = item.get_ing_style()
 
-    def markdown(self, markdown_arg):
-        pass
+                if item.markup != 0:
+                    console.print(f"[{style}]{item.name}[/{style}]'s price is marked up by [money]{"${:.2f}".format(item.markup)}.")
+                if item.markdown != 0:
+                    console.print(f"[{style}]{item.name}[/{style}] is currently marked down by {item.formatted_markdown}.")
+
+
+                prompt = f"[cmd]Mark{direction} [{style}]{item.name}[/{style}] by what percentage or dollar value?[/cmd] > "
+                value = None
+                percent = False
+                while value is None:
+                    try:
+                        inpt = console.input(prompt).strip()
+                        if find_command(inpt, ["back"], feedback=False):
+                            return True
+                        if inpt.startswith("$"):
+                            value = float(inpt.strip("$"))
+                        elif inpt.endswith("%"):
+                            percent = True
+                            value = float(inpt[:-1]) / 100
+                        else:
+                            if float(inpt) == 0.00:
+                                value = 0
+                            else:
+                                console.print("[error]Must begin with $ or end with %")
+                                continue
+                    except ValueError:
+                        console.print("[error]Must be a number")
+
+                if cmd in category_strings:
+                    for menu_item in self.get_section(cmd):
+                        if direction == "up":
+                            return menu_item.markup(value, percent)
+                        elif direction == "down":
+                            return menu_item.markdown(value, percent)
+
+                elif item in self.get_section(item):
+                    if direction == "up":
+                        return item.mark_up(value, percent)
+                    elif direction == "down":
+                        return item.mark_down(value, percent)
+
     # </editor-fold>

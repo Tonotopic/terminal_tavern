@@ -4,8 +4,7 @@ import sqlite3
 import inspect
 from rich.table import Table
 
-import rich_console
-from rich_console import console, styles, standardized_spacing
+from rich_console import console, styles, standardized_spacing, quarter_round
 
 all_ingredients = []
 
@@ -19,23 +18,17 @@ special_formats = {
 
 class MenuItem:
     def __init__(self):
-        self.price = "{:.2f}".format(rich_console.quarter_round(self.profit_base()[0])) if self.volumes else None
+        self.markup = 0.0
+        self.markdown = 0.0
+        self.formatted_markdown = ""
 
     def cost_value(self):
         variable = False
-        if hasattr(self, "r_ingredients"):
-            console.print("[error] Recipe cost_value should be overwritten")
-            '''cost_value = 0
-            for ingredient in self.r_ingredients:
-                cocktail_vol = self.r_ingredients[ingredient]
-                cost_value += self.price_per_oz() * cocktail_vol
-            return cost_value'''
-        elif isinstance(self, Alcohol):
-            if self.volumes:
-                cost_value = self.price_per_oz() * self.menu_pour()
-                return cost_value, variable
-            else:
-                console.print(f"[error]Ingredient {self.name} has no product volumes")
+        if self.volumes:
+            cost_value = self.price_per_oz() * self.pour_vol()
+            return cost_value, variable
+        else:
+            console.print(f"[error]Ingredient {self.name} has no product volumes")
 
     def profit_base(self):
         cost_value, variable = self.cost_value()
@@ -48,29 +41,71 @@ class MenuItem:
             profit_base = cost_value * 2
         return profit_base, variable
 
-    def list_price(self):
-        return f"[money]${self.price}"
+    def base_price(self):
+        return round(quarter_round(self.profit_base()[0]) + self.markup, 2)
 
-    def list_item(self):
+    def mark_up(self, value, percent):
+        if percent:
+            self.markup = self.base_price() * value
+            return True
+        else:
+            self.markup = value
+            return True
+
+    def mark_down(self, value, percent):
+        if percent:
+            self.markdown = self.current_price() * value
+            self.formatted_markdown = f"-{int(value * 100)}%"
+            return True
+        else:
+            self.markdown = value
+            if value == 0:
+                self.formatted_markdown = ""
+            else:
+                self.formatted_markdown = f"-${"{:.2f}".format(value)}"
+            return True
+
+    def current_price(self):
+        return round(self.base_price() - self.markdown, 2)
+
+    def list_price(self, expanded=False):
+        price = self.current_price()
+        formatted_price = f"[money]${"{:.2f}".format(price)}"
+        if self.markdown == 0 or expanded is False:
+            return formatted_price
+        else:
+            return formatted_price + f" ({self.formatted_markdown})"
+
+    def list_item(self, expanded=False):
+        # Layout offset (12) and markdown offset (14)
+        total_spacing = console.size[0] - 12 - 15 if expanded else int(console.size[0] / 2) - 18
+
         if isinstance(self, Beer):
             name = self.name
-            beer_spacing = 50
-            price_spacing = 50
+            if expanded:  # Half taken by beer name
+                price_spacing = total_spacing / 2
+                beer_spacing = price_spacing
+            else:  # 3/4 Taken by beer name
+                price_spacing = total_spacing / 4
+                beer_spacing = 3 * price_spacing
+
+            if len(name) > beer_spacing:
+                name = name[:-3] + "..."
+
             return (f"[beer]{name}{standardized_spacing(name, beer_spacing)}({self.format_type()})[/beer]"
-                    f"{standardized_spacing(self.format_type() + "()", price_spacing)}{self.list_price()}")
+                    f"{standardized_spacing(self.format_type() + "()", price_spacing)}{self.list_price(expanded=expanded)}")
+
         elif isinstance(self, Alcohol):
+            name = self.name
             style = self.get_ing_style()
-            return f"[style]{self.name}[/style]{standardized_spacing(self.name, 100)}{self.list_price()}"
+
+            if len(name) > total_spacing:
+                name = name[:-3] + "..."
+
+            return f"[{style}]{name}[/{style}]{standardized_spacing(name, total_spacing)}{self.list_price()}"
+
         else:
             console.print(f"[error]Menu item {self.name} not triggering Recipe, Beer, or other Alcohol")
-
-    def menu_pour(self):
-        if hasattr(self, "r_ingredients"):
-            pass
-        elif isinstance(self, Beer) or isinstance(self, Cider):
-            return 8
-        elif isinstance(self, Wine) or isinstance(self, Mead):
-            return 6
 
 
 # TODO: Soda water always available
@@ -243,6 +278,9 @@ class Beer(Alcohol, MenuItem):
     @override
     def get_portions(self):
         return {"8oz": 8, "6oz": 6, "4oz": 4}
+
+    def pour_vol(self):
+        return 12
 
 
 # <editor-fold desc="Ale">
@@ -475,6 +513,9 @@ class Cider(Alcohol, MenuItem):
     def get_portions(self):
         return {"8oz": 8, "6oz": 6, "4oz": 4}
 
+    def pour_vol(self):
+        return 12
+
 
 # <editor-fold desc="Wine">
 class Wine(Alcohol, MenuItem):
@@ -486,6 +527,9 @@ class Wine(Alcohol, MenuItem):
     @override
     def get_portions(self):
         return {"Glass Pour": 6, "Spritzer Pour": 4, "Shot": 2}
+
+    def pour_vol(self):
+        return 6
 
 
 class RedWine(Wine, MenuItem):
@@ -649,8 +693,12 @@ class Mead(Alcohol, MenuItem):
         super().__init__(name, flavor, character, notes, abv, volumes)
         MenuItem.__init__(self)
 
+    @override
     def get_portions(self):
         return {"Glass Pour": 6, "Spritzer Pour": 4, "Shot": 2}
+
+    def pour_vol(self):
+        return 6
 
 
 # <editor-fold desc="Liqueur">

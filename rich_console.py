@@ -61,7 +61,7 @@ console.size = width, height - 1
 def standardized_spacing(preceding_string, total_spacing):
     item_info_spacing = total_spacing - len(preceding_string)
     info_spacing_string = ""
-    for spacing_index in range(item_info_spacing):
+    for spacing_index in range(int(item_info_spacing)):
         info_spacing_string += " "
     return info_spacing_string
 

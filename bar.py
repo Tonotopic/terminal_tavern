@@ -5,7 +5,7 @@ from rich.table import Table
 from unidecode import unidecode
 
 import bar_menu
-import bar_stock
+import stock
 import commands
 import ingredients
 from rich_console import console, styles, Screen
@@ -13,17 +13,22 @@ from recipe import Recipe
 
 global prompt
 
+reputation_levels = {
+    0: 0,
+    1: 100
+}
+
 
 class Bar:
     def __init__(self, name, balance=1000):
         self.name = name
         self.balance = balance  # Float: current balance in dollars
         self.reputation = 0
-        self.stock = bar_stock.BarStock(self)
+        self.rep_level = 0
+        self.stock = stock.BarStock(self)
         self.recipes = {}
         self.menu = bar_menu.BarMenu(self)
         self.screen = Screen.MAIN
-
 
     # <editor-fold desc="Recipes">
     # @TODO: '2 whole maraschino cherry'
@@ -133,5 +138,12 @@ class Bar:
 
     # </editor-fold>
 
-    def save(self):
-        pass
+    def open(self):
+        for recipe in self.recipes:
+            if not self.stock.check_ingredients(recipe):
+                return None
+
+    def make_sale(self, menu_item: ingredients.MenuItem):
+        if self.stock.has_enough(menu_item):
+            self.stock.pour(menu_item)
+            self.balance += menu_item.current_price()

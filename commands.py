@@ -6,6 +6,7 @@ from rich.panel import Panel
 from unidecode import unidecode
 
 import ingredients
+import logger
 import utils
 from recipe import Recipe
 import rich_console
@@ -55,13 +56,25 @@ help_panels = {
             f"[cmd]'Add \\[category]'[/cmd], i.e. [cmd]'add cocktail'[/cmd], to view drinks that can be added to the menu,"
             f"or additionally for cocktails, to create a new recipe.",
 
-    "buy": f"Syntax: [cmd]'buy \\[volume]'[/cmd]\n"
+    "buy": f"Syntax: [cmd]'buy \\[volume]'[/cmd]\n, e.g. [cmd]'buy 96'[/cmd]"
            f"Buy the product currently being viewed, in the specified volume.\n"
            f"[warn]Note: Buying a product does [italic]not[/italic] automatically add it to the menu.",
 
     "add": f"Syntax: [cmd]'add \\[category]'[/cmd]\n"
            f"Used in the bar's drink menu to add products of the specified type.\n"
            f"[cmd]'Add cocktails'[/cmd] allows both selecting from created recipes, and writing them ([cmd]'new'[/cmd]).",
+
+    "markup": f"Syntax: [cmd]'markup \\[menu item or category]'[/cmd], e.g. [cmd]'markup guinness', 'markup beer'[/cmd]\n"
+                            f"Markup and markdown allow you to tweak the calculated price of a menu item.\n"
+                            f"They can be used simultaneously, so that markup can reflect your preferred initial price, "
+                            f"while markdown can represent temporary pricing for specials."
+                            f"[cmd]'markup'[/cmd] and [cmd]'markdown'[/cmd] can be used at the menu management screen.",
+
+    "markdown": f"Syntax: [cmd]'markdown \\[menu item or category]'[/cmd], e.g. [cmd]'markdown guinness', 'markdown beer'[/cmd]\n"
+                            f"Markup and markdown allow you to tweak the calculated price of a menu item.\n"
+                            f"They can be used simultaneously, so that markup can reflect your preferred initial price"
+                            f"while markdown can represent temporary pricing for specials.\n"
+                            f"[cmd]'markup'[/cmd] and [cmd]'markdown'[/cmd] can be used at the menu management screen.",
     # </editor-fold>
 
 }
@@ -118,7 +131,7 @@ def command_to_item(cmd, lst):
     return None
 
 
-def find_command(inpt, commands=None, force_beginning=False):
+def find_command(inpt, commands=None, force_beginning=False, feedback=True):
     """Takes an input string and a command list, and either returns a single command match,
     prints multiple matching commands for the user to choose between,
     or prints all valid commands if no valid command is found.
@@ -156,6 +169,7 @@ def find_command(inpt, commands=None, force_beginning=False):
 
     primary_command = parts[0]
     commands = commands or persistent_commands
+
     sorted_commands = sorted(commands)
     sorted_commands.insert(0, "help")
     if "back" in sorted_commands:
@@ -163,7 +177,8 @@ def find_command(inpt, commands=None, force_beginning=False):
         sorted_commands.append("back")
     sorted_commands.append("quit")
     if inpt == "" or inpt == '""':
-        console.print(f"Valid commands: {sorted_commands}")
+        if feedback:
+            console.print(f"Valid commands: {sorted_commands}")
         return None
 
     # <editor-fold desc="Find matching commands">
@@ -222,6 +237,9 @@ def find_command(inpt, commands=None, force_beginning=False):
 
     # </editor-fold>
 
+    if feedback:
+        logger.log(f"'{inpt}' command matches : {matching_commands}")
+
     if len(matching_commands) == 1:
         # found 1 match
         if len(parts) > 1:  # If arguments are present along the primary command
@@ -230,9 +248,11 @@ def find_command(inpt, commands=None, force_beginning=False):
             return matching_commands[0]
     elif len(matching_commands) == 0:
         if len(sorted_commands) <= 15:
-            console.print(f"[error]Valid commands: {sorted_commands}")
+            if feedback:
+                console.print(f"[error]Valid commands: {sorted_commands}")
         else:
-            console.print(f"[error]No matching term found for [cmd]{inpt}")
+            if feedback:
+                console.print(f"[error]No matching term found for [cmd]{inpt}")
         return None
     elif len(matching_commands) > 1:  # found more than one match
         most_base_cmd = None
@@ -243,9 +263,11 @@ def find_command(inpt, commands=None, force_beginning=False):
                 elif ref_cmd in cmd and cmd != ref_cmd:
                     most_base_cmd = ref_cmd
         if most_base_cmd is not None:
+            logger.log("Most base command: " + most_base_cmd)
             return most_base_cmd
         else:
-            console.print(f"Matching commands : {matching_commands}")
+            if feedback:
+                console.print(f"Matching commands : {matching_commands}")
 
 
 def parse_input(prompt, commands=None, force_beginning: bool = False):
@@ -262,15 +284,11 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
         inpt = console.input(f"[prompt]{prompt}:[/prompt][white] > ").strip().lower()
 
     # TODO: As commands with args are added, skip them here
-    arg_command = False
-    arg_commands = ["buy", "ad", "help", "rem", "loa"]
     # If not a command with args, group spaced words together
-    for cmd in arg_commands:
-        if inpt.startswith(cmd):
-            arg_command = True
-    if not arg_command:
+    arg_commands = ["buy", "add", "help", "remove", "load", "markup", "markdown"]
+    if not find_command(inpt.split()[0], arg_commands, feedback=False):
+        logger.log(f"Not a command with args - wrapping {inpt} in quotes")
         inpt = f'"{inpt}"'
-
 
     inpt_cmd = find_command(inpt, commands, force_beginning)
 
@@ -293,26 +311,8 @@ def input_loop(prompt, commands, force_beginning=False, ingredient=None, bar=Non
         if inpt[0] is None:
             continue
         primary_cmd, args = inpt
-        if primary_cmd == "new" and "load" in commands:
-            bar_name = ""
-            while bar_name == "":
-                bar_name = console.input("Name your bar: > ")
-                if bar_name not in utils.list_saves():
-                    found_valid_input = True
-                    return primary_cmd, [bar_name]
-                else:
-                    console.print("[error]This bar name is already present in your save files.")
-        elif primary_cmd == "load":
-            try:
-                if len(utils.list_saves()) < int(args[0]):
-                    console.print(f"[error]There are only {len(utils.list_saves())} save files to load from.")
-                else:
-                    found_valid_input = True
-                    return primary_cmd, args
-            except ValueError:
-                console.print(f"[error]Load argument must be a number")
 
-        elif primary_cmd == "quit":
+        if primary_cmd == "quit":
             if bar:
                 bar.screen = rich_console.Screen.MAIN
                 utils.save_game(bar)
@@ -335,30 +335,14 @@ def input_loop(prompt, commands, force_beginning=False, ingredient=None, bar=Non
                 arg_ing = command_to_item(arg, ingredients.all_ingredients)
                 console.print(arg_ing.description())
                 continue
-        elif primary_cmd == "buy":
-            if len(args) > 0:
-                if buy(ingredient=ingredient, arg=args[0], bar=bar):
-                    found_valid_input = True
-                    return primary_cmd, args
-            else:
-                console.print("[error]Incorrect number of arguments. Usage: buy <quantity>")
-        elif primary_cmd == ("add" or "remove") and ingredient is None and len(args) == 0:
-            console.print("[error]Invalid args. Use: 'add cocktail', 'add beer', etc.")
-            continue
-        elif primary_cmd == "add":
-            type_displaying = ingredient
-            if type_displaying is None:
-                if bar.menu.add(args[0]):
-                    found_valid_input = True
-                    return primary_cmd, args
-            else:
-                if bar.menu.add(type_displaying):
-                    found_valid_input = True
-                    return primary_cmd, args
-        elif primary_cmd == "remove":
-            if bar.menu.remove(args[0]):
+        elif primary_cmd == "new" and "load" not in commands:  # Skip check_new (for new game) when new cocktail
+            found_valid_input = True
+            return primary_cmd, args
+        elif callable(globals().get("check_" + primary_cmd)):
+            result = globals().get("check_" + primary_cmd)(args, bar, ingredient)
+            if result is not None:
                 found_valid_input = True
-                return primary_cmd, args
+                return result
         else:
             found_valid_input = True
             return primary_cmd, args
@@ -366,42 +350,70 @@ def input_loop(prompt, commands, force_beginning=False, ingredient=None, bar=Non
         # <editor-fold desc="Command Functions">
 
 
-def buy(bar, ingredient: ingredients.Ingredient = None, arg=""):
-    parts = arg.split()
+# <editor-fold desc="Input Loop Command Checkers">
+def check_add(args, bar, ingredient):
+    if ingredient is None and len(args) == 0:
+        console.print("[error]Invalid args. Use: 'add cocktail', 'add beer', etc.")
+        return None
+    type_displaying = ingredient
+    if type_displaying is None:
+        typ = command_to_item(find_command(args[0], ["cocktails", "beers", "ciders", "wines", "meads"]),
+                              [Recipe, ingredients.Beer, ingredients.Cider, ingredients.Wine, ingredients.Mead])
+        if bar.menu.add(typ):
+            return "add", args
+    else:
+        if bar.menu.add(type_displaying):
+            return "add", args
 
-    if len(parts) == 2:  # i.e. buy 24
-        ingredient = ingredients.get_ingredient(str(parts[0]))
-        volume = parts[1]
 
-    elif len(parts) == 1:
-        volume = arg
-
+def check_buy(args, bar, ingredient):
+    if len(args) > 0:
+        if bar.stock.buy(ingredient=ingredient, arg=args[0]):
+            return "buy", args
     else:
         console.print("[error]Incorrect number of arguments. Usage: buy <quantity>")
-        return False
 
+
+def check_load(args, bar, ingredient):
     try:
-        volume = int(volume)
-    except ValueError:
-        console.print("[error]Invalid quantity. Please enter a number.")
-        return False
-
-    if ingredient:
-        if volume in ingredient.volumes:
-            price = ingredient.volumes[volume]
-            balance = bar.balance
-            if balance >= price:
-                bar.balance -= price
-                bar.stock.inventory[ingredient] = bar.stock.inventory.get(ingredient, 0) + volume
-                return True
-            else:
-                console.print(f"[error]Insufficient funds. Bar balance: [money]${balance}")
-                return False
+        if len(utils.list_saves()) < int(args[0]):
+            console.print(f"[error]There are only {len(utils.list_saves())} save files to load from.")
         else:
-            console.print(f"[error]Invalid volume. Available: {[oz for oz in ingredient.volumes.keys()]}")
-            return False
-    else:
-        console.print("[error]No ingredient selected. Please select an ingredient first.")
-        return False
+            return "load", args
+    except IndexError:
+        console.print("[error]Syntax: 'load \\[num]'")
+    except ValueError:
+        console.print(f"[error]Load argument must be a number")
 
+
+
+def check_markdown(args, bar, ingredient):
+    if ingredient is None and len(args) == 0:
+        console.print("[error]Invalid args. Use: 'markdown margarita', 'markdown beer', etc.")
+    elif bar.menu.mark(direction="down", mark_arg=args[0]):
+        return "markdown", args
+
+
+def check_markup(args, bar, ingredient):
+    if ingredient is None and len(args) == 0:
+        console.print("[error]Invalid args. Use: 'markup margarita', 'markup beer', etc.")
+    elif bar.menu.mark(direction="up", mark_arg=args[0]):
+        return "markup", args
+
+
+def check_new(args, bar, ingredient):
+    bar_name = ""
+    while bar_name == "":
+        bar_name = console.input("Name your bar: > ")
+        if bar_name not in utils.list_saves():
+            return "new", [bar_name]
+        else:
+            console.print("[error]This bar name is already present in your save files.")
+
+
+def check_remove(args, bar, ingredient):
+    if ingredient is None and len(args) == 0:
+        console.print("[error]Invalid args. Use: 'remove margarita', 'remove guinness', etc.")
+    elif bar.menu.remove(args[0]):
+        return "remove", args
 # </editor-fold>

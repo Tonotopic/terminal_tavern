@@ -6,9 +6,12 @@ from ingredients import Ingredient, MenuItem
 
 class Recipe(MenuItem):
     def __init__(self, name=None, r_ingredients: dict[type[Ingredient] or Ingredient, float] = None):
+        super().__init__()
+        self.markup = 0.0
+        self.markdown = 0.0
+        self.formatted_markdown = ""
         self.name = name
         self.r_ingredients = r_ingredients
-        self.price = "{:.2f}".format(quarter_round(self.profit_base()[0]))
 
     @override
     def cost_value(self):
@@ -25,6 +28,7 @@ class Recipe(MenuItem):
                 console.print("[error]Recipe cost value received an ingredient not registering as type or ingredient")
         return cost_value, variable
 
+    @override
     def profit_base(self):
         cost_value, variable = self.cost_value()
         profit_base = None
@@ -36,12 +40,38 @@ class Recipe(MenuItem):
             profit_base = 2.5 * cost_value
         return profit_base, variable
 
-    def list_price(self):
-        profit_base, variable = self.profit_base()
+    @override
+    def list_price(self, expanded=False):
+        variable = self.profit_base()[1]
+        price = self.current_price()
+        formatted_price = f"[money]${"{:.2f}".format(price)}"
         if variable:
-            return f"[money]${self.price}+"
+            formatted_price += "+"
+
+        if self.markdown == 0 or expanded is False:
+            return formatted_price
         else:
-            return f"[money]${self.price}"
+            return f"{formatted_price} ({self.formatted_markdown})"
+
+    @override
+    def list_item(self, expanded=False):
+        name = self.name
+        total_spacing = console.size[0] - 21 if expanded else int(console.size[0] / 2) - 12
+        if expanded:
+            cocktail_spacing = int(0.3 * total_spacing)
+            ingredient_spacing = int(0.7 * total_spacing) - 6
+
+            ingredients = self.format_ingredients(markup=False)
+            if len(ingredients) > ingredient_spacing:
+                ingredients = ingredients[:-3] + "..."
+
+            return (
+                f"[cocktail]{name}[/cocktail]{standardized_spacing(name, cocktail_spacing)}{self.format_ingredients()}"
+                f"{standardized_spacing(ingredients, ingredient_spacing)}"
+                f"{self.list_price(expanded=True)}")
+        else:
+            return (f"[cocktail]{name}[/cocktail]{standardized_spacing(name, total_spacing - 6)}"
+                    f"{self.list_price(expanded=False)}")
 
     def format_ingredients(self, markup=True):
         r_ings = []
@@ -70,24 +100,10 @@ class Recipe(MenuItem):
 
         return formatted_ing_string
 
-    def list_item(self):
-        name = self.name
-        cocktail_spacing = 30
-        ingredient_spacing = 70
-        listing = (f"[cocktail]{name}[/cocktail]{standardized_spacing(name, cocktail_spacing)}{self.format_ingredients()}"
-                   f"{standardized_spacing(self.format_ingredients(markup=False), ingredient_spacing)}"
-                   f"{self.list_price()}")
-        return listing
-
     def select_ingredients(self):
         for r_ingredient in self.r_ingredients:
             if isinstance(r_ingredient, type):
                 pass
-
-    def make(self):
-        provided_ingredients = {}
-        if self.check_ingredients(provided_ingredients):
-            pass
 
     def calculate_abv(self):
         """Calculates the ABV of the recipe using ingredient ABVs."""
