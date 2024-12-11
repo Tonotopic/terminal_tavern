@@ -91,13 +91,12 @@ def startup_screen():
     startup_cmd, args = input_loop(prompt, ["new", "load"])
     if startup_cmd == "new":
         # Name input and checking handled by input loop
-        bar = Bar(args[0])
-        utils.save_bar(bar)
+        new_bar = Bar(args[0])
+        utils.save_bar(new_bar)
+        utils.load_bar(new_bar)
     elif startup_cmd == "load":
-        # TODO: Handle returns None case
-        bar = utils.load_bar(int(args[0]) - 1)
+        utils.load_bar(int(args[0]) - 1)
 
-    return bar
 
 
 def dashboard(bar):

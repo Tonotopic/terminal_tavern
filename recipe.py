@@ -144,6 +144,8 @@ class Recipe(MenuItem):
             for ingredient in self.r_ingredients:
                 if self.r_ingredients[ingredient] in ["Crushed", "Whole"]:
                     of = ""
+                elif self.r_ingredients[ingredient] in ["On the Rim"]:
+                    of = ":"
                 else:
                     of = "of"
 

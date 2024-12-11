@@ -146,6 +146,15 @@ class BarMenu:
 
     # <editor-fold desc="Modify">
 
+    def regen(self):
+        for menu_recipe in self.cocktails:
+            for new_recipe in self.bar.recipes:
+                if new_recipe == menu_recipe.name:
+                    self.cocktails.remove(menu_recipe)
+                    self.cocktails.append(self.bar.recipes[new_recipe])
+        logger.log("Menu regenerated.")
+
+
     def select_to_add(self, add_typ, add_arg=""):
         self.bar.set_screen("BAR_MENU")
 

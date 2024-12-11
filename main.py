@@ -1,5 +1,6 @@
 import flavors
 import rich_console
+import utils
 from ingredients import load_ingredients_from_db, all_ingredients, MenuItem
 import ui
 from rich_console import console
@@ -13,8 +14,8 @@ for ingredient in all_ingredients:
         except AttributeError as e:
             console.print(ingredient.name)
 
-
-current_bar = ui.startup_screen()
+ui.startup_screen()
+current_bar = utils.current_bar
 
 while True:
     if current_bar.get_screen() == "MAIN":

@@ -42,7 +42,6 @@ class Bar:
 
     # <editor-fold desc="Recipes">
     # @TODO: '2 whole maraschino cherry'
-    # TODO: fix "on the rim of salt"
     def show_recipes(self, off_menu=False):
         recipes_list = []
         recipes_table = Table()
@@ -151,9 +150,16 @@ class Bar:
                     if isinstance(r_ing, ingredients.Ingredient) and r_ing.name == db_ing.name:
                         new_ings[db_ing] = recip.r_ingredients[r_ing]
 
-            new_recipes[cocktail_name] = Recipe(name=cocktail_name, r_ingredients=new_ings)
+            new_recipe = Recipe(name=cocktail_name, r_ingredients=new_ings)
+            new_recipe.markup = recip.markup
+            new_recipe.markdown = recip.markdown
+            new_recipe.formatted_markdown = recip.formatted_markdown
+            new_recipes[cocktail_name] = new_recipe
 
-            recip.taste_profile = recip.generate_taste_profile()
+        self.recipes = new_recipes
+        logger.log("Recipes regenerated.")
+        self.menu.regen()
+
 
     # </editor-fold>
 
