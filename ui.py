@@ -276,12 +276,12 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
             table_settings["box"] = box.MARKDOWN
 
-            shop_tables, shop_list = bar.stock.show_stock(table_settings, current_selection, showing_flavored,
-                                                          shop=True)
-            inv_table, inv_list = bar.stock.show_stock(table_settings, current_selection, showing_flavored)
+            shop_tables, shop_list = bar.stock.show_ing_category(table_settings, current_selection, showing_flavored,
+                                                                 shop=True)
+            inv_table, inv_list = bar.stock.show_ing_category(table_settings, current_selection, showing_flavored)
             inv_table = inv_table[0]
 
-            items = list_ingredients(shop_list, current_selection, type_specific=True)
+            items = list_ingredients(shop_list, current_selection, no_inheritance=True)
             if items:  # If there are ingredients in this category
                 if not msg:
                     prompt = "Type a category or product to view"

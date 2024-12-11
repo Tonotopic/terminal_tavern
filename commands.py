@@ -14,7 +14,7 @@ from rich_console import console
 
 from recipe import Recipe
 
-persistent_commands = {"shop", "buy", "menu"}
+persistent_commands = {"shop", "menu"}
 help_panels = {
     "help": f"Syntax: [cmd]'help \\[term]'[/cmd]\n"
             f"[cmd]'Help'[/cmd] can be used on commands (shop, add, etc), products (lychee, Ketel One Classic, etc), "

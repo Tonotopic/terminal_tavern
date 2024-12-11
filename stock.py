@@ -2,14 +2,14 @@ from rich.table import Table
 from rich.text import Text
 
 import commands
-import ingredients
 import logger
+import rich_console
 from rich_console import console, styles
 from recipe import Recipe
-from ingredients import all_ingredients, list_ingredients, Ingredient, Spirit, Liqueur, categorize_spirits, get_ingredient, MenuItem, Beer, Cider, Wine, Mead
+from ingredients import all_ingredients, list_ingredients, Ingredient, Spirit, Liqueur, categorize_spirits, \
+    get_ingredient, MenuItem
 
 
-# TODO: "Shop beer"
 class BarStock:
     def __init__(self, bar):
         self.bar = bar
@@ -81,7 +81,7 @@ class BarStock:
 
         return add_tool_table, lst
 
-    def show_stock(self, table_settings, typ: type = Ingredient, showing_flavored=False, shop=False):
+    def show_ing_category(self, table_settings, typ: type = Ingredient, showing_flavored=False, shop=False):
 
         container = all_ingredients if shop else self.inventory
         table_1 = Table(**table_settings)
@@ -90,7 +90,7 @@ class BarStock:
         lst = []
 
         subclasses = typ.__subclasses__()
-        items = list_ingredients(container, typ, type_specific=True)
+        items = list_ingredients(container, typ, no_inheritance=True)
 
         showing_flavorable_spirit = False
         if (isinstance(typ(), Spirit) or isinstance(typ(), Liqueur)) and typ is not Spirit:
@@ -105,8 +105,8 @@ class BarStock:
                 obj = subclass()
                 style = obj.get_style()
                 table_1.add_row(Text(f"{obj.format_type(plural=True)} "  # Pluralize
-                                   f"({len(list_ingredients(container, subclass))})",  # Quantity
-                                   style=style), end_section=end_section)
+                                     f"({len(list_ingredients(container, subclass))})",  # Quantity
+                                     style=style), end_section=end_section)
                 table_1.add_row()  # rich.table's leading parameter breaks end_section. Add space between rows manually
                 lst.append(subclass)
 
@@ -114,13 +114,12 @@ class BarStock:
             flavored, unflavored = categorize_spirits(items)
             if not showing_flavored:  # Group flavored into a category and only list unflavored
                 table_1.add_row(Text(f"Flavored ({len(flavored)})",
-                                   style=styles.get("additive")), end_section=True)
+                                     style=styles.get("additive")), end_section=True)
                 table_1.add_row()  # Manual space between rows
                 lst.append("Flavored")
                 items = unflavored
         if showing_flavored:
             items = flavored
-
 
         global table_section
         table_section = table_1
@@ -134,7 +133,20 @@ class BarStock:
                 lst.append(item)
                 style = item.get_style()
                 if shop:
-                    table_section.add_row(f"[{style}][italic]{item.name}")
+                    min_price = "{:.2f}".format(item.price_per_oz("min"))
+                    max_price = "{:.2f}".format(item.price_per_oz("max"))
+                    spacing = (console.size[0] / 2) - 6 - 11
+
+                    if min_price == max_price:
+                        price_string = f"${min_price}"
+                    else:
+                        price_string = f"${min_price} - ${max_price}"
+                        spacing -= 8
+
+                    table_section.add_row(f"[{style}][italic]{item.name}[/{style}][/italic]"
+                                          f"{rich_console.standardized_spacing(item.name, spacing)}"
+                                          f"[money]{price_string} /oz")
+
                 else:
                     volume = container.get(item, 0)
                     table_section.add_row(f"[{style}][italic]{item.name}[/italic] ({volume}oz)")
@@ -151,7 +163,6 @@ class BarStock:
             if type(item) is typ and self.inventory[item] >= min_vol:
                 lst.append(item)
         return lst
-
 
     def check_ingredients(self, recipe):
         """Checks if there are enough ingredients in stock to make the recipe."""
@@ -223,7 +234,6 @@ class BarStock:
                 final_ings[r_ingredient] = vol
         return final_ings
 
-
     def pour(self, menu_item: MenuItem):
         if isinstance(menu_item, Recipe):
             r_ingredients = self.select_ingredients(menu_item)
@@ -233,5 +243,3 @@ class BarStock:
         else:
             self.inventory[menu_item] -= menu_item.pour_vol()
             logger.log(f"Pouring {menu_item.pour_vol()} of {menu_item.name} - stock now at {self.inventory[menu_item]}")
-
-

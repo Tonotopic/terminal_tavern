@@ -1,5 +1,5 @@
 import re
-from typing import override
+from typing import override, Literal
 import sqlite3
 import inspect
 from rich.table import Table
@@ -31,7 +31,7 @@ class MenuItem:
     def cost_value(self):
         variable = False
         if self.volumes:
-            cost_value = self.price_per_oz() * self.pour_vol()
+            cost_value = self.price_per_oz("max") * self.pour_vol()
             return cost_value, variable
         else:
             console.print(f"[error]Ingredient {self.name} has no product volumes")
@@ -246,12 +246,22 @@ class Ingredient:
             portions_list.append(portion_key.lower())
         return portions_table, portions_list
 
-    def price_per_oz(self):
+    def price_per_oz(self, bound: Literal["max", "min", "avg"]):
+        def price_over_vol(index):
+            shop_vol = list(self.volumes)[index]
+            vol_price = list(self.volumes.values())[index]
+            return vol_price / shop_vol
+
         if self.volumes:
-            shop_vol = list(self.volumes)[0]
-            vol_price = list(self.volumes.values())[0]
-            price_per_oz = vol_price / shop_vol
-            return price_per_oz
+            if bound == "max":
+                return price_over_vol(0)
+            elif bound == "min":
+                return price_over_vol(len(self.volumes) - 1)
+            elif bound == "avg":
+                total = 0.0
+                for i in self.volumes:
+                    total += price_over_vol(i)
+                return total / len(self.volumes)
         else:
             console.print(f"[error]self.volumes not present for {self.name}")
 
@@ -765,6 +775,18 @@ class Vermouth(Liqueur):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
+class SweetVermouth(Vermouth):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class DryVermouth(Vermouth):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
 class Amaro(Liqueur):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
@@ -964,12 +986,12 @@ def load_ingredients_from_db():
     connection.close()
 
 
-def list_ingredients(container, typ, type_specific=False):
+def list_ingredients(container, typ, no_inheritance=False):
     lst = []
 
     for ingredient in container:
         is_instance = False
-        if type_specific:
+        if no_inheritance:
             if type(ingredient) is typ:
                 is_instance = True
         else:

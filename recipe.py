@@ -11,6 +11,8 @@ from rich_console import console, standardized_spacing, styles
 from ingredients import Ingredient, MenuItem, Fruit
 
 
+# TODO Specify ingredients like Coffee liqueur
+
 class Recipe(MenuItem):
     def __init__(self, name=None, r_ingredients: dict[type[Ingredient] or Ingredient, str] = None):
         super().__init__()
@@ -20,6 +22,7 @@ class Recipe(MenuItem):
         self.markdown = 0.0
         self.formatted_markdown = ""
 
+    # <editor-fold desc="Display">
     @override
     def list_item(self, expanded=False):
         name = self.name
@@ -42,14 +45,18 @@ class Recipe(MenuItem):
             return (f"[cocktails]{name}[/cocktails]{standardized_spacing(name, total_spacing - 5)}"
                     f"{self.list_price(expanded=False)}")
 
-    def format_type(self, plural=False):
+    @staticmethod
+    def format_type(plural=False):
         if plural:
             return "Cocktails"
         else:
             return "Cocktail"
 
-    def get_style(self):
+    @staticmethod
+    def get_style():
         return styles.get("cocktails")
+
+    # </editor-fold>
 
     # <editor-fold desc="Price">
     @override
@@ -62,7 +69,7 @@ class Recipe(MenuItem):
                 variable = True
             elif isinstance(r_ingredient, Ingredient):
                 portion = r_ingredient.get_portions()[self.r_ingredients[r_ingredient]]
-                cost_value += portion * r_ingredient.price_per_oz()
+                cost_value += portion * r_ingredient.price_per_oz("max")
             else:
                 console.print("[error]Recipe cost value received an ingredient not registering as type or ingredient")
         return cost_value, variable
@@ -91,6 +98,7 @@ class Recipe(MenuItem):
             return formatted_price
         else:
             return f"{formatted_price} ({self.formatted_markdown})"
+
     # </editor-fold>
 
     # <editor-fold desc="Ingredients">
@@ -146,7 +154,8 @@ class Recipe(MenuItem):
                 else:
                     name = ingredient.name
                     style = ingredient.get_style()
-                    cost = "~${:.2f}".format(ingredient.get_portions()[self.r_ingredients[ingredient]] * ingredient.price_per_oz())
+                    cost = "~${:.2f}".format(
+                        ingredient.get_portions()[self.r_ingredients[ingredient]] * ingredient.price_per_oz("max"))
 
                 recipe_table.add_row(f"-   {self.r_ingredients[ingredient]}", of, Text(name, style),
                                      Text(cost, money_style))
@@ -160,16 +169,22 @@ class Recipe(MenuItem):
 
         return recipe_table
 
-
     # </editor-fold>
 
+    # <editor-fold desc="Calculations">
     def calculate_abv(self):
         """Calculates the ABV of the recipe using ingredient ABVs."""
         total_alcohol_fl_oz = 0
         total_volume_fl_oz = 0
 
         for ingredient, portion in self.r_ingredients.items():
-            fl_oz = ingredient.get_portions()[portion]
+            if isinstance(ingredient, Ingredient):
+                obj = ingredient
+            elif isinstance(ingredient, type):
+                obj = ingredient()
+
+            fl_oz = obj.get_portions()[portion]
+
             if hasattr(ingredient, "abv"):
                 alcohol_fl_oz = fl_oz * (ingredient.abv / 100)
                 total_alcohol_fl_oz += alcohol_fl_oz
@@ -205,7 +220,6 @@ class Recipe(MenuItem):
                         elif 0.2 < volume < 0.5:
                             volume = round(volume * 10, 2)
 
-
             for taste in flavors.tastes:
                 points = Decimal()
 
@@ -230,7 +244,8 @@ class Recipe(MenuItem):
                     points_added = round(Decimal(term_weight * desc_weight * volume), 2)
                     points += points_added
                     if desc_weight > 0:
-                        logger.log(f"        {term_weight}(term) * {desc_weight}(desc) * {volume}(vol) = {points_added} points in {taste} from \"{word}\" in {name}")
+                        logger.log(
+                            f"        {term_weight}(term) * {desc_weight}(desc) * {volume}(vol) = {points_added} points in {taste} from \"{word}\" in {name}")
 
                 if points > 0:
                     try:
@@ -241,3 +256,4 @@ class Recipe(MenuItem):
                     logger.log(f"    {points} points in {taste} from {name}")
 
         return taste_profile
+    # </editor-fold>
