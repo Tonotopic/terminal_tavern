@@ -1,17 +1,28 @@
+from unidecode import unidecode
+from enum import Enum
+
 from rich.layout import Layout
 from rich.text import Text
 from rich.panel import Panel
 from rich.table import Table
-from unidecode import unidecode
 
 import bar_menu
+import logger
 import stock
 import commands
 import ingredients
-from rich_console import console, styles, Screen
+from rich_console import console, styles
 from recipe import Recipe
 
 global prompt
+
+
+class Screen(Enum):
+    MAIN = 1
+    SHOP = 2
+    BAR_MENU = 3
+    ADD = 4
+
 
 reputation_levels = {
     0: 0,
@@ -47,6 +58,7 @@ class Bar:
         return recipes_table, recipes_list
 
     def new_recipe(self):
+        logger.log("Drawing new recipe screen...")
         recipe_table = Table(show_header=False, box=None)
         recipe_panel = Panel(recipe_table, title="New Recipe", border_style=styles.get("cocktails"))
         new_recipe_layout = Layout(recipe_panel)
@@ -72,7 +84,6 @@ class Bar:
             console.print(new_recipe_layout)
 
             rcp_write_prompt = "Enter a type (e.g. bourbon), an ingredient (e.g. lemon, patron silver), or 'finish'"
-            cmd = None
             cmds = type_args | ingredient_args
             cmds.add("back")
             cmds.add("finish")
@@ -137,6 +148,16 @@ class Bar:
                     recipe_table.add_row()  # Spacing
 
     # </editor-fold>
+
+    def get_screen(self):
+        return self.screen.name
+
+    def set_screen(self, screen_arg: str):
+        screen_arg = screen_arg.strip().upper()
+        for screen in Screen:
+            if screen_arg == screen.name:
+                self.screen = screen
+                break
 
     def open(self):
         for recipe in self.recipes:

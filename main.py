@@ -1,6 +1,6 @@
 from ingredients import load_ingredients_from_db, all_ingredients, MenuItem
 import ui
-from rich_console import Screen, console
+from rich_console import console
 
 load_ingredients_from_db()
 
@@ -14,10 +14,12 @@ for ingredient in all_ingredients:
             console.print(ingredient.name)
 
 current_bar = ui.startup_screen()
+
+
 while True:
-    if current_bar.screen == Screen.MAIN:
+    if current_bar.get_screen() == "MAIN":
         ui.dashboard(current_bar)
-    elif current_bar.screen == Screen.SHOP:
+    elif current_bar.get_screen() == "SHOP":
         ui.shop_screen(current_bar)
-    elif current_bar.screen == Screen.BAR_MENU:
+    elif current_bar.get_screen() == "BAR_MENU":
         ui.menu_screen(current_bar)

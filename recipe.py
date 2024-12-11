@@ -1,17 +1,18 @@
 from typing import override
 
-from rich_console import console, standardized_spacing, quarter_round
+from rich_console import console, standardized_spacing
 from ingredients import Ingredient, MenuItem
 
 
 class Recipe(MenuItem):
     def __init__(self, name=None, r_ingredients: dict[type[Ingredient] or Ingredient, float] = None):
         super().__init__()
+        self.name = name
+        self.r_ingredients = r_ingredients
         self.markup = 0.0
         self.markdown = 0.0
         self.formatted_markdown = ""
-        self.name = name
-        self.r_ingredients = r_ingredients
+
 
     @override
     def cost_value(self):
@@ -72,6 +73,12 @@ class Recipe(MenuItem):
         else:
             return (f"[cocktail]{name}[/cocktail]{standardized_spacing(name, total_spacing - 6)}"
                     f"{self.list_price(expanded=False)}")
+
+    def format_type(self, plural=False):
+        if plural:
+            return "Cocktails"
+        else:
+            return "Cocktail"
 
     def format_ingredients(self, markup=True):
         r_ings = []

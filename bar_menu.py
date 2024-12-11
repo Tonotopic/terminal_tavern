@@ -1,14 +1,14 @@
 from rich import box
+from rich.layout import Layout
+from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
-from rich.panel import Panel
-from rich.layout import Layout
 
-from ingredients import Beer, Cider, Wine, Mead, MenuItem
+import logger
+from ingredients import Beer, Cider, Wine, Mead, MenuItem, list_ingredients, Ingredient
 from recipe import Recipe
-from rich_console import console, styles, standardized_spacing, Screen
+from rich_console import console, styles
 from commands import items_to_commands, find_command, command_to_item, input_loop
-import ingredients
 
 
 class BarMenu:
@@ -93,6 +93,7 @@ class BarMenu:
 
             table_1.add_row(Text(sect_name, style=styles.get(sect_name.lower())), str(len(display_section)),
                             end_section=True)
+            table_1.add_row()
 
             table_section = table_1
             for item in display_section:
@@ -113,11 +114,15 @@ class BarMenu:
     # </editor-fold>
 
     # <editor-fold desc="Modify">
-    def add(self, add_typ, add_arg=""):
-        self.bar.screen = Screen.BAR_MENU
-        inv_ingredients = ingredients.list_ingredients(self.bar.stock.inventory, add_typ)
+
+    def select_to_add(self, add_typ, add_arg=""):
+        self.bar.set_screen("BAR_MENU")
+
+        add_commands = ["back", "menu"]
+        add_prompt = "Type a name to add"
 
         if add_arg != "":
+            inv_ingredients = list_ingredients(self.bar.stock.inventory, add_typ)
             ing_command = find_command(add_arg, items_to_commands(inv_ingredients))[0]
             if ing_command is not None:
                 ingredient = command_to_item(ing_command, inv_ingredients)
@@ -137,65 +142,45 @@ class BarMenu:
                 if not typ_cmd:
                     console.print(f"[error]{typ_cmd} did not match to a menu category")
                     return False
-                add_typ = command_to_item(typ_cmd, [Recipe, ingredients.Beer, ingredients.Cider, ingredients.Wine,
-                                                    ingredients.Mead])
+                add_typ = command_to_item(typ_cmd, [Recipe, Beer, Cider, Wine, Mead])
                 if add_typ is None:
                     console.print("[error]Add type argument does not match any category")
                     return False
-            if add_typ is ingredients.Ingredient:
+            if add_typ is Ingredient:
                 console.print("[error]No type or ingredient given to add command. Syntax: add beer")
                 return False
-            elif add_typ == Recipe:
-                choosing_recipe = True
-                while choosing_recipe:
-                    recipes_table, recipes_list = self.bar.show_recipes(off_menu=True)
-                    recipes_panel = Panel(recipes_table, border_style=styles.get("bar_menu"))
-                    recipes_layout = Layout(recipes_panel)
 
-                    recipe_commands = items_to_commands(recipes_list)
-                    recipe_commands.add("back")
-                    recipe_commands.add("new")
+            adding = True
+            logger.log("Adding " + add_typ().format_type())
+            while adding:
+                if add_typ == Recipe:
+                    add_tool_table, add_tool_list = self.bar.show_recipes(off_menu=True)
+                    add_commands.append("new")
+                else:
+                    add_tool_table, add_tool_list = self.bar.stock.table_items(add_typ, off_menu=True)
 
-                    console.print(recipes_layout)
-
-                    prompt = "Enter the name of a recipe, or 'new' to define a new recipe"
-                    add_cmd = input_loop(prompt, recipe_commands, bar=self.bar)[0]
-
-                    if add_cmd == "new":
-                        self.bar.new_recipe()
-                    elif add_cmd == "back":
-                        return True
-                    elif add_cmd == "menu":
-                        self.bar.screen = Screen.MAIN
-                        return True
-                    else:
-                        for index, recipe in enumerate(recipes_list):
-                            if add_cmd == recipe.name.lower():
-                                self.cocktails.append(recipes_list[index])
-                                return True
-
-            else:
-                add_tool_table, add_tool_list = self.bar.stock.table_items(add_typ, off_menu=True)
                 add_tool_panel = Panel(add_tool_table, border_style=styles.get("bar_menu"))
                 add_tool_layout = Layout(add_tool_panel)
+                add_commands.extend(items_to_commands(add_tool_list))
 
                 console.print(add_tool_layout)
+                add_cmd, ing_args = input_loop(add_prompt, add_commands, bar=self.bar)
+                if add_cmd == "back":
+                    self.bar.set_screen("BAR_MENU")
+                    return True
+                elif add_cmd == "menu":
+                    self.bar.set_screen("MAIN")
+                    return True
+                if add_cmd == "new":
+                    self.bar.new_recipe()
+                else:
+                    item = command_to_item(add_cmd, add_tool_list)
+                    self.add(item)
+                    self.bar.set_screen("BAR_MENU")
+                    return True
 
-                adding = True
-                add_commands = items_to_commands(add_tool_list)
-                add_commands.add("back")
-                add_commands.add("menu")
-                while adding:
-                    add_cmd, ing_args = input_loop("Type a name to add", add_commands, bar=self.bar)
-                    if add_cmd == "back":
-                        return True
-                    elif add_cmd == "menu":
-                        self.bar.screen = Screen.MAIN
-                        return True
-                    else:
-                        ingredient = command_to_item(add_cmd, inv_ingredients)
-                        self.get_section(ingredient).append(ingredient)
-                        return True
+    def add(self, item):
+        self.get_section(item).append(item)
 
     def remove(self, remove_arg):
         item_cmd = find_command(remove_arg, items_to_commands(self.full_menu()))
@@ -203,6 +188,7 @@ class BarMenu:
             rmv_item = command_to_item(item_cmd, self.full_menu())
             menu_section = self.get_section(rmv_item)
             menu_section.remove(rmv_item)
+            logger.log(f"Removing {rmv_item.name} from the menu.")
             return True
         else:
             console.print(f"[error]'{remove_arg}' did not match to a current menu item")
@@ -231,6 +217,7 @@ class BarMenu:
                         f"[{style}]{item.name}[/{style}] is currently marked down by {item.formatted_markdown}.")
 
                 prompt = f"[cmd]Mark{direction} [{style}]{item.name}[/{style}] by what percentage or dollar value?[/cmd] > "
+                logger.log(f"Marking {direction} {item.name}...")
                 value = None
                 percent = False
                 while value is None:

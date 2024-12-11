@@ -81,11 +81,13 @@ class BarStock:
         return add_tool_table, lst
 
     def show_stock(self, table_settings, typ: type = Ingredient, showing_flavored=False, shop=False):
-        table = Table(**table_settings)
-        lst = []
-        container = all_ingredients if shop else self.inventory
 
-        table.add_column(justify="center")
+        container = all_ingredients if shop else self.inventory
+        table_1 = Table(**table_settings)
+        table_1.add_column(justify="center")
+        tables = [table_1]
+        lst = []
+
         subclasses = typ.__subclasses__()
         items = list_ingredients(container, typ, type_specific=True)
 
@@ -93,42 +95,39 @@ class BarStock:
         if (isinstance(typ(), Spirit) or isinstance(typ(), Liqueur)) and typ is not Spirit:
             showing_flavorable_spirit = True
 
-        if not showing_flavored:
+        if not showing_flavored:  # List subclasses
             for index, subclass in enumerate(subclasses):
                 end_section = False
+                # New section for any items once there are no more categories to list
                 if items and index == len(subclasses) - 1 and not showing_flavorable_spirit:
                     end_section = True
                 obj = subclass()
                 style = obj.get_ing_style()
-                table.add_row(Text(f"{obj.format_type(plural=True)} "  # Pluralize
+                table_1.add_row(Text(f"{obj.format_type(plural=True)} "  # Pluralize
                                    f"({len(list_ingredients(container, subclass))})",  # Quantity
                                    style=style), end_section=end_section)
-                table.add_row()  # rich.table's leading parameter breaks end_section. Add space between rows manually
+                table_1.add_row()  # rich.table's leading parameter breaks end_section. Add space between rows manually
                 lst.append(subclass)
 
         if showing_flavorable_spirit:
             flavored, unflavored = categorize_spirits(items)
-            if not showing_flavored:
-                table.add_row(Text(f"Flavored ({len(flavored)})",
+            if not showing_flavored:  # Group flavored into a category and only list unflavored
+                table_1.add_row(Text(f"Flavored ({len(flavored)})",
                                    style=styles.get("additive")), end_section=True)
-                table.add_row()  # Manual space between rows
+                table_1.add_row()  # Manual space between rows
                 lst.append("Flavored")
                 items = unflavored
         if showing_flavored:
             items = flavored
 
+
         global table_section
-        table_section = table
-        overflow_table = Table(**table_settings)
-        overflow_2 = Table(**table_settings)
-        overflow_table.add_column(justify="center")
-        overflow_2.add_column(justify="center")
+        table_section = table_1
         for item in items:
-            if len(table.rows) > console.height - 12:
-                if len(overflow_table.rows) > console.height - 12:
-                    table_section = overflow_2
-                else:
-                    table_section = overflow_table
+            if len(table_section.rows) > console.height - 12:
+                table_section = Table(**table_settings)
+                table_section.add_column(justify="center")
+                tables.append(table_section)
 
             if type(item) is typ:
                 lst.append(item)
@@ -140,15 +139,10 @@ class BarStock:
                     table_section.add_row(f"[{style}][italic]{item.name}[/italic] ({volume}oz)")
                 table_section.add_row()
 
-        if len(table.rows) == 0:
-            table.add_row(Text("[None]", styles.get("dimmed")))
+        if len(table_1.rows) == 0:
+            table_1.add_row(Text("[None]", styles.get("dimmed")))
 
-        if len(overflow_table.rows) != 0:
-            if len(overflow_2.rows) != 0:
-                return [table, overflow_table, overflow_2], lst
-            return [table, overflow_table], lst
-        else:
-            return [table], lst
+        return tables, lst
 
     def check_ingredients(self, recipe):
         """Checks if there are enough ingredients in stock to make the recipe."""

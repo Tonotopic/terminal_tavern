@@ -65,22 +65,23 @@ help_panels = {
            f"[cmd]'Add cocktails'[/cmd] allows both selecting from created recipes, and writing them ([cmd]'new'[/cmd]).",
 
     "markup": f"Syntax: [cmd]'markup \\[menu item or category]'[/cmd], e.g. [cmd]'markup guinness', 'markup beer'[/cmd]\n"
-                            f"Markup and markdown allow you to tweak the calculated price of a menu item.\n"
-                            f"They can be used simultaneously, so that markup can reflect your preferred initial price, "
-                            f"while markdown can represent temporary pricing for specials."
-                            f"[cmd]'markup'[/cmd] and [cmd]'markdown'[/cmd] can be used at the menu management screen.",
+              f"Markup and markdown allow you to tweak the calculated price of a menu item.\n"
+              f"They can be used simultaneously, so that markup can reflect your preferred initial price, "
+              f"while markdown can represent temporary pricing for specials."
+              f"[cmd]'markup'[/cmd] and [cmd]'markdown'[/cmd] can be used at the menu management screen.",
 
     "markdown": f"Syntax: [cmd]'markdown \\[menu item or category]'[/cmd], e.g. [cmd]'markdown guinness', 'markdown beer'[/cmd]\n"
-                            f"Markup and markdown allow you to tweak the calculated price of a menu item.\n"
-                            f"They can be used simultaneously, so that markup can reflect your preferred initial price"
-                            f"while markdown can represent temporary pricing for specials.\n"
-                            f"[cmd]'markup'[/cmd] and [cmd]'markdown'[/cmd] can be used at the menu management screen.",
+                f"Markup and markdown allow you to tweak the calculated price of a menu item.\n"
+                f"They can be used simultaneously, so that markup can reflect your preferred initial price"
+                f"while markdown can represent temporary pricing for specials.\n"
+                f"[cmd]'markup'[/cmd] and [cmd]'markdown'[/cmd] can be used at the menu management screen.",
     # </editor-fold>
 
 }
 
 
 def draw_help_panel(cmd):
+    logger.log("Drawing help panel for " + cmd)
     panel = Panel(help_panels.get(cmd), title=f"Help: {cmd}", box=rich.box.ASCII2,
                   style=rich_console.styles.get("highlight"), width=100)
     console.print(panel)
@@ -146,27 +147,7 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
     inpt = inpt.strip().lower()
 
     # <editor-fold desc="Splitting logic allowing for spaces in quotes">
-    parts = []
-    current_part = ""
-    in_quotes = False
-
-    for char in inpt:
-        if char == '"':  # At quotes, flip space-allowing condition and end current part
-            in_quotes = not in_quotes
-            if not in_quotes:
-                parts.append(current_part)
-                current_part = ""
-        elif char == ' ' and not in_quotes:  # When not inside quotes, end part at space
-            if current_part:
-                parts.append(current_part)
-                current_part = ""
-        else:  # Any other characters are part of the current part
-            current_part += char
-
-    if current_part:  # Add the last part at end of input
-        parts.append(current_part)
-    # </editor-fold>
-
+    parts = utils.split_with_quotes(inpt)
     primary_command = parts[0]
     commands = commands or persistent_commands
 
@@ -238,7 +219,7 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
     # </editor-fold>
 
     if feedback:
-        logger.log(f"'{inpt}' command matches : {matching_commands}")
+        logger.log(f"'{inpt}' cmd matches: {matching_commands}")
 
     if len(matching_commands) == 1:
         # found 1 match
@@ -249,7 +230,9 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
     elif len(matching_commands) == 0:
         if len(sorted_commands) <= 15:
             if feedback:
-                console.print(f"[error]Valid commands: {sorted_commands}")
+                msg = f"[error]Valid commands: {sorted_commands}"
+                console.print(msg)
+                logger.log(msg)
         else:
             if feedback:
                 console.print(f"[error]No matching term found for [cmd]{inpt}")
@@ -267,7 +250,9 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
             return most_base_cmd
         else:
             if feedback:
-                console.print(f"Matching commands : {matching_commands}")
+                msg = f"Matching commands : {matching_commands}"
+                console.print(msg)
+                logger.log(msg)
 
 
 def parse_input(prompt, commands=None, force_beginning: bool = False):
@@ -287,7 +272,6 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
     # If not a command with args, group spaced words together
     arg_commands = ["buy", "add", "remove", "load", "markup", "markdown"]  # help is added by find_command
     if not find_command(inpt.split()[0], arg_commands, feedback=False):
-        logger.log(f"Not a command with args - wrapping {inpt} in quotes")
         inpt = f'"{inpt}"'
 
     inpt_cmd = find_command(inpt, commands, force_beginning)
@@ -314,12 +298,12 @@ def input_loop(prompt, commands, force_beginning=False, ingredient=None, bar=Non
 
         if primary_cmd == "quit":
             if bar:
-                bar.screen = rich_console.Screen.MAIN
+                bar.set_screen("main")
                 utils.save_game(bar)
             utils.quit()
         elif primary_cmd == "help":
             ingredient_cmds = items_to_commands(ingredients.all_ingredients)
-            help_args = help_panels.keys()
+            help_args = set(help_panels.keys()).union(ingredient_cmds)
 
             arg_input = " ".join(args)
             if arg_input == "":
@@ -353,16 +337,18 @@ def input_loop(prompt, commands, force_beginning=False, ingredient=None, bar=Non
 # <editor-fold desc="Input Loop Command Checkers">
 def check_add(args, bar, ingredient):
     if ingredient is None and len(args) == 0:
-        console.print("[error]Invalid args. Use: 'add cocktail', 'add beer', etc.")
+        msg = "[error]Invalid args. Use: 'add cocktail', 'add beer', etc."
+        console.print(msg)
+        logger.log(msg)
         return None
     type_displaying = ingredient
     if type_displaying is None:
         typ = command_to_item(find_command(args[0], ["cocktails", "beers", "ciders", "wines", "meads"]),
                               [Recipe, ingredients.Beer, ingredients.Cider, ingredients.Wine, ingredients.Mead])
-        if bar.menu.add(typ):
+        if bar.menu.select_to_add(typ):
             return "add", args
     else:
-        if bar.menu.add(type_displaying):
+        if bar.menu.select_to_add(type_displaying):
             return "add", args
 
 
@@ -371,7 +357,9 @@ def check_buy(args, bar, ingredient):
         if bar.stock.buy(ingredient=ingredient, arg=args[0]):
             return "buy", args
     else:
-        console.print("[error]Incorrect number of arguments. Usage: buy <quantity>")
+        msg = "[error]Incorrect number of arguments. Usage: buy <quantity>"
+        console.print(msg)
+        logger.log(msg)
 
 
 def check_load(args, bar, ingredient):
@@ -381,15 +369,20 @@ def check_load(args, bar, ingredient):
         else:
             return "load", args
     except IndexError:
-        console.print("[error]Syntax: 'load \\[num]'")
+        msg = "[error]Syntax: 'load \\[num]'"
+        logger.log("IndexError :" + msg)
+        console.print(msg)
     except ValueError:
-        console.print(f"[error]Load argument must be a number")
-
+        msg = f"[error]Load argument must be a number"
+        console.print(msg)
+        logger.log(msg)
 
 
 def check_markdown(args, bar, ingredient):
     if ingredient is None and len(args) == 0:
-        console.print("[error]Invalid args. Use: 'markdown margarita', 'markdown beer', etc.")
+        msg = "[error]Invalid args. Use: 'markdown margarita', 'markdown beer', etc."
+        console.print(msg)
+        logger.log(msg)
     elif bar.menu.mark(direction="down", mark_arg=args[0]):
         return "markdown", args
 

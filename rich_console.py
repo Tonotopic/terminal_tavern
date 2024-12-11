@@ -1,15 +1,6 @@
-import math
-
 from rich.console import Console
 from rich.theme import Theme
 from rich.style import Style
-from enum import Enum
-
-
-class Screen(Enum):
-    MAIN = 1
-    SHOP = 2
-    BAR_MENU = 3
 
 
 styles = {"abv": Style(color="#d40241"),
@@ -38,6 +29,7 @@ styles = {"abv": Style(color="#d40241"),
           "hard soda": Style(color="#db5858"),  # Same as soda
           "beer": Style(color="#f2d280"),
           "wine": Style(color="#bd24a8"),
+          "brandy": Style(color="#b3566a"),
           "cider": Style(color="#e08700"),
           "mead": Style(color="#b89c00"),
           "spirit": Style(color="#51c9ab"),
@@ -47,6 +39,7 @@ styles = {"abv": Style(color="#d40241"),
           "tequila": Style(color="#40ecff"),
           "rum": Style(color="#fffa7d"),
           "liqueur": Style(color="#db1818"),
+          "absinthe": Style(color="#aae68a"),
           "soda": Style(color="#db5858"),
           "tea": Style(color="#549462")}
 
@@ -64,7 +57,3 @@ def standardized_spacing(preceding_string, total_spacing):
     for spacing_index in range(int(item_info_spacing)):
         info_spacing_string += " "
     return info_spacing_string
-
-
-def quarter_round(price):
-    return math.ceil(price * 4) / 4

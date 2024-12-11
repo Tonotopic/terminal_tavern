@@ -1,7 +1,6 @@
-import time
-import asyncio
 from pynput import keyboard
 from itertools import cycle
+
 from rich.layout import Layout
 from rich import box
 from rich.panel import Panel
@@ -9,12 +8,14 @@ from rich.table import Table
 from rich.text import Text
 from rich.live import Live
 
+import logger
 import utils
-from rich_console import console, Screen, styles
-from commands import items_to_commands, input_loop, command_to_item
-from ingredients import Ingredient, list_ingredients, Drink
+from rich_console import console, styles
+from commands import items_to_commands, command_to_item, input_loop
 from bar import Bar
+from ingredients import list_ingredients, Ingredient, Drink
 
+# <editor-fold desc="Live Display">
 live_prompt = "Cycling multiple pages... Begin typing to stop."
 
 
@@ -41,11 +42,13 @@ def listen(sec: int):
 def draw_live(tables, panel, layout, sec):
     bump_console_size()
     with Live(console=console, refresh_per_second=0.00001) as live:
+        logger.log("Drawing live display...")
 
         global draw_sentinel
         draw_sentinel = False
         for table in cycle(tables):
             if draw_sentinel:
+                logger.log("Stopping live display.")
                 break
 
             panel.renderable = table
@@ -56,6 +59,10 @@ def draw_live(tables, panel, layout, sec):
     bump_console_size(down=True)
 
 
+# </editor-fold>
+
+
+# <editor-fold desc="Screens">
 def startup_screen():
     saves_table = Table(expand=True)
     saves_table.add_column("Saves", justify="center")
@@ -77,6 +84,7 @@ def startup_screen():
         saves_table.add_row("[dimmed]No existing saves found")
 
     console.print(startup_layout)
+    logger.log("Startup screen drawn.")
 
     prompt = "'Load \\[num]' or 'new'"
     startup_cmd, args = input_loop(prompt, ["new", "load"])
@@ -100,31 +108,80 @@ def dashboard(bar):
 
     dash_layout = Layout(name="dash_layout")
     dash_layout.split_column(Layout(name="dash_header", size=3),
-                             Layout(name="dash_body"))
+                             Layout(name="dash"))
     dash_layout["dash_header"].split_row(Layout(name="bar_name", renderable=bar_name_panel),
                                          Layout(name="balance", renderable=balance_panel))
 
     # </editor-fold>
     menu_tables = bar.menu.table_menu(expanded=False)[0]
     if len(menu_tables) > 1:
-        dash_layout["dash_body"].split_column(Layout(name="dash"),
-                                              Layout(name="footer", size=1, renderable=live_prompt))
-        dash_layout["dash"].split_row(Layout(name="menu_layout", renderable=menu_panel),
-                                      Layout())
+        dash_layout["dash"].split_column(Layout(name="dash_body"),
+                                         Layout(name="footer", size=1, renderable=live_prompt))
+        dash_layout["dash_body"].split_row(Layout(name="menu_layout", renderable=menu_panel),
+                                           Layout())
 
         draw_live(tables=menu_tables, panel=menu_panel, layout=dash_layout, sec=3)
 
     else:
-        dash_layout["dash_body"].split_row(Layout(name="menu_layout", renderable=menu_panel),
-                                           Layout())
+        menu_panel.renderable = menu_tables[0]
+        dash_layout["dash"].split_row(Layout(name="menu_layout", renderable=menu_panel),
+                                      Layout())
         console.print(dash_layout)
+        logger.log("Dashboard drawn.")
 
     prompt = "'Shop' or view the 'menu'"
     primary_cmd, args = input_loop(prompt, ["shop", "menu"], bar=bar)
     if primary_cmd == "shop":
-        bar.screen = Screen.SHOP
+        bar.set_screen("SHOP")
     elif primary_cmd == "menu":
-        bar.screen = Screen.BAR_MENU
+        bar.set_screen("BAR_MENU")
+
+
+def menu_screen(bar):
+    bar.set_screen("BAR_MENU")
+    global type_displaying
+    type_displaying = None
+    prompt = "'Back' to go back"
+
+    while bar.get_screen() == "BAR_MENU":
+        menu_tables, menu_list = bar.menu.table_menu(display_type=type_displaying, expanded=True)
+        bar_menu_panel = Panel(title=f"~*~ {bar.name} Menu ~*~", renderable="render failed",
+                               border_style=styles.get("bar_menu"))
+        bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
+
+        if len(menu_tables) > 1:
+            bar_menu_layout.split_column(Layout(name="bar_menu_panel", renderable=bar_menu_panel),
+                                         Layout(name="footer", size=1, renderable=live_prompt))
+
+            draw_live(tables=menu_tables, panel=bar_menu_panel, layout=bar_menu_layout, sec=5)
+        else:
+            bar_menu_panel.renderable = menu_tables[0]
+            console.print(bar_menu_layout)
+
+        menu_commands = {"add", "remove", "markup", "markdown", "back", "menu"}
+        # When viewing a section, don't add menu items as primary commands
+        if type_displaying is None:
+            logger.log("Bar menu screen drawn - viewing All")
+            menu_commands = menu_commands.union(items_to_commands(menu_list))
+        else:
+            logger.log("Bar menu screen drawn - viewing " + type_displaying().format_type())
+
+        typ = None if type_displaying is None else type_displaying
+        primary_cmd, args = input_loop(prompt, menu_commands, ingredient=typ, bar=bar)
+
+        if primary_cmd == "back":
+            if type_displaying is None:  # At the full menu screen
+                bar.set_screen("MAIN")
+            else:  # Viewing beer menu, etc.
+                type_displaying = None
+        elif primary_cmd == "menu":
+            bar.set_screen("MAIN")
+        elif primary_cmd in ["add", "remove", "markup", "markdown"]:
+            pass  # Handled by input loop
+        elif primary_cmd in menu_commands:  # beer, cider, wine, etc.
+            type_displaying = command_to_item(primary_cmd, menu_list)
+        else:
+            console.print("[error]No allowed command recognized.")
 
 
 def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=None):
@@ -137,10 +194,10 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
           :param current_selection: The current category or product being displayed.
           :param msg: One-time specific prompt, such as confirming a successful purchase.
         """
-    bar.screen = Screen.SHOP
+    bar.set_screen("SHOP")
     showing_flavored = False
 
-    while bar.screen == Screen.SHOP:
+    while bar.get_screen() == "SHOP":
         # <editor-fold desc="Layout">
         global prompt
         table_settings = {
@@ -229,9 +286,8 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
         elif isinstance(current_selection, Ingredient):
             shop_commands.add("buy")
             prompt = "Buy \\[volume], or go back"
-            obj = current_selection
-            style = obj.get_ing_style()
-            header_text = obj.description()
+            style = current_selection.get_ing_style()
+            header_text = current_selection.description()
 
             # <editor-fold desc="inv_table">
             inv_volume = 0
@@ -239,8 +295,8 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
                               padding=(5, 0, 0, 0),
                               **table_settings)
             inv_table.add_column(justify="center")
-            if obj in bar.stock.inventory:
-                inv_volume = bar.stock.inventory.get(obj)
+            if current_selection in bar.stock.inventory:
+                inv_volume = bar.stock.inventory.get(current_selection)
             inv_table.add_row(Text(f"{inv_volume}oz", style))
             # </editor-fold>
 
@@ -251,7 +307,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             vol_table.add_column("Price", justify="center")
             vol_table.show_header = True
 
-            for volume, price in obj.volumes.items():
+            for volume, price in current_selection.volumes.items():
                 vol_table.add_row()  # Table's leading parameter breaks end_section. Add space between rows manually
                 vol_table.add_row(f"[{style}]{volume}oz[/{style}]",
                                   Text("${:.2f}".format(price), style=styles.get("money")))
@@ -268,6 +324,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
         # </editor-fold>
 
         if isinstance(current_selection, type):
+            logger.log(f"Shop screen drawn; viewing {header_text}")
             if len(shop_tables) > 1:
                 shop_layout["shop_screen"].split_column(Layout(name="footed_shop_screen"),
                                                         Layout(name="footer", size=1,
@@ -280,7 +337,9 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
                 shop_panel.renderable = shop_tables[0]
                 console.print(shop_layout)
         else:
+            logger.log("Shop screen drawn; viewing " + current_selection.name)
             console.print(shop_layout)
+
 
         # <editor-fold desc="Input">
 
@@ -296,12 +355,13 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             # Buy has been executed in input loop
             msg = (f"Bought {args[0]}oz of [{style}]{current_selection.name}[/{style}]. "
                    f"Current stock: {bar.stock.inventory[current_selection]}oz")
+            logger.log(msg)
             shop_screen(bar=bar, current_selection=type(current_selection),
                         msg=msg)  # Go back from the ingredient screen
             return
         elif primary_cmd == "back":
             if current_selection == Ingredient:
-                bar.screen = Screen.MAIN
+                bar.set_screen("MAIN")
                 return
             elif isinstance(current_selection, Ingredient):  # Ingredient selected, go back to category
                 current_selection = type(current_selection)
@@ -313,7 +373,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             else:
                 console.print("current_category is not category or ingredient")
         elif primary_cmd == "shop":  # exit the shop
-            bar.screen = Screen.MAIN
+            bar.set_screen("MAIN")
             return
         elif primary_cmd == "flavored":
             showing_flavored = True
@@ -323,47 +383,4 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             console.print("[error]Command not handled")
 
         # </editor-fold>
-
-
-def menu_screen(bar):
-    bar.screen = Screen.BAR_MENU
-    global type_displaying
-    type_displaying = None
-    prompt = "'Back' to go back"
-
-    while bar.screen == Screen.BAR_MENU:
-        menu_tables, menu_list = bar.menu.table_menu(display_type=type_displaying, expanded=True)
-        bar_menu_panel = Panel(title=f"~*~ {bar.name} Menu ~*~", renderable="render failed",
-                               border_style=styles.get("bar_menu"))
-        bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
-
-        if len(menu_tables) > 1:
-            bar_menu_layout.split_column(Layout(name="bar_menu_panel", renderable=bar_menu_panel),
-                                         Layout(name="footer", size=1, renderable=live_prompt))
-
-            draw_live(tables=menu_tables, panel=bar_menu_panel, layout=bar_menu_layout, sec=5)
-        else:
-            bar_menu_panel.renderable = menu_tables[0]
-            console.print(bar_menu_layout)
-
-        menu_commands = {"add", "remove", "markup", "markdown", "back", "menu"}
-        # When viewing a section, don't add menu items as primary commands
-        if type_displaying is None:
-            menu_commands = menu_commands.union(items_to_commands(menu_list))
-
-        typ = None if type_displaying is None else type_displaying
-        primary_cmd, args = input_loop(prompt, menu_commands, ingredient=typ, bar=bar)
-
-        if primary_cmd == "back":
-            if type_displaying is None:  # At the full menu screen
-                bar.screen = Screen.MAIN
-            else:  # Viewing beer menu, etc.
-                type_displaying = None
-        elif primary_cmd == "menu":
-            bar.screen = Screen.MAIN
-        elif primary_cmd in ["add", "remove", "markup", "markdown"]:
-            pass  # Handled by input loop
-        elif primary_cmd in menu_commands:  # beer, cider, wine, etc.
-            type_displaying = command_to_item(primary_cmd, menu_list)
-        else:
-            console.print("[error]No allowed command recognized.")
+# </editor-fold>

@@ -4,7 +4,8 @@ import sqlite3
 import inspect
 from rich.table import Table
 
-from rich_console import console, styles, standardized_spacing, quarter_round
+from rich_console import console, styles, standardized_spacing
+from utils import quarter_round
 
 all_ingredients = []
 
@@ -13,6 +14,10 @@ special_formats = {
     "Rose": "Rosé",
     "SkinContact": "Skin-Contact Wine",
     "NonAlcohol": "Non-Alcoholic Drink"
+}
+special_plurals = {
+    "Chardonnay": "Chardonnays",
+    "Amaro": "Amari"
 }
 
 
@@ -35,10 +40,12 @@ class MenuItem:
         profit_base = None
         if cost_value < 1.25:
             profit_base = 3.75
-        elif 1.25 <= cost_value < 3:
+        elif 1.25 <= cost_value < 2.5:
             profit_base = cost_value * 3
-        elif cost_value >= 3:
+        elif 2.5 <= cost_value < 4.5:
             profit_base = cost_value * 2
+        elif cost_value >= 4.5:
+            profit_base = cost_value * 1.25
         return profit_base, variable
 
     def base_price(self):
@@ -146,9 +153,11 @@ class Ingredient:
             type_name = type_name.replace("I P A", "IPA")
 
         if plural:
-            if type_name.endswith("ey"):
+            if type_name in special_plurals:
+                type_name = special_plurals[type_name]
+            elif type_name.endswith("ey"):
                 type_name = type_name[:-2] + "ies"  # Replace "ey" with "ies"
-            elif type_name.endswith("y") and not type_name == "Chardonnay":
+            elif type_name.endswith("y"):
                 type_name = type_name[:-1] + "ies"  # Replace "y" with "ies"
             elif type_name.endswith("ch") or type_name.endswith("sh") or type_name.endswith("x") or type_name.endswith(
                     "s") or type_name.endswith("z"):
@@ -594,7 +603,7 @@ class Spirit(Alcohol):
 
     @override
     def get_portions(self):
-        return {"Shot": 2, "Double": 4}
+        return {"Splash": 1, "Shot": 2, "Double": 4}
 
 
 class Vodka(Spirit):
@@ -631,6 +640,7 @@ class Rye(Whiskey):
 # </editor-fold>  # Whiskey
 
 
+# <editor-fold desc="Gin">
 class Gin(Spirit):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
@@ -641,6 +651,9 @@ class LondonDryGin(Gin):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+# </editor-fold>
 
 
 class Tequila(Spirit):
@@ -677,6 +690,18 @@ class Brandy(Spirit):
 
 
 class Cognac(Brandy):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class Sherry(Brandy):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class Absinthe(Spirit):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -721,6 +746,12 @@ class Vermouth(Liqueur):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
+class Amaro(Liqueur):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
 # </editor-fold>
 
 class HardSoda(Alcohol):
@@ -747,7 +778,7 @@ class NonAlcohol(Drink):
 
     @override
     def get_portions(self):
-        return {"4oz": 4, "6oz": 6, "8oz": 8}
+        return {"Splash": 1, "2oz": 2, "4oz": 4, "6oz": 6, "8oz": 8}
 
 
 class Tea(NonAlcohol):
@@ -786,7 +817,7 @@ class Additive(Ingredient):
 
     @override
     def get_portions(self):
-        return {"Single": 1, "Shared": 3}
+        return {"1oz": 1, "2oz": 2, "3oz": 3, "4oz": 4}
 
 
 class Syrup(Additive):
