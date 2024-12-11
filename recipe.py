@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import override
 from rich.table import Table
 from rich.text import Text
@@ -194,35 +195,39 @@ class Recipe(MenuItem):
                 obj = ingredient()
                 name = obj.format_type()
 
-            volume = round(obj.get_portions()[self.r_ingredients[ingredient]], 2)
+            volume = round(Decimal(obj.get_portions()[self.r_ingredients[ingredient]]), 2)
 
             for typ in [ingredients.Liqueur, ingredients.Spice]:
                 if isinstance(ingredient, typ) or (isinstance(ingredient, type) and ingredient == typ):
-                    if volume < 1:
-                        volume = volume * 50
+                    if typ in [ingredients.Liqueur, ingredients.Spice]:
+                        if volume < 0.2:
+                            volume = round(volume * 20, 2)
+                        elif 0.2 < volume < 0.5:
+                            volume = round(volume * 10, 2)
+
 
             for taste in flavors.tastes:
-                points = 0
+                points = Decimal()
 
                 name_to_type = {typ().format_type(): typ for typ in ingredients.all_ingredient_types()}
                 for word in flavors.tastes[taste]:
-                    desc_weight = 0
+                    desc_weight = Decimal()
                     if word in name_to_type:
                         typ = name_to_type[word]
                         if isinstance(obj, typ):
                             logger.log(f"      {name} is a {word} - adds {taste}")
-                            desc_weight += 3
+                            desc_weight += Decimal(3)
                     if obj.flavor != "":
                         if word in obj.flavor:
-                            desc_weight += 5
+                            desc_weight += Decimal(5)
                     if obj.character:
                         if word in obj.character:
-                            desc_weight += 2
+                            desc_weight += Decimal(3)
                     if obj.notes:
                         if word in obj.notes:
-                            desc_weight += 0.75
-                    term_weight = flavors.tastes[taste][word]
-                    points_added = round(term_weight * desc_weight * volume, 2)
+                            desc_weight += Decimal(0.75)
+                    term_weight = Decimal(flavors.tastes[taste][word])
+                    points_added = round(Decimal(term_weight * desc_weight * volume), 2)
                     points += points_added
                     if desc_weight > 0:
                         logger.log(f"        {term_weight}(term) * {desc_weight}(desc) * {volume}(vol) = {points_added} points in {taste} from \"{word}\" in {name}")
@@ -231,7 +236,8 @@ class Recipe(MenuItem):
                     try:
                         taste_profile[taste] += points
                     except KeyError:
-                        taste_profile[taste] = points
+                        taste_profile[taste] = Decimal()
+                        taste_profile[taste] += points
                     logger.log(f"    {points} points in {taste} from {name}")
 
         return taste_profile

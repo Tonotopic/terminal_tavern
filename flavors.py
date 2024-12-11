@@ -24,4 +24,9 @@ hoppy = ["hoppy", "hops", "beer"]
 ["wine", "bourbon", "rum", "champagne", "complex", "dull", "hazy", "cloudy", "boozey", "funky", "exotic",
  "vibrant", "bright", "balanced", "complex", "minimalistic", "foamy"]
 ["very", "strongly"]
-["lightly", "slightly", "subtle"]
+["lightly", "slightly", "subtl"]
+
+# Creamy reduces dark
+# Dull reduces complex, exotic, balanced
+
+# Vegetal clashes with sweet
