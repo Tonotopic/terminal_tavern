@@ -8,8 +8,6 @@ from rich_console import console, styles, standardized_spacing
 from utils import quarter_round
 import flavors
 
-# TODO: Fix sugar on the rim
-
 all_ingredients = []
 
 special_formats = {
@@ -548,7 +546,7 @@ class Cider(Alcohol, MenuItem):
 
     @override
     def get_portions(self):
-        return {"8oz": 8, "5oz": 5, "2oz": 2, "1oz": 1}
+        return Beer.get_portions(self)
 
     def pour_vol(self):
         return 12
@@ -563,7 +561,7 @@ class Wine(Alcohol, MenuItem):
 
     @override
     def get_portions(self):
-        return {"Glass Pour": 6, "Spritzer Pour": 4, "Shot": 2, "1oz": 1, "Splash": 0.5}
+        return {"Glass Pour": 6, "Spritzer Pour": 4, "Shot": 2, "1oz": 1, "Half oz": 1 / 2}
 
     def pour_vol(self):
         return 6
@@ -658,7 +656,7 @@ class Spirit(Alcohol):
 
     @override
     def get_portions(self):
-        return {"Splash": 0.5, "1oz": 1, "Shot": 2, "Double": 4}
+        return {"Splash": 0.25, "Half oz": 1 / 2, "1oz": 1, "Shot": 2, "Double": 4}
 
 
 class Vodka(Spirit):
@@ -761,7 +759,7 @@ class Mead(Alcohol, MenuItem):
 
     @override
     def get_portions(self):
-        return {"Glass Pour": 6, "Spritzer Pour": 4, "Shot": 2, "1oz": 1, "Splash": 0.5}
+        return Wine.get_portions(self)
 
     def pour_vol(self):
         return 6
@@ -775,7 +773,8 @@ class Liqueur(Alcohol):
 
     @override
     def get_portions(self):
-        return {"Dash": 1 / 48, "Generous Dash": 1 / 24, "Splash": 0.5, "1oz": 1, "Shot": 2, "Double": 4, }
+        return {"Dash": 1 / 48, "Generous Dash": 1 / 24, "Splash": 0.25, "Half oz": 1 / 2, "1oz": 1, "Shot": 2,
+                "Double": 4, }
 
 
 class Bitter(Liqueur):
@@ -817,7 +816,7 @@ class HardSoda(Alcohol):
 
     @override
     def get_portions(self):
-        return {"1oz": 1, "2oz": 2, "4oz": 4, "6oz": 6, "8oz": 8}
+        return Soda.get_portions(self)
 
 
 # </editor-fold>  # Alcohols
@@ -830,7 +829,7 @@ class NonAlcohol(Drink):
 
     @override
     def get_portions(self):
-        return {"Splash": 0.5, "1oz": 1, "2oz": 2, "4oz": 4, "6oz": 6, "8oz": 8}
+        return {"Half oz": 1 / 2, "1oz": 1, "2oz": 2, "4oz": 4, "6oz": 6, "8oz": 8}
 
 
 class Tea(NonAlcohol):
@@ -869,7 +868,7 @@ class Additive(Ingredient):
 
     @override
     def get_portions(self):
-        return {"Half ounce": 0.5, "1oz": 1, "2oz": 2, "3oz": 3, "4oz": 4}
+        return {"Dash": 1 / 24, "Teaspoon": 1 / 6, "Splash": 0.25, "Half ounce": 1 / 2, "1oz": 1, "2oz": 2, "3oz": 3}
 
 
 class Syrup(Additive):
@@ -884,7 +883,7 @@ class Spice(Additive):
 
     @override
     def get_portions(self):
-        return {"Dash": 1 / 24, "Teaspoon": 1 / 6, "On the Rim": 1 / 6}
+        return {"Dash": 1 / 24, "Teaspoon": 1 / 6, "Tablespoon": 1 / 2, "On the Rim": 1 / 6}
 
 
 class Herb(Additive):
@@ -902,7 +901,10 @@ class Sweetener(Additive):
 
     @override
     def get_portions(self):
-        return {"Teaspoon": 1 / 6, "Tablespoon": 1 / 2, "1 fl oz": 1}
+        portions = {"Teaspoon": 1 / 6, "Tablespoon": 1 / 2, "1 fl oz": 1}
+        if self.name == "sugar":
+            portions["On the Rim"] = 1 / 6
+        return portions
 
 
 class Fruit(Additive):
@@ -911,14 +913,17 @@ class Fruit(Additive):
 
     def get_portions(self):
         unsliceable = {"maraschino cherry", "raspberry", "lychee", "blackberry", "cranberry"}
-        portions = {"Slice": 1 / 8, "Juice": 1 / 2, "Crushed": 1, "Whole": 1}
+        portions = {"Juice (Tsp)": 1 / 6, "Juice (Tbsp)": 1 / 2, "Crushed": 1}
         if self.name in unsliceable:
-            portions.pop("Slice")
-            '''for portion in portions:
-                portions[portion] = (portions[portion]) / 8'''
-        elif self.name in flavors.tastes["citrus"]:
+            portions["Whole"] = 1 / 8
+            portions["Crushed"] = 1 / 8
+        else:
+            portions["Slice"] = 1 / 8
+        if self.name in flavors.tastes["citrus"]:
             portions["Rind"] = 1 / 8
-            portions["Zest"] = 1 / 8
+            portions["Zest"] = 1 / 24
+        if self.name in flavors.tastes["citrus"] or self.name == "pineapple":
+            portions["Wheel"] = 1 / 4
 
         return portions
 
