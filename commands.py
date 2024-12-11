@@ -7,6 +7,7 @@ from unidecode import unidecode
 
 import ingredients
 import logger
+import ui
 import utils
 from recipe import Recipe
 import rich_console
@@ -277,7 +278,7 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
 
     # TODO: As commands with args are added, skip them here
     # If not a command with args, group spaced words together
-    arg_commands = ["buy", "add", "remove", "load", "markup", "markdown"]  # help is added by find_command
+    arg_commands = ["shop", "buy", "add", "remove", "load", "markup", "markdown"]  # help is added by find_command
     if not find_command(inpt.split()[0], arg_commands, feedback=False):
         inpt = f'"{inpt}"'
 
@@ -292,12 +293,10 @@ def parse_input(prompt, commands=None, force_beginning: bool = False):
     return primary_command, args
 
 
-def input_loop(prompt, commands, force_beginning=False, ingredient=None, bar=None):
+def input_loop(prompt, commands, force_beginning=False, ingredient=None, bar=None, skip=None):
     """Loops the prompt checking for the success of certain commands so feedback can be shown without
     re-drawing the entire screen."""
-    global found_valid_input
-    found_valid_input = False
-    while found_valid_input is False:
+    while True:
         inpt = parse_input(prompt, commands, force_beginning)
         if inpt[0] is None:
             continue
@@ -326,16 +325,15 @@ def input_loop(prompt, commands, force_beginning=False, ingredient=None, bar=Non
                 arg_ing = command_to_item(arg, ingredients.all_ingredients)
                 console.print(arg_ing.description())
                 continue
-        elif primary_cmd == "new" and "load" not in commands:  # Skip check_new (for new game) when new cocktail
-            found_valid_input = True
-            return primary_cmd, args
         elif callable(globals().get("check_" + primary_cmd)):
+            if primary_cmd == skip:
+                return primary_cmd, args
             result = globals().get("check_" + primary_cmd)(args, bar, ingredient)
             if result is not None:
-                found_valid_input = True
                 return result
+            else:
+                continue
         else:
-            found_valid_input = True
             return primary_cmd, args
 
         # <editor-fold desc="Command Functions">
@@ -396,7 +394,9 @@ def check_markdown(args, bar, ingredient):
 
 def check_markup(args, bar, ingredient):
     if ingredient is None and len(args) == 0:
-        console.print("[error]Invalid args. Use: 'markup margarita', 'markup beer', etc.")
+        msg = "[error]Invalid args. Use: 'markup margarita', 'markup beer', etc."
+        console.print(msg)
+        logger.log(msg)
     elif bar.menu.mark(direction="up", mark_arg=args[0]):
         return "markup", args
 
@@ -416,4 +416,22 @@ def check_remove(args, bar, ingredient):
         console.print("[error]Invalid args. Use: 'remove margarita', 'remove guinness', etc.")
     elif bar.menu.remove(args[0]):
         return "remove", args
+
+
+def check_shop(args, bar, ingredient):
+    if len(args) > 0:
+        all_ingredient_types = ingredients.all_ingredient_types()
+        cmd_lst = [typ().format_type().lower() for typ in all_ingredient_types]
+        shop_arg = find_command(args[0], cmd_lst)
+        if shop_arg:
+            shop_typ = command_to_item(shop_arg, all_ingredient_types)
+            bar.set_screen("SHOP")
+            ui.shop_screen(bar, shop_typ)
+        else:
+            return None
+    else:
+        bar.set_screen("SHOP")
+        ui.shop_screen(bar)
+    return "shop", args
+
 # </editor-fold>

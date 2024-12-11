@@ -67,7 +67,7 @@ class BarStock:
                 if ingredient in self.bar.menu.get_section(ingredient):
                     continue
             lst.append(ingredient)
-            row_ings.append(Text(ingredient.name, style=typ().get_ing_style()))
+            row_ings.append(Text(ingredient.name, style=typ().get_style()))
             row_ings.append(ingredient.format_type())
             if len(row_ings) == 6:
                 add_tool_table.add_row(row_ings[0], row_ings[1], row_ings[2], row_ings[3], row_ings[4], row_ings[5],
@@ -103,7 +103,7 @@ class BarStock:
                 if items and index == len(subclasses) - 1 and not showing_flavorable_spirit:
                     end_section = True
                 obj = subclass()
-                style = obj.get_ing_style()
+                style = obj.get_style()
                 table_1.add_row(Text(f"{obj.format_type(plural=True)} "  # Pluralize
                                    f"({len(list_ingredients(container, subclass))})",  # Quantity
                                    style=style), end_section=end_section)
@@ -132,7 +132,7 @@ class BarStock:
 
             if type(item) is typ:
                 lst.append(item)
-                style = item.get_ing_style()
+                style = item.get_style()
                 if shop:
                     table_section.add_row(f"[{style}][italic]{item.name}")
                 else:

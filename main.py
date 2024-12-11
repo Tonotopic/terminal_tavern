@@ -27,6 +27,8 @@ while True:
     if current_bar.get_screen() == "MAIN":
         ui.dashboard(current_bar)
     elif current_bar.get_screen() == "SHOP":
-        ui.shop_screen(current_bar)
+        # current_selection passed in shop command handler, and shop recursively calls itself
+        # shop screen is set inside ui.shop_screen - return once it's done calling itself
+        current_bar.set_screen("MAIN")
     elif current_bar.get_screen() == "BAR_MENU":
         ui.menu_screen(current_bar)

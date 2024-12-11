@@ -48,7 +48,6 @@ class BarMenu:
 
     # <editor-fold desc="Display">
     def table_menu(self, display_type=None, expanded=False):
-        # @TODO: Multiple columns or live display to save space
         table_settings = {
             "show_header": False,
             "box": box.MINIMAL,
@@ -117,7 +116,7 @@ class BarMenu:
 
     def overview(self, item):
         if isinstance(item, Ingredient):
-            description_panel = Panel(renderable=item.description(), border_style=item.get_ing_style())
+            description_panel = Panel(renderable=item.description(), border_style=item.get_style())
             stock_rem = self.bar.stock.inventory[item]
             pours_left = math.floor(stock_rem / item.pour_vol())
             stock_panel = Panel(renderable=f"[panel]{stock_rem}[/panel]oz in stock ([panel]{pours_left}[/panel] full pours)",
@@ -190,7 +189,7 @@ class BarMenu:
                 add_commands.extend(items_to_commands(add_tool_list))
 
                 console.print(add_tool_layout)
-                add_cmd, ing_args = input_loop(add_prompt, add_commands, bar=self.bar)
+                add_cmd, ing_args = input_loop(add_prompt, add_commands, bar=self.bar, skip="new")
                 if add_cmd == "back":
                     self.bar.set_screen("BAR_MENU")
                     return True
@@ -225,25 +224,27 @@ class BarMenu:
             console.print("[error]Syntax: 'markup \\[menu item/category]'")
             return False
         else:
-            category_strings = [cat[1] for cat in self.menu_sections()]
+            category_strings = [cat[1].lower() for cat in self.menu_sections()]
             menu_args = items_to_commands(self.full_menu()).union(set(category_strings))
-            cmd = find_command(mark_arg, items_to_commands(menu_args))
-            if cmd:
+            cmd = find_command(mark_arg, menu_args) # TODO redundant i_t_c call?
+            if cmd in menu_args:
                 item = command_to_item(cmd, self.full_menu() + [section[2] for section in self.menu_sections()])
-                if isinstance(item, Recipe):
-                    style = styles.get("cocktails")
+                if isinstance(item, type):
+                    obj = item()
+                    style = obj.get_style()
+                    name = obj.format_type()
                 else:
-                    style = item.get_ing_style()
+                    style = item.get_style()
+                    name = item.name
+                    if item.markup != 0:
+                        console.print(
+                            f"[{style}]{item.name}[/{style}]'s price is marked up by [money]{"${:.2f}".format(item.markup)}.")
+                    if item.markdown != 0:
+                        console.print(
+                            f"[{style}]{name}[/{style}] is currently marked down by {item.formatted_markdown}.")
 
-                if item.markup != 0:
-                    console.print(
-                        f"[{style}]{item.name}[/{style}]'s price is marked up by [money]{"${:.2f}".format(item.markup)}.")
-                if item.markdown != 0:
-                    console.print(
-                        f"[{style}]{item.name}[/{style}] is currently marked down by {item.formatted_markdown}.")
-
-                prompt = f"[cmd]Mark{direction} [{style}]{item.name}[/{style}] by what percentage or dollar value?[/cmd] > "
-                logger.log(f"Marking {direction} {item.name}...")
+                prompt = f"[cmd]Mark{direction} [{style}]{name}[/{style}] by what percentage or dollar value?[/cmd] > "
+                logger.log(f"Marking {direction} {name}...")
                 value = None
                 percent = False
                 while value is None:
@@ -266,17 +267,31 @@ class BarMenu:
                         console.print("[error]Must be a number")
 
                 if cmd in category_strings:
+                    successful = True
                     for menu_item in self.get_section(cmd):
                         if direction == "up":
-                            return menu_item.markup(value, percent)
+                            if not menu_item.mark_up(value, percent):
+                                successful = False
+                                msg = f"[error]Error marking section {cmd} thrown by {menu_item.name}"
+                                console.print(msg)
+                                logger.log(msg)
                         elif direction == "down":
-                            return menu_item.markdown(value, percent)
+                            if not menu_item.mark_down(value, percent):
+                                successful = False
+                                msg = f"[error]Error marking section {cmd} thrown by {menu_item.name}"
+                                console.print(msg)
+                                logger.log(msg)
+                    return successful
+
 
                 elif item in self.get_section(item):
                     if direction == "up":
                         return item.mark_up(value, percent)
                     elif direction == "down":
                         return item.mark_down(value, percent)
+            else:
+                console.print(f"[error]Syntax: 'mark{direction} \\[item]' or 'mark{direction} \\[category]'")
+                return None
 
     # </editor-fold>
 

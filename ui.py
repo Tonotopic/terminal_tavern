@@ -131,7 +131,8 @@ def dashboard(bar):
         logger.log("Dashboard drawn.")
 
     prompt = "'Shop' or view the 'menu'"
-    primary_cmd, args = input_loop(prompt, ["shop", "menu"], bar=bar)
+    inpt = input_loop(prompt, ["shop", "menu"], bar=bar)
+    primary_cmd, args = inpt
     if primary_cmd == "shop":
         bar.set_screen("SHOP")
     elif primary_cmd == "menu":
@@ -267,7 +268,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             if current_selection == Ingredient:
                 header_text = "[dimmed]All"
             else:  # Show pluralized category name in its proper style
-                style = styles.get(obj.get_ing_style())
+                style = styles.get(obj.get_style())
                 if showing_flavored:
                     header_text = Text(f"Flavored {obj.format_type()}s", style=style)
                 else:
@@ -294,7 +295,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
         elif isinstance(current_selection, Ingredient):
             shop_commands.add("buy")
             prompt = "Buy \\[volume], or go back"
-            style = current_selection.get_ing_style()
+            style = current_selection.get_style()
             header_text = current_selection.description()
 
             # <editor-fold desc="inv_table">
@@ -354,7 +355,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
         #  Don't do mid-word matches for Alcohol vs Non-Alcohol so "alco"+ doesn't return both commands
         force_beginning = True if current_selection == Drink else False
 
-        primary_cmd, args = input_loop(prompt, shop_commands, force_beginning, current_selection, bar=bar)
+        primary_cmd, args = input_loop(prompt, shop_commands, force_beginning, current_selection, bar=bar, skip="shop")
 
         if msg:
             msg = None

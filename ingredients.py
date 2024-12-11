@@ -86,13 +86,13 @@ class MenuItem:
 
     def list_item(self, expanded=False):
         # Layout offset (12) and markdown offset (15)
-        total_spacing = console.size[0] - 12 - 14 if expanded else int(console.size[0] / 2) - 19
+        total_spacing = console.size[0] - 12 - 16 if expanded else int(console.size[0] / 2) - 19
 
         if isinstance(self, Beer):
             name = self.name
             price_spacing = total_spacing / 3
             beer_spacing = 2 * price_spacing
-            if console.size[0] % 3 > 0:
+            if not expanded and console.size[0] % 3 > 0:
                 price_spacing -= 1
 
             formatted_type = self.format_type()
@@ -115,7 +115,7 @@ class MenuItem:
 
         elif isinstance(self, Alcohol):
             name = self.name
-            style = self.get_ing_style()
+            style = self.get_style()
 
             if len(name) > total_spacing:
                 name = name[:-3] + "..."
@@ -187,7 +187,7 @@ class Ingredient:
         else:
             return ""
 
-    def get_ing_style(self):
+    def get_style(self):
         """Gets the style for the given type or its nearest parent in the theme."""
         typ = self.format_type().lower()
         if typ in styles:
@@ -195,13 +195,13 @@ class Ingredient:
         else:
             for parent_class in type(self).__bases__:
                 parent_object = parent_class()
-                style = parent_object.get_ing_style()
+                style = parent_object.get_style()
                 if style:
                     return style
         return ""
 
     def description(self):  # {Name} is a/an {character} {flavor}{type}{notes}.
-        style = self.get_ing_style()
+        style = self.get_style()
         desc = (f"[{style}][italic]{self.name.capitalize()}[/{style}][/italic] "
                 f"is {self.format_a()} {self.character} {self.format_flavor()}"
                 f"[{style}]{self.format_type().lower()}[/{style}]{self.notes_desc()}.")
@@ -264,7 +264,7 @@ class Drink(Ingredient):
 
     @override
     def description(self):  # Remove capitalization
-        style = self.get_ing_style()
+        style = self.get_style()
         desc = (f"[{style}][italic]{self.name}[/{style}][/italic] "
                 f"is {self.format_a()} {self.character} {self.format_flavor()}"
                 f"[{style}]{self.format_type().lower()}[/{style}]{self.notes_desc()}.")
@@ -973,9 +973,10 @@ def list_ingredients(container, typ, type_specific=False):
 
 
 def all_ingredient_types(typ=Ingredient):
-    subclasses = typ.__subclasses__()
-    for subclass in subclasses:
-        subclasses.extend(all_ingredient_types(subclass))
+    subclasses = set()
+    for subclass in typ.__subclasses__():
+        subclasses.add(subclass)
+        subclasses.update(all_ingredient_types(subclass))
     return subclasses
 
 

@@ -3,7 +3,7 @@ from rich.table import Table
 from rich.text import Text
 
 import rich_console
-from rich_console import console, standardized_spacing
+from rich_console import console, standardized_spacing, styles
 from ingredients import Ingredient, MenuItem, Fruit
 
 
@@ -19,7 +19,7 @@ class Recipe(MenuItem):
     @override
     def list_item(self, expanded=False):
         name = self.name
-        total_spacing = console.size[0] - 20 if expanded else int(console.size[0] / 2) - 14
+        total_spacing = console.size[0] - 22 if expanded else int(console.size[0] / 2) - 14
         if expanded:
             cocktail_spacing = int(0.3 * total_spacing)
             ingredient_spacing = int(0.7 * total_spacing) - 5
@@ -43,6 +43,9 @@ class Recipe(MenuItem):
             return "Cocktails"
         else:
             return "Cocktail"
+
+    def get_style(self):
+        return styles.get("cocktails")
 
     # <editor-fold desc="Price">
     @override
@@ -92,12 +95,12 @@ class Recipe(MenuItem):
         for entry in self.r_ingredients:
             if isinstance(entry, type):
                 if markup:
-                    r_ings.append(f"[{entry().get_ing_style()}]{entry().format_type()}")
+                    r_ings.append(f"[{entry().get_style()}]{entry().format_type()}")
                 else:
                     r_ings.append(entry().format_type())
             elif isinstance(entry, Ingredient):
                 if markup:
-                    r_ings.append(f"[{entry.get_ing_style()}]{entry.name}")
+                    r_ings.append(f"[{entry.get_style()}]{entry.name}")
                 else:
                     r_ings.append(entry.name)
             else:
@@ -134,11 +137,11 @@ class Recipe(MenuItem):
                 if isinstance(ingredient, type):
                     obj = ingredient()
                     name = obj.format_type()
-                    style = obj.get_ing_style()
+                    style = obj.get_style()
                     cost = "?"
                 else:
                     name = ingredient.name
-                    style = ingredient.get_ing_style()
+                    style = ingredient.get_style()
                     cost = "~${:.2f}".format(ingredient.get_portions()[self.r_ingredients[ingredient]] * ingredient.price_per_oz())
 
                 recipe_table.add_row(f"-   {self.r_ingredients[ingredient]}", of, Text(name, style),
