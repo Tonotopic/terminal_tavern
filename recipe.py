@@ -27,10 +27,11 @@ class Recipe(MenuItem):
     @override
     def list_item(self, expanded=False):
         name = self.name
-        total_spacing = console.size[0] - 22 if expanded else int(console.size[0] / 2) - 14
+        total_spacing = console.size[0] - 29 if expanded else int(console.size[0] // 2) - 19
         if expanded:
-            cocktail_spacing = int(0.3 * total_spacing)
-            ingredient_spacing = int(0.7 * total_spacing) - 5
+            cocktail_spacing = total_spacing // 4
+            ingredient_spacing = 3 * cocktail_spacing
+            cocktail_spacing += total_spacing % 4
             trunc_index = ingredient_spacing
 
             ingredients = self.format_ingredients(markup=False)
@@ -54,12 +55,16 @@ class Recipe(MenuItem):
 
                 formatted_ingredients = formatted_ingredients[:(f_trunc_index)] + "[dimmed]..."
 
+            console.print(f"total spacing = {total_spacing}")
+            console.print(f"cocktail spacing = {cocktail_spacing}")
+            console.print(f"ingredient spacing = {ingredient_spacing}")
             return (
                 f"[cocktails]{name}[/cocktails]{standardized_spacing(name, cocktail_spacing)}{formatted_ingredients}"
                 f"{standardized_spacing(ingredients[:trunc_index], ingredient_spacing)}"
                 f"{self.list_price(expanded=True)}")
         else:
-            return (f"[cocktails]{name}[/cocktails]{standardized_spacing(name, total_spacing - 5)}"
+            console.print(f"total spacing = {total_spacing}")
+            return (f"[cocktails]{name}[/cocktails]{standardized_spacing(name, total_spacing)}"
                     f"{self.list_price(expanded=False)}")
 
     @staticmethod

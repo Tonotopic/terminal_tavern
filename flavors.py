@@ -1,6 +1,6 @@
 import sqlite3
 
-connection = sqlite3.connect("cocktailDB.db")
+connection = sqlite3.connect("tavern_db.db")
 cursor = connection.cursor()
 cursor.execute("SELECT * FROM tastes")
 rows = cursor.fetchall()

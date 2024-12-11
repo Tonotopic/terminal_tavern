@@ -9,7 +9,7 @@ from rich.text import Text
 from rich.live import Live
 
 import logger
-import recipe
+import rich_console
 import utils
 from rich_console import console, styles
 from commands import items_to_commands, command_to_item, input_loop
@@ -65,38 +65,59 @@ def draw_live(tables, panel, layout, sec):
 
 # <editor-fold desc="Screens">
 def startup_screen():
-    saves_table = Table(expand=True)
-    saves_table.add_column("Saves", justify="center")
+    saves_table = Table(expand=True, box=box.SIMPLE, style=styles.get("dimmed"), show_header=False)
+    saves_table.add_column(justify="center")
+    saves_table.add_row()
 
-    header_panel = Panel(box=box.DOUBLE, height=3, renderable="Welcome to a game I still haven't named!")
-    saves_panel = Panel(title="Load Game", box=box.SQUARE_DOUBLE_HEAD, renderable=saves_table)
+    screen_width, screen_height = console.size
+    # Panel borders
+    screen_width -= 6
+    screen_height -= 4
 
+    max_saves_width = 50
+    saves_width = max_saves_width if screen_width // 2 > max_saves_width else screen_width // 2
+    title_width = screen_width - saves_width
+
+    title_card = "~*~ Terminal Tavern ~*~"
+    title_card_sizes = [(17, 70), (11, 47), (10, 42), (11, 20)]
+    for size in title_card_sizes:
+        height, width = size
+        if screen_height >= height and title_width >= width:
+            padding = ""
+            for i in range((screen_height - height) // 2):
+                padding += "\n"
+            title_card = padding + rich_console.title_cards.get(f"{height}x{width}")
+            title_width = width + 4
+            break
+
+    saves_panel = Panel(title="[tequila]Load Game", box=box.SQUARE_DOUBLE_HEAD, renderable=saves_table,
+                        border_style=styles.get("panel"))
     startup_layout = Layout(name="startup_layout")
-    startup_layout.split_column(Layout(name="startup_header", renderable=header_panel, size=3),
-                                Layout(name="startup_menu"))
-    startup_layout["startup_menu"].split_row(Layout(name="info_layout"),
-                                             Layout(name="saves_layout", renderable=saves_panel))
+    startup_layout["startup_layout"].split_row(Layout(name="info_layout", renderable=title_card, size=title_width),
+                                               Layout(name="saves_layout", renderable=saves_panel))
 
     file_names = utils.list_saves()
     if len(file_names) > 0:
         for i, file_name in enumerate(file_names):
             saves_table.add_row(f"{i + 1}. {file_name[:-7]}")  # Removes .pickle
+            saves_table.add_row()
     else:
         saves_table.add_row("[dimmed]No existing saves found")
+        saves_table.add_row()
+        saves_table.add_row("[dimmed]Enter 'new' to begin!")
 
     console.print(startup_layout)
     logger.log("Startup screen drawn.")
 
-    prompt = "'Load \\[num]' or 'new'"
+    prompt = "'Load \\[#]' or 'new'"
     startup_cmd, args = input_loop(prompt, ["new", "load"])
     if startup_cmd == "new":
         # Name input and checking handled by input loop
         new_bar = Bar(args[0])
         utils.save_bar(new_bar)
-        utils.load_bar(len(utils.list_saves()) - 1)
+        utils.load_bar(0)
     elif startup_cmd == "load":
         utils.load_bar(int(args[0]) - 1)
-
 
 
 def dashboard(bar):
@@ -348,7 +369,6 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
         else:
             logger.log("Shop screen drawn; viewing " + current_selection.name)
             console.print(shop_layout)
-
 
         # <editor-fold desc="Input">
 

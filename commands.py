@@ -424,13 +424,16 @@ def check_markup(args, bar, ingredient):
 
 
 def check_new(args, bar, ingredient):
+    console.print()
     bar_name = ""
     while bar_name == "":
-        bar_name = console.input("Name your bar: > ")
-        if bar_name not in utils.list_saves():
-            return "new", [bar_name]
-        else:
-            console.print("[error]This bar name is already present in your save files.")
+        bar_name = console.input("[cmd]Name your bar:[/cmd] > ")
+        if bar_name in "quit" or bar_name in "back":
+            utils.quit()
+    if bar_name not in utils.list_saves():
+        return "new", [bar_name]
+    else:
+        console.print("[error]This bar name is already present in your save files.")
 
 
 def check_remove(args, bar, ingredient):

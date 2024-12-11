@@ -46,36 +46,40 @@ def log_exception(exc_type, exc_value, exc_traceback):
 
     local_vars = frame.f_locals
     for var_name, var_value in local_vars.items():
-        if var_name.startswith("__") or isinstance(var_value, types.ModuleType):
-            continue
+        try:
+            if var_name.startswith("__") or isinstance(var_value, types.ModuleType):
+                continue
 
-        def is_ingredient(obj):
-            for cls in inspect.getmro(type(obj)):
-                if cls.__name__ == "Ingredient":
-                    return True
+            def is_ingredient(obj):
+                for cls in inspect.getmro(type(obj)):
+                    if cls.__name__ == "Ingredient":
+                        return True
 
-        def ing_name(obj):
-            if hasattr(obj, "name"):
-                return obj.name
-            else:
-                return obj.format_type()
-
-        if isinstance(var_value, list) or isinstance(var_value, dict):
-            locals_line = f"  [l]{var_name}[/l]: "
-            for item in var_value:
-                if is_ingredient(item):
-                    locals_line += f"{ing_name(item)}, "
+            def ing_name(obj):
+                if hasattr(obj, "name"):
+                    return obj.name
                 else:
-                    locals_line += str(var_value)
-        else:
-            if is_ingredient(var_value):
-                var_value = ing_name(var_value)
-            locals_line = f"  [l]{var_name}[/l]: {var_value}"
+                    return obj.format_type()
 
-        logger.error(locals_line)
-        if len(locals_line) > 500:
-            locals_line = locals_line[:500] + "..."
-        console.print(locals_line)
+            if isinstance(var_value, list) or isinstance(var_value, dict):
+                locals_line = f"  [l]{var_name}[/l]: "
+                for item in var_value:
+                    if is_ingredient(item):
+                        locals_line += f"{ing_name(item)}, "
+                    else:
+                        locals_line += str(var_value)
+            else:
+                if is_ingredient(var_value):
+                    var_value = ing_name(var_value)
+                locals_line = f"  [l]{var_name}[/l]: {var_value}"
+
+            logger.error(locals_line)
+            if len(locals_line) > 500:
+                locals_line = locals_line[:500] + "..."
+            console.print(locals_line)
+        except Exception as e:
+            console.print(e)
+            continue
 
 
 if not os.path.exists("logs"):

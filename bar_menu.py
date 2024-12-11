@@ -69,11 +69,9 @@ class BarMenu:
             table_section = table_1
             for menu_section, sect_name, sect_typ in self.menu_sections():
                 if sect_typ in (recipe.Recipe, ingredients.Beer) or len(menu_section) > 0:
-                    table_section.add_row()
                     table_section.add_row(Text(sect_name, style=styles.get(sect_name.lower())),
                                           str(len(menu_section)), end_section=True)
                     lst.append(sect_typ)
-
                     for menu_item in menu_section:
                         if len(table_1.rows) > console.height - 8:
                             if len(table_2.rows) > console.height - 8:
@@ -83,6 +81,7 @@ class BarMenu:
                         table_section.add_row(menu_item.list_item(expanded=expanded))
                         table_section.add_row()
                         lst.append(menu_item)
+                    table_section.add_row()
 
         # Viewing specifically the Beer menu, Cocktail menu, etc
         else:

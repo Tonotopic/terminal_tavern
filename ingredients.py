@@ -8,6 +8,8 @@ from rich_console import console, styles, standardized_spacing
 from utils import quarter_round
 import flavors
 
+# TODO: Fix sugar on the rim
+
 all_ingredients = []
 
 special_formats = {
@@ -86,40 +88,38 @@ class MenuItem:
 
     def list_item(self, expanded=False):
         # Layout offset (12) and markdown offset (15)
-        total_spacing = console.size[0] - 12 - 16 if expanded else int(console.size[0] / 2) - 19
+        total_spacing = console.size[0] - 29 if expanded else int(console.size[0] // 2) - 19
+        name = self.name
 
         if isinstance(self, Beer):
-            name = self.name
-            price_spacing = total_spacing / 3
+            price_spacing = total_spacing // 3
             beer_spacing = 2 * price_spacing
-            if not expanded and console.size[0] % 3 > 0:
-                price_spacing -= 1
+            beer_spacing += total_spacing % 3
 
             formatted_type = self.format_type()
-            abv_str = str(self.abv)
+            abv_str = f"({self.abv}%)" if expanded else ""
             if len(name) > beer_spacing:
                 hidden_chars = int(len(name) - beer_spacing)
                 name = name[:-(hidden_chars + 3)] + "..."
-            if len(self.format_type() + str(self.abv) + "() (%)") > price_spacing:
-                if console.size[0] % 3 > 0:
-                    price_spacing += 1
-                hidden_chars = int(len(self.format_type() + str(self.abv) + "() (%)") - (price_spacing))
+            if len(self.format_type() + abv_str + "()") > price_spacing:
+                hidden_chars = int(len(self.format_type() + abv_str + "()") - (price_spacing))
                 formatted_type = formatted_type[:-(hidden_chars + 2)] + ".."
-            else:
-                price_spacing += 1
+
+            console.print(f"total spacing = {total_spacing}")
+            console.print(f"price spacing = {price_spacing}")
+            console.print(f"beer spacing = {beer_spacing}")
 
             return (f"[beer]{name}{standardized_spacing(name, beer_spacing)}"
-                    f"({formatted_type})[/beer] [abv]({self.abv}%)[/abv]"
-                    f"{standardized_spacing(self.format_type() + str(self.abv) + "() (%)", price_spacing)}"
+                    f"({formatted_type})[/beer][abv]{abv_str}[/abv]"
+                    f"{standardized_spacing(self.format_type() + abv_str + "()", price_spacing)}"
                     f"{self.list_price(expanded=expanded)}")
 
         elif isinstance(self, Alcohol):
-            name = self.name
             style = self.get_style()
 
             if len(name) > total_spacing:
                 name = name[:-3] + "..."
-
+            console.print(f"total spacing = {total_spacing}")
             return f"[{style}]{name}[/{style}]{standardized_spacing(name, total_spacing)}{self.list_price()}"
 
         else:
@@ -506,6 +506,7 @@ class Maibock(Bock, MenuItem):
 # </editor-fold>
 
 
+# <editor-fold desc="Wheat Beer">
 class WheatBeer(Beer, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
@@ -529,6 +530,13 @@ class Hefeweizen(WheatBeer, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
+
+# </editor-fold>
+
+class Shandy(Beer, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
 
 # </editor-fold>
 
@@ -610,6 +618,30 @@ class SparklingWine(Wine, MenuItem):
 
 
 class SkinContact(WhiteWine, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class FortifiedWine(Wine, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class Sherry(FortifiedWine):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class Brandy(Wine, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class Cognac(Brandy):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -712,23 +744,6 @@ class DarkRum(Rum):
 
 # </editor-fold>  # Rum
 
-class Brandy(Spirit):
-    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
-                 volumes=None):
-        super().__init__(name, flavor, character, notes, abv, volumes)
-
-
-class Cognac(Brandy):
-    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
-                 volumes=None):
-        super().__init__(name, flavor, character, notes, abv, volumes)
-
-
-class Sherry(Brandy):
-    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
-                 volumes=None):
-        super().__init__(name, flavor, character, notes, abv, volumes)
-
 
 class Absinthe(Spirit):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
@@ -812,10 +827,6 @@ class NonAlcohol(Drink):
     def __init__(self, name=None, flavor=None, character=None, notes=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, volumes)
-
-    @override
-    def description(self):
-        return super().description().replace("non-alcoholic drink", "drink")
 
     @override
     def get_portions(self):
@@ -958,7 +969,7 @@ def create_object(ingredient_type, row_data, column_names):
 def load_ingredients_from_db():
     #  Populates all_ingredients with ingredients from the database, including their available volumes and prices
     # Database connection
-    connection = sqlite3.connect('cocktailDB.db')
+    connection = sqlite3.connect('tavern_db.db')
     cursor = connection.cursor()
     global all_ingredients
     cursor.execute("SELECT * FROM ingredients")
