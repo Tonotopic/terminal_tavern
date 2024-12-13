@@ -123,7 +123,8 @@ class BarMenu:
                 renderable=f"[panel]{stock_rem}[/panel]oz in stock ([panel]{pours_left}[/panel] full pours)",
                 border_style=styles.get("panel"))
             overview_layout = Layout(name="overview_layout")
-            overview_layout.split_column(Layout(name="description", renderable=description_panel, size=3),
+            overview_layout.split_column(Layout(name="description", renderable=description_panel,
+                                                size=(4 if len(item.description(markup=False)) > console.width else 3)),
                                          Layout(name="stock", renderable=stock_panel, size=3))
 
         elif isinstance(item, recipe.Recipe):

@@ -193,11 +193,16 @@ class Ingredient:
                     return style
         return ""
 
-    def description(self):  # {Name} is a/an {character} {flavor}{type}{notes}.
+    def description(self, markup=True):  # {Name} is a/an {character} {flavor}{type}{notes}.
         style = self.get_style()
-        desc = (f"[{style}][italic]{self.name.capitalize()}[/{style}][/italic] "
-                f"is {self.format_a()} {self.character} {self.format_flavor()}"
-                f"[{style}]{self.format_type().lower()}[/{style}]{self.notes_desc()}.")
+        if markup:
+            desc = (f"[{style}][italic]{self.name.capitalize()}[/{style}][/italic] "
+                    f"is {self.format_a()} {self.character} {self.format_flavor()}"
+                    f"[{style}]{self.format_type().lower()}[/{style}]{self.notes_desc()}.")
+        else:
+            desc = (f"{self.name.capitalize()} "
+                    f"is {self.format_a()} {self.character} {self.format_flavor()}"
+                    f"{self.format_type().lower()}{self.notes_desc()}.")
         return desc
 
     def get_attributes(self):
@@ -266,11 +271,16 @@ class Drink(Ingredient):
         super().__init__(name, flavor, character, notes, volumes)
 
     @override
-    def description(self):  # Remove capitalization
+    def description(self, markup=True):  # Remove capitalization
         style = self.get_style()
-        desc = (f"[{style}][italic]{self.name}[/{style}][/italic] "
-                f"is {self.format_a()} {self.character} {self.format_flavor()}"
-                f"[{style}]{self.format_type().lower()}[/{style}]{self.notes_desc()}.")
+        if markup:
+            desc = (f"[{style}][italic]{self.name}[/{style}][/italic] "
+                    f"is {self.format_a()} {self.character} {self.format_flavor()}"
+                    f"[{style}]{self.format_type().lower()}[/{style}]{self.notes_desc()}.")
+        else:
+            desc = (f"{self.name} "
+                    f"is {self.format_a()} {self.character} {self.format_flavor()}"
+                    f"{self.format_type().lower()}{self.notes_desc()}.")
         return desc
 
 
@@ -281,13 +291,16 @@ class Alcohol(Drink):
         super().__init__(name, flavor, character, notes, volumes)
         self.abv = abv
 
-    def abv_desc(self):
+    def abv_desc(self, markup=True):
         if self.abv is not None:
-            return f" It is [abv]{self.abv}% ABV.[/abv]"
+            if markup:
+                return f" It is [abv]{self.abv}% ABV.[/abv]"
+            else:
+                return f" It is {self.abv}% ABV."
 
     @override
-    def description(self):
-        return super().description() + self.abv_desc()
+    def description(self, markup=True):
+        return super().description(markup) + self.abv_desc()
 
 
 # <editor-fold desc="Beer">
@@ -833,8 +846,8 @@ class Tea(NonAlcohol):
         super().__init__(name, flavor, character, notes, volumes)
 
     @override
-    def description(self):  # Skip Drink desc and go back to Ingredient to re-capitalize generics
-        return Ingredient.description(self)
+    def description(self, markup=True):  # Skip Drink desc and go back to Ingredient to re-capitalize generics
+        return Ingredient.description(self, markup)
 
 
 class Soda(NonAlcohol):
