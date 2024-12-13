@@ -161,7 +161,6 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
     # <editor-fold desc="Splitting logic allowing for spaces in quotes">
     parts = utils.split_with_quotes(inpt)
     primary_command = parts[0]
-    commands = commands or persistent_commands
 
     sorted_commands = sorted(commands)
     sorted_commands.insert(0, "help")
@@ -180,25 +179,35 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
     input_words = primary_command.split()
     if len(input_words) == 0:
         input_words[0] = primary_command
+
     for command in sorted_commands:
         matching = True
-        cmd_words = command.split()
+        remaining_command = command
         while matching:
-            if len(input_words) > len(cmd_words):
+            if len(input_words) > len(command.split()):
                 matching = False
                 break
-            for i, cmd_word in enumerate(cmd_words):
-                if len(input_words) < i + 1:
+            for input_word in input_words:
+                if not matching:
                     break
-                if len(input_words[i]) < 4 or force_beginning:
-                    if not cmd_word.startswith(input_words[i]):
-                        matching = False
-                        break
-                else:
-                    pattern = r"\s*".join(input_words[i])
-                    if not re.search(pattern, cmd_word):
-                        matching = False
-                        break
+                inpt_word_has_match = False
+                for cmd_word in remaining_command.split():
+                    if len(input_word) < 4 or force_beginning:
+                        if cmd_word.startswith(input_word):
+                            inpt_word_has_match = True
+                            try:
+                                remaining_command = command.split(cmd_word)[1]
+                            except IndexError:
+                                remaining_command = command.split(cmd_word)[0]
+                            break
+                    else:
+                        pattern = r"\s*".join(input_word)
+                        if re.search(pattern, cmd_word):
+                            inpt_word_has_match = True
+                            break
+                if not inpt_word_has_match:
+                    matching = False
+                    break
             if matching:
                 matching_commands.append(command)
                 break
@@ -207,23 +216,31 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
     if not matching_commands:
         for command in sorted_commands:
             matching = True
+            remaining_command = command
             while matching:
                 if len(input_words) > len(command.split()):
                     matching = False
                 for input_word in input_words:
-                    word_has_match = False
-                    for cmd_word in command.split():
+                    if not matching:
+                        break
+                    inpt_word_has_match = False
+                    for cmd_word in remaining_command.split():
                         if len(input_word) < 3:
                             if cmd_word.startswith(input_word):
-                                word_has_match = True
+                                inpt_word_has_match = True
+                                try:
+                                    remaining_command = command.split(f"{cmd_word} ")[1]
+                                except IndexError:
+                                    remaining_command = command.split(cmd_word)[0]
                                 break
                         else:
                             pattern = r"\s*".join(input_word)
                             if re.search(pattern, cmd_word):
-                                word_has_match = True
+                                inpt_word_has_match = True
                                 break
-                    if not word_has_match:
-                        matching = False
+                    if not inpt_word_has_match:
+                        matching = False  # If there's an input word with no match in the command, it's not this command
+                        break
                 if matching:  # After all input words, there are none that don't match the command
                     matching_commands.append(command)
                     break
@@ -252,7 +269,10 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
         return None
     elif len(matching_commands) > 1:  # found more than one match
         base_cmd = None
+        base_cmd_in_all_matching_cmds = True
         for cmd in matching_commands:
+            if not base_cmd_in_all_matching_cmds:
+                break
             for ref_cmd in matching_commands:
                 if cmd in ref_cmd and cmd != ref_cmd:
                     if base_cmd is not None:
@@ -261,6 +281,9 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
                         base_cmd = cmd
                 elif ref_cmd in cmd and cmd != ref_cmd:
                     base_cmd = ref_cmd
+                else:
+                    base_cmd = None
+                    base_cmd_in_all_matching_cmds = False
         if base_cmd is not None:
             logger.log("Most base command: " + base_cmd)
             return base_cmd
@@ -271,7 +294,7 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
                 logger.log(msg)
 
 
-def parse_input(prompt=None, commands=None, force_beginning: bool = False, inpt=None):
+def parse_input(prompt=None, commands=None, force_beginning: bool = False, inpt=""):
     """
     Gather, standardize, and validate input, handling multi-word logic and distinguishing primary commands from arguments.
 
@@ -280,16 +303,21 @@ def parse_input(prompt=None, commands=None, force_beginning: bool = False, inpt=
           :param commands: Optional list of commands to pass to find_command.
           :param force_beginning: Can be set to True to disallow matching to the middle of a command.
         """
-    while inpt is None:
+    while inpt == "":
         inpt = console.input(f"[prompt]{prompt}:[/prompt][white] > ").strip().lower()
 
     # TODO: As commands with args are added, skip them here
     # If not a command with args, group spaced words together
-    arg_commands = ["shop", "buy", "add", "remove", "load", "markup", "markdown"]  # help is added by find_command
     parts = inpt.split()
-    arg_cmd = find_command(parts[0], arg_commands, feedback=False)
+    arg_commands = ["shop", "buy", "add", "remove", "load", "markup", "markdown"]  # help is added by find_command
+    current_arg_cmds = []
+    for arg_cmd in arg_commands:
+        if arg_cmd in commands:
+            current_arg_cmds.append(arg_cmd)
+
+    arg_cmd = find_command(inpt=parts[0], commands=current_arg_cmds, feedback=False)
     while True:
-        if arg_cmd is None:
+        if arg_cmd is None and not inpt.startswith('"'):
             inpt = f'"{inpt}"'
         elif len(parts) > 1 and not parts[1].startswith('"'):
             parts[1] = '"' + parts[1]
@@ -302,6 +330,7 @@ def parse_input(prompt=None, commands=None, force_beginning: bool = False, inpt=
         if arg_cmd:
             if inpt_cmd is None or inpt_cmd[0] != arg_cmd:
                 arg_cmd = None
+                inpt = inpt.replace('"', "")
                 continue
 
         if isinstance(inpt_cmd, tuple):  # If find_command returned args
