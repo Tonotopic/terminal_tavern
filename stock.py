@@ -91,6 +91,7 @@ class BarStock:
 
         subclasses = typ.__subclasses__()
         items = list_ingredients(container, typ, no_inheritance=True)
+        items = sorted(items, key=lambda x: x.name)
 
         showing_flavorable_spirit = False
         if (isinstance(typ(), Spirit) or isinstance(typ(), Liqueur)) and typ is not Spirit:
