@@ -88,8 +88,6 @@ help_panels = {
 }
 
 
-# TODO: "j c s" returns Calico Jack Spiced Rum, should only return Jose Cuervo Especial Silver (maintain word order)
-
 def draw_help_panel(term):
     """Print a panel to the user containing help info for the given term."""
     logger.log("Drawing help panel for " + term)
@@ -98,16 +96,13 @@ def draw_help_panel(term):
     console.print(panel)
 
 
-def items_to_commands(lst: Iterable[ingredients.Ingredient]):
+def items_to_commands(lst: Iterable[ingredients.Ingredient], plural_types=True):
     """Convert a list of ingredients, ingredient types, and/or strings into a list of commands for parsing."""
     commands = set("")
     for entry in lst:
         if isinstance(entry, type):
-            if entry == Recipe:
-                commands.add("cocktails")
-            else:
-                obj = entry()
-                commands.add(unidecode(f"{obj.format_type().lower()}s"))
+            obj = entry()
+            commands.add(unidecode(obj.format_type(plural=plural_types).lower()))
         elif isinstance(entry, ingredients.Ingredient):
             commands.add(unidecode(entry.name.lower()))
         elif isinstance(entry, str):

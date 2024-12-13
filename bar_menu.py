@@ -201,7 +201,7 @@ class BarMenu:
 
                 add_tool_panel = Panel(add_tool_table, border_style=styles.get("bar_menu"))
                 add_tool_layout = Layout(add_tool_panel)
-                add_commands.extend(items_to_commands(add_tool_list))
+                add_commands.extend(items_to_commands(add_tool_list, plural_types=True))
 
                 console.print(add_tool_layout)
                 add_cmd, ing_args = input_loop(add_prompt, add_commands, bar=self.bar, skip="new")

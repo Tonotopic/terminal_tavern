@@ -185,9 +185,10 @@ def menu_screen(bar):
         # When viewing a section, don't add menu items as primary commands
         if type_displaying is None:
             logger.log("Bar menu screen drawn - viewing All")
-            menu_commands = menu_commands.union(items_to_commands(menu_list))
+            menu_commands = menu_commands.union(items_to_commands(menu_list, plural_types=True))
         else:
-            menu_commands = menu_commands.union(items_to_commands(bar.menu.get_section(type_displaying())))
+            menu_commands = menu_commands.union(
+                items_to_commands(bar.menu.get_section(type_displaying()), plural_types=True))
             logger.log("Bar menu screen drawn - viewing " + type_displaying().format_type())
 
         typ = None if type_displaying is None else type_displaying
@@ -291,9 +292,9 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             else:  # Show pluralized category name in its proper style
                 style = styles.get(obj.get_style())
                 if showing_flavored:
-                    header_text = Text(f"Flavored {obj.format_type()}s", style=style)
+                    header_text = Text(f"Flavored {obj.format_type(plural=True)}", style=style)
                 else:
-                    header_text = Text(f"{obj.format_type()}s", style=style)
+                    header_text = Text(f"{obj.format_type(plural=True)}", style=style)
 
             table_settings["box"] = box.MARKDOWN
 
@@ -307,7 +308,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
                 if not msg:
                     prompt = "Type a category or product to view"
 
-            for command in items_to_commands(shop_list):
+            for command in items_to_commands(shop_list, plural_types=True):
                 shop_commands.add(command)
 
             inv_panel.renderable = inv_table
