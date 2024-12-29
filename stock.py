@@ -81,6 +81,15 @@ class BarStock:
 
         return add_tool_table, lst
 
+    def regen(self):
+        new_ings = {}
+        for inv_ing in self.inventory:
+            for db_ing in all_ingredients:
+                if inv_ing.name == db_ing.name:
+                    new_ings[db_ing] = self.inventory[inv_ing]
+        self.inventory = new_ings
+        logger.log("Stock regenerated.")
+
     def show_ing_category(self, table_settings, typ: type = Ingredient, showing_flavored=False, shop=False):
 
         container = all_ingredients if shop else self.inventory
@@ -174,38 +183,48 @@ class BarStock:
             if isinstance(req_ingredient, type):  # Check if requirement is a type (accepts any)
                 req_quantity = req_ingredient().get_portions()[req_quantity]
                 found_match = False
+                has_enough = False
                 for inv_ingredient in self.inventory:
                     if isinstance(inv_ingredient,
                                   req_ingredient):
-
+                        found_match = True
                         if self.inventory[inv_ingredient] >= req_quantity:
-                            found_match = True
+                            has_enough = True
                             logger.log(f"{inv_ingredient.name} in quantity {self.inventory[inv_ingredient]} satisfies "
                                        f"{req_ingredient().format_type()} requirement")
                             break
                         else:
                             logger.log(f"{inv_ingredient.name} in quantity {self.inventory[inv_ingredient]} "
                                        f"not enough for {req_ingredient().format_type()} requirement")
-                if not found_match:
+                if not has_enough:
                     if not ing_missing:
                         ing_missing = True
                         console.print(f"[error]Ingredients missing for {recipe.name}:")
-                    console.print(f"[error] Not enough {req_ingredient().format_type()}!")
+                    if found_match:
+                        console.print(f"[error] Not enough {req_ingredient().format_type()}!")
+                    else:
+                        console.print(f"[error] No {req_ingredient().format_type()}!")
                     # Continue looping so all missing ingredients are printed
             else:  # Specific ingredient required
+                req_quantity = req_ingredient.get_portions()[req_quantity]
                 if req_ingredient in self.inventory:
                     if self.inventory[req_ingredient] >= req_quantity:
                         logger.log(f"{req_ingredient.name} in quantity {self.inventory[req_ingredient]} "
                                    f"satisfies requirement")
                         break
                     else:
+                        if not ing_missing:
+                            ing_missing = True
+                            console.print(f"[error]Ingredients missing for {recipe.name}:")
                         logger.log(
                             f"{req_ingredient.name} in quantity {self.inventory[req_ingredient]} "
                             f"not enough to satisfy requirement of {req_quantity}")
                         console.print(f"[error] Not enough {req_ingredient.name}!")
                 else:
+                    if not ing_missing:
+                        ing_missing = True
+                        console.print(f"[error]Ingredients missing for {recipe.name}:")
                     console.print(f"[error] No {req_ingredient.name}!")
-                    return False  # Missing specific ingredient
                 # Add quantity check if needed
         if ing_missing:
             return False
@@ -225,7 +244,7 @@ class BarStock:
         return False
 
     def select_ingredients(self, recipe):
-        final_ings = {}
+        final_ings = dict()
         for r_ingredient in recipe.r_ingredients:
             vol = recipe.r_ingredients[r_ingredient]
             if isinstance(r_ingredient, type):
@@ -241,9 +260,11 @@ class BarStock:
     def pour(self, menu_item: MenuItem):
         if isinstance(menu_item, Recipe):
             provided_ings = self.select_ingredients(menu_item)
-            for ingredient, volume in provided_ings:
-                self.inventory[ingredient] -= volume
-                logger.log(f"Pouring {volume} of {ingredient.name} - stock now at {self.inventory[ingredient]}")
+            for ingredient in provided_ings:
+                vol = provided_ings[ingredient]
+                vol = ingredient.get_portions()[vol]
+                self.inventory[ingredient] -= vol
+                logger.log(f"Pouring {vol} of {ingredient.name} - stock now at {self.inventory[ingredient]}")
         else:
             self.inventory[menu_item] -= menu_item.pour_vol()
             logger.log(f"Pouring {menu_item.pour_vol()} of {menu_item.name} - stock now at {self.inventory[menu_item]}")

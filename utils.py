@@ -53,7 +53,7 @@ def load_bar(index):
             current_bar = pickle.load(f)
             logger.log(f"Game loaded from {filename}")
 
-            current_bar.regen_recipes()
+            current_bar.regen_ingredients()
 
             return current_bar
     except Exception as e:

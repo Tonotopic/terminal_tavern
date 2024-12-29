@@ -147,11 +147,31 @@ class BarMenu:
     # <editor-fold desc="Modify">
 
     def regen(self):
-        for menu_recipe in self.cocktails:
-            for new_recipe in self.bar.recipes:
-                if new_recipe == menu_recipe.name:
-                    self.cocktails.remove(menu_recipe)
-                    self.cocktails.append(self.bar.recipes[new_recipe])
+        for menu_section in self.menu_sections():
+            menu_section = menu_section[0]
+            new_section = []
+            menu_item = None
+            for menu_item in menu_section:
+                if isinstance(menu_item, Recipe):
+                    for new_recipe in self.bar.recipes:
+                        if new_recipe == menu_item.name:
+                            self.cocktails.remove(menu_item)
+                            self.cocktails.append(self.bar.recipes[new_recipe])
+                elif isinstance(menu_item, Ingredient):
+                    for db_ing in ingredients.all_ingredients:
+                        if menu_item.name == db_ing.name:
+                            new_section.append(db_ing)
+                            break
+            if isinstance(menu_item, Beer):
+                self.beer = new_section
+            elif isinstance(menu_item, Cider):
+                self.cider = new_section
+            elif isinstance(menu_item, Wine):
+                self.wine = new_section
+            elif isinstance(menu_item, Mead):
+                self.mead = new_section
+
+
         logger.log("Menu regenerated.")
 
 
