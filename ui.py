@@ -8,6 +8,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.live import Live
 
+import commands
 import logger
 import rich_console
 import utils
@@ -403,8 +404,11 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             else:
                 console.print("current_category is not category or ingredient")
         elif primary_cmd == "shop":  # exit the shop
-            bar.set_screen("MAIN")
-            return
+            if len(args) > 0:
+                commands.check_shop(args=args, bar=bar, ingredient=None)
+            else:
+                bar.set_screen("MAIN")
+                return
         elif primary_cmd == "flavored":
             showing_flavored = True
         elif command_to_item(cmd=primary_cmd, lst=shop_list, plural=True):
