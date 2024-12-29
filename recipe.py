@@ -100,7 +100,7 @@ class Recipe(MenuItem):
         elif 1.50 < cost_value <= 4:
             profit_base = 3 * cost_value
         elif cost_value > 4:
-            profit_base = 2.5 * cost_value
+            profit_base = 2 * cost_value
         return profit_base, variable
 
     @override

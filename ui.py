@@ -274,7 +274,6 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
         shop_commands = {"back", "shop", "buy"}
 
-        # TODO: Sort shop list display
         shop_list = []
 
         # Type selected, not currently selecting an ingredient

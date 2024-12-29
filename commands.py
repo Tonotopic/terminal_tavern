@@ -263,25 +263,21 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
                 logger.log(f"Valid commands: {sorted_commands}")
         return None
     elif len(matching_commands) > 1:  # found more than one match
-        base_cmd = None
-        base_cmd_in_all_matching_cmds = True
+        min_length = 20
+        # Get shortest matching command
         for cmd in matching_commands:
-            if not base_cmd_in_all_matching_cmds:
-                break
-            for ref_cmd in matching_commands:
-                if cmd in ref_cmd and cmd != ref_cmd:
-                    if base_cmd is not None:
-                        base_cmd = cmd if len(ref_cmd) > len(cmd) else ref_cmd
-                    else:
-                        base_cmd = cmd
-                elif ref_cmd in cmd and cmd != ref_cmd:
-                    base_cmd = ref_cmd
-                else:
-                    base_cmd = None
-                    base_cmd_in_all_matching_cmds = False
-        if base_cmd is not None:
-            logger.log("Most base command: " + base_cmd)
-            return base_cmd
+            if len(cmd) < min_length:
+                min_length = len(cmd)
+                most_base_cmd = cmd
+        # Check if all command matches contain the shortest
+        all_cmds_contain_base = True
+        for cmd in matching_commands:
+            if most_base_cmd not in cmd:
+                all_cmds_contain_base = False
+
+        if all_cmds_contain_base:
+            logger.log("Most base command: " + most_base_cmd)
+            return most_base_cmd
         else:
             if feedback:
                 msg = f"Matching commands : {matching_commands}"
