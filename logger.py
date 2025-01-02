@@ -21,6 +21,11 @@ def log(msg):
     logger.info(f"{timestamp} - {msg}")
 
 
+def logprint(msg):
+    console.print(msg)
+    log(msg)
+
+
 def delete_oldest_log(log_dir, max_files):
     log_files = os.listdir(log_dir)
     log_files = [os.path.join(log_dir, f) for f in log_files]
@@ -91,8 +96,6 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 file_handler = RotatingFileHandler(filename, maxBytes=10 * 1024 * 1024, backupCount=5)
-formatter = logging.Formatter('%(asctime)s - %(message)s')
-file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
 

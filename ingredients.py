@@ -781,8 +781,8 @@ class Liqueur(Alcohol):
 
     @override
     def get_portions(self):
-        return {"Dash": 1 / 48, "Generous Dash": 1 / 24, "Splash": 0.25, "Half oz": 1 / 2, "1oz": 1, "Shot": 2,
-                "Double": 4, }
+        return {"Dash": round(1 / 48, 2), "Generous Dash": round(1 / 24, 2), "Splash": 0.25, "Half oz": 1 / 2, "1oz": 1,
+                "Shot": 2, "Double": 4, }
 
 
 class Bitter(Liqueur):
@@ -925,15 +925,15 @@ class Fruit(Additive):
         unsliceable = {"maraschino cherry", "raspberry", "lychee", "blackberry", "cranberry"}
         portions = {"Juice (Tsp)": round(1 / 6, 2), "Juice (Tbsp)": 1 / 2, "Crushed": 1}
         if self.name in unsliceable:
-            portions["Whole"] = 1 / 8
-            portions["Crushed"] = 1 / 8
+            portions["Whole"] = round(1 / 8, 2)
+            portions["Crushed"] = round(1 / 8, 2)
         else:
             portions["Slice"] = round(1 / 8, 2)
         if self.name in flavors.tastes["citrus"]:
-            portions["Rind"] = 1 / 8
-            portions["Zest"] = 1 / 24
+            portions["Rind"] = round(1 / 8, 2)
+            portions["Zest"] = round(1 / 24, 2)
         if self.name in flavors.tastes["citrus"] or self.name == "pineapple":
-            portions["Wheel"] = 1 / 4
+            portions["Wheel"] = 0.25
 
         return portions
 

@@ -171,9 +171,7 @@ class BarMenu:
             elif isinstance(menu_item, Mead):
                 self.mead = new_section
 
-
         logger.log("Menu regenerated.")
-
 
     def select_to_add(self, add_typ, add_arg=""):
         self.bar.set_screen("BAR_MENU")
@@ -308,17 +306,12 @@ class BarMenu:
                         if direction == "up":
                             if not menu_item.mark_up(value, percent):
                                 successful = False
-                                msg = f"[error]Error marking section {cmd} thrown by {menu_item.name}"
-                                console.print(msg)
-                                logger.log(msg)
+                                logger.logprint("[error]Error marking section {cmd} thrown by {menu_item.name}")
                         elif direction == "down":
                             if not menu_item.mark_down(value, percent):
                                 successful = False
-                                msg = f"[error]Error marking section {cmd} thrown by {menu_item.name}"
-                                console.print(msg)
-                                logger.log(msg)
+                                logger.logprint("[error]Error marking section {cmd} thrown by {menu_item.name}")
                     return successful
-
 
                 elif item in self.get_section(item):
                     if direction == "up":

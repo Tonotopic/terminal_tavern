@@ -254,9 +254,7 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
     elif len(matching_commands) == 0:
         if len(sorted_commands) <= 15:
             if feedback:
-                msg = f"[error]Valid commands: {sorted_commands}"
-                console.print(msg)
-                logger.log(msg)
+                logger.logprint("[error]Valid commands: {sorted_commands}")
         else:
             if feedback:
                 console.print(f"[error]No matching term found for [cmd]{inpt}")
@@ -284,9 +282,7 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
             return most_base_cmd
         else:
             if feedback:
-                msg = f"Matching commands : {matching_commands}"
-                console.print(msg)
-                logger.log(msg)
+                logger.logprint("Matching commands : {matching_commands}")
 
 
 def parse_input(prompt=None, commands=None, force_beginning: bool = False, inpt=""):
@@ -404,9 +400,7 @@ def input_loop(prompt: str, commands, force_beginning=False, skip: str = None, i
 # <editor-fold desc="Input Loop Command Checkers">
 def check_add(args, bar, ingredient):
     if ingredient is None and len(args) == 0:
-        msg = "[error]Invalid args. Use: 'add cocktail', 'add beer', etc."
-        console.print(msg)
-        logger.log(msg)
+        logger.logprint("[error]Invalid args. Use: 'add cocktail', 'add beer', etc.")
         return None
     type_displaying = ingredient
     if type_displaying is None:
@@ -425,9 +419,7 @@ def check_buy(args, bar, ingredient):
         if bar.stock.buy(ingredient=ingredient, arg=args[0]):
             return "buy", args
     else:
-        msg = "[error]Incorrect number of arguments. Usage: buy <quantity>"
-        console.print(msg)
-        logger.log(msg)
+        logger.logprint("[error]Incorrect number of arguments. Usage: buy <quantity>")
 
 
 def check_load(args, bar, ingredient):
@@ -441,25 +433,19 @@ def check_load(args, bar, ingredient):
         logger.log("IndexError :" + msg)
         console.print(msg)
     except ValueError:
-        msg = f"[error]Load argument must be a number"
-        console.print(msg)
-        logger.log(msg)
+        logger.logprint("[error]Load argument must be a number")
 
 
 def check_markdown(args, bar, ingredient):
     if ingredient is None and len(args) == 0:
-        msg = "[error]Invalid args. Use: 'markdown margarita', 'markdown beer', etc."
-        console.print(msg)
-        logger.log(msg)
+        logger.logprint("[error]Invalid args. Use: 'markdown margarita', 'markdown beer', etc.")
     elif bar.menu.mark(direction="down", mark_arg=args[0]):
         return "markdown", args
 
 
 def check_markup(args, bar, ingredient):
     if ingredient is None and len(args) == 0:
-        msg = "[error]Invalid args. Use: 'markup margarita', 'markup beer', etc."
-        console.print(msg)
-        logger.log(msg)
+        logger.logprint("[error]Invalid args. Use: 'markup margarita', 'markup beer', etc.")
     elif bar.menu.mark(direction="up", mark_arg=args[0]):
         return "markup", args
 
