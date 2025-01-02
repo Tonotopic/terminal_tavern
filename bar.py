@@ -140,12 +140,12 @@ class Bar:
                     else:
                         recipe_dict[matching_obj] = portion
 
-    def regen_ingredients(self):
-        self.regen_recipes()
-        self.menu.regen()
-        self.stock.regen()
+    def reload_ingredients(self):
+        self.reload_recipes()
+        self.menu.reload()
+        self.stock.reload()
 
-    def regen_recipes(self):
+    def reload_recipes(self):
         new_recipes = {}
         for cocktail_name in self.recipes:
             recip = self.recipes[cocktail_name]
@@ -166,7 +166,7 @@ class Bar:
             new_recipes[cocktail_name] = new_recipe
 
         self.recipes = new_recipes
-        logger.log("Recipes regenerated.")
+        logger.log("Recipes reloaded.")
 
     # </editor-fold>
 

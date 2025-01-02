@@ -81,14 +81,14 @@ class BarStock:
 
         return add_tool_table, lst
 
-    def regen(self):
+    def reload(self):
         new_ings = {}
         for inv_ing in self.inventory:
             for db_ing in all_ingredients:
                 if inv_ing.name == db_ing.name:
                     new_ings[db_ing] = self.inventory[inv_ing]
         self.inventory = new_ings
-        logger.log("Stock regenerated.")
+        logger.log("Stock reloaded.")
 
     def show_ing_category(self, table_settings, typ: type = Ingredient, showing_flavored=False, shop=False):
 
