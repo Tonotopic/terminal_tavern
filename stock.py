@@ -246,14 +246,19 @@ class BarStock:
     def select_ingredients(self, recipe):
         final_ings = dict()
         for r_ingredient in recipe.r_ingredients:
-            vol = recipe.r_ingredients[r_ingredient]
             if isinstance(r_ingredient, type):
+                logger.log(f"Selecting {r_ingredient().format_type}...")
+                vol = r_ingredient().get_portions()[recipe.r_ingredients[r_ingredient]]
                 available_ings = self.list_type(r_ingredient, min_vol=vol)
-                console.print([ing.name for ing in available_ings])
+                options_str = [ing.name for ing in available_ings]
+                console.print(options_str)
+                logger.log(options_str)
                 cmd = commands.input_loop(f"Select {r_ingredient().format_type()}",
-                                          commands.items_to_commands(available_ings))
-                final_ings[commands.command_to_item(cmd, available_ings)] = vol
+                                          commands.items_to_commands(available_ings))[0]
+                item = commands.command_to_item(cmd, available_ings)
+                final_ings[item] = vol
             else:
+                vol = r_ingredient.get_portions()[recipe.r_ingredients[r_ingredient]]
                 final_ings[r_ingredient] = vol
         return final_ings
 
@@ -262,7 +267,6 @@ class BarStock:
             provided_ings = self.select_ingredients(menu_item)
             for ingredient in provided_ings:
                 vol = provided_ings[ingredient]
-                vol = ingredient.get_portions()[vol]
                 self.inventory[ingredient] -= vol
                 logger.log(f"Pouring {vol} of {ingredient.name} - stock now at {self.inventory[ingredient]}")
         else:

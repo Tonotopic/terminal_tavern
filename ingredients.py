@@ -876,7 +876,8 @@ class Additive(Ingredient):
 
     @override
     def get_portions(self):
-        return {"Dash": 1 / 24, "Teaspoon": 1 / 6, "Splash": 0.25, "Half ounce": 1 / 2, "1oz": 1, "2oz": 2, "3oz": 3}
+        return {"Dash": round(1 / 24, 2), "Teaspoon": round(1 / 6, 2), "Splash": 0.25, "Half ounce": 1 / 2, "1oz": 1,
+                "2oz": 2, "3oz": 3}
 
 
 class Syrup(Additive):
@@ -891,7 +892,8 @@ class Spice(Additive):
 
     @override
     def get_portions(self):
-        return {"Dash": 1 / 24, "Teaspoon": 1 / 6, "Tablespoon": 1 / 2, "On the Rim": 1 / 6}
+        return {"Dash": round(1 / 24, 2), "Teaspoon": round(1 / 6, 2), "Tablespoon": 1 / 2,
+                "On the Rim": round(1 / 6, 2)}
 
 
 class Herb(Additive):
@@ -909,9 +911,9 @@ class Sweetener(Additive):
 
     @override
     def get_portions(self):
-        portions = {"Teaspoon": 1 / 6, "Tablespoon": 1 / 2, "1 fl oz": 1}
+        portions = {"Teaspoon": round(1 / 6, 2), "Tablespoon": 1 / 2, "1 fl oz": 1}
         if self.name == "sugar":
-            portions["On the Rim"] = 1 / 6
+            portions["On the Rim"] = round(1 / 6, 2)
         return portions
 
 
@@ -921,12 +923,12 @@ class Fruit(Additive):
 
     def get_portions(self):
         unsliceable = {"maraschino cherry", "raspberry", "lychee", "blackberry", "cranberry"}
-        portions = {"Juice (Tsp)": 1 / 6, "Juice (Tbsp)": 1 / 2, "Crushed": 1}
+        portions = {"Juice (Tsp)": round(1 / 6, 2), "Juice (Tbsp)": 1 / 2, "Crushed": 1}
         if self.name in unsliceable:
             portions["Whole"] = 1 / 8
             portions["Crushed"] = 1 / 8
         else:
-            portions["Slice"] = 1 / 8
+            portions["Slice"] = round(1 / 8, 2)
         if self.name in flavors.tastes["citrus"]:
             portions["Rind"] = 1 / 8
             portions["Zest"] = 1 / 24
