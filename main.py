@@ -1,5 +1,5 @@
 import utils
-from ingredients import load_ingredients_from_db, all_ingredients, MenuItem
+from ingredients import load_ingredients_from_db
 import ui
 from rich_console import console
 

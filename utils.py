@@ -34,15 +34,17 @@ def save_bar(bar_obj):
 
 
 def list_saves():
+    """Returns a list of save file names in the directory."""
     file_names = [save_file for save_file in os.listdir() if save_file.endswith(".pickle")]
     return file_names
 
 
 def load_bar(index):
-    """Loads the game state from a file.
+    """
+    Loads the game state (bar) from the file at the given index of the save list.
 
-    Returns:
-        The loaded Bar object, or None if loading fails.
+    :param index: The desired file's index in list_saves()
+    :return: The loaded Bar object, or None if loading fails.
     """
     global current_bar
     filename = list_saves()[index]

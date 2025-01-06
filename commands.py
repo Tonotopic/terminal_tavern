@@ -89,15 +89,21 @@ help_panels = {
 
 
 def draw_help_panel(term):
-    """Print a panel to the user containing help info for the given term."""
+    """Prints a panel to the user containing help info for the given term."""
     logger.log("Drawing help panel for " + term)
     panel = Panel(help_panels.get(term), title=f"Help: {term}", box=rich.box.ASCII2,
                   style=rich_console.styles.get("highlight"), width=100)
     console.print(panel)
 
 
-def items_to_commands(lst: Iterable[ingredients.Ingredient], plural_types=True):
-    """Convert a list of ingredients, ingredient types, and/or strings into a list of commands for parsing."""
+def items_to_commands(lst: Iterable, plural_types=True):
+    """
+    Converts a list of ingredients, ingredient types, and/or strings into a list of commands for parsing.
+
+    :param lst: List of ingredient objects
+    :param plural_types: Whether types should be pluralized, i.e. Liqueurs, Lagers
+    :return: A set of command strings to match input to
+    """
     commands = set("")
     for entry in lst:
         if isinstance(entry, type):
@@ -114,7 +120,13 @@ def items_to_commands(lst: Iterable[ingredients.Ingredient], plural_types=True):
 
 
 def command_to_item(cmd, lst, plural=False):
-    """Match a string command to an ingredient or type from the given list."""
+    """
+    Matches a string command to an ingredient or type from the given list.
+    :param cmd: Full command string
+    :param lst: Reference list of types, ingredients, recipes, and/or strings
+    :param plural: Whether type names are plural.
+    :return: The matching item, if found.
+    """
     if cmd is None:
         return None
     for entry in lst:
@@ -140,7 +152,7 @@ def command_to_item(cmd, lst, plural=False):
 
 def find_command(inpt, commands=None, force_beginning=False, feedback=True):
     """
-    Take an input string and a command list, and either returns a single command match,
+    Takes an input string and a command list, and either returns a single command match,
     prints multiple matching commands for the user to choose between,
     or prints all valid commands if no valid command is found.
 
@@ -399,6 +411,14 @@ def input_loop(prompt: str, commands, force_beginning=False, skip: str = None, i
 
 # <editor-fold desc="Input Loop Command Checkers">
 def check_add(args, bar, ingredient):
+    """
+    Interprets the argument and attempts the process of adding an item to the menu.
+
+    :param args: Section/type argument
+    :param bar: Current context bar.
+    :param ingredient: Type being viewed in the menu, if not all. Makes "add" work with no args.
+    :return: "add" and args if item added to menu, else None
+    """
     if ingredient is None and len(args) == 0:
         logger.logprint("[error]Invalid args. Use: 'add cocktail', 'add beer', etc.")
         return None
@@ -415,6 +435,14 @@ def check_add(args, bar, ingredient):
 
 
 def check_buy(args, bar, ingredient):
+    """
+    Checks the success of the buy command, for use in the input loop.
+
+    :param args: User's input for the volume option to buy.
+    :param bar: Current context bar.
+    :param ingredient: The ingredient object being purchased.
+    :return: "buy" and args if purchase successful, else None
+    """
     if len(args) > 0:
         if bar.stock.buy(ingredient=ingredient, arg=args[0]):
             return "buy", args
@@ -423,6 +451,12 @@ def check_buy(args, bar, ingredient):
 
 
 def check_load(args, bar, ingredient):
+    """
+    Validates input for loading a game.
+
+    :param args: String of user input for save slot number
+    :return: "load" and args
+    """
     try:
         if len(utils.list_saves()) < int(args[0]):
             console.print(f"[error]There are only {len(utils.list_saves())} save files to load from.")
@@ -437,6 +471,13 @@ def check_load(args, bar, ingredient):
 
 
 def check_markdown(args, bar, ingredient):
+    """
+    Attempts to mark down a menu item or section, checking the result.
+
+    :param args: User input for ingredient/section to mark down
+    :param bar: Current context bar.
+    :return: "markdown" and args if markdown successful, else None
+    """
     if ingredient is None and len(args) == 0:
         logger.logprint("[error]Invalid args. Use: 'markdown margarita', 'markdown beer', etc.")
     elif bar.menu.mark(direction="down", mark_arg=args[0]):
@@ -444,6 +485,12 @@ def check_markdown(args, bar, ingredient):
 
 
 def check_markup(args, bar, ingredient):
+    """
+    Attempts to mark up a menu item or section, checking the result.
+
+    :param args: User input for ingredient/section to mark up
+    :param bar: Current context bar.
+    :return: "markup" and args if markup successful, else None"""
     if ingredient is None and len(args) == 0:
         logger.logprint("[error]Invalid args. Use: 'markup margarita', 'markup beer', etc.")
     elif bar.menu.mark(direction="up", mark_arg=args[0]):
@@ -451,6 +498,7 @@ def check_markup(args, bar, ingredient):
 
 
 def check_new(args, bar, ingredient):
+    """Validates bar name input."""
     console.print()
     bar_name = ""
     while bar_name == "":
@@ -464,6 +512,13 @@ def check_new(args, bar, ingredient):
 
 
 def check_remove(args, bar, ingredient):
+    """
+    Attempts to remove an item from the menu, checking the result.
+
+    :param args: User input for item to remove.
+    :param bar: Current context bar.
+    :return: "remove" and args if an item is successfully removed, else None
+    """
     if ingredient is None and len(args) == 0:
         console.print("[error]Invalid args. Use: 'remove margarita', 'remove guinness', etc.")
     elif bar.menu.remove(args[0]):
@@ -471,6 +526,13 @@ def check_remove(args, bar, ingredient):
 
 
 def check_shop(args, bar, ingredient):
+    """
+    Sets and initiates the shop screen, interpreting a type argument if present.
+
+    :param args: Optional user input argument corresponding to an ingredient type, i.e. spices, Pale Ales
+    :param bar: Current context bar
+    :return: "shop" and args if arg recognized, else None
+    """
     if len(args) > 0:
         all_ingredient_types = ingredients.all_ingredient_types()
         cmd_lst = [typ().format_type(plural=True).lower() for typ in all_ingredient_types]

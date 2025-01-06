@@ -1,9 +1,9 @@
 import re
 from typing import override, Literal
 import sqlite3
-import inspect
 from rich.table import Table
 
+import logger
 from rich_console import console, styles, standardized_spacing
 from utils import quarter_round
 import flavors
@@ -29,6 +29,11 @@ class MenuItem:
         self.formatted_markdown = ""
 
     def cost_value(self):
+        """
+        Multiplies highest price per oz by serving volume.
+        :return: A cost value float, and a bool indicating whether the price is variable (as in some cocktails based
+        on ingredient selection)
+        """
         variable = False
         if self.volumes:
             cost_value = self.price_per_oz("max") * self.pour_vol()
@@ -37,6 +42,11 @@ class MenuItem:
             console.print(f"[error]Ingredient {self.name} has no product volumes")
 
     def profit_base(self):
+        """
+        Uses cost value to calculate a profitable baseline price for a drink.
+        :return: A non-rounded decimal value, and a bool indicating whether the price is variable (as in some cocktails
+        based on ingredient selection).
+        """
         cost_value, variable = self.cost_value()
         profit_base = None
         if cost_value < 1.25:
@@ -50,9 +60,17 @@ class MenuItem:
         return profit_base, variable
 
     def base_price(self):
+        """Format and round to the nearest quarter the profit base price of a drink."""
         return round(quarter_round(self.profit_base()[0]) + self.markup, 2)
 
-    def mark_up(self, value, percent):
+    def mark_up(self, value, percent: bool):
+        """
+        Sets markup on the price of a drink, by percentage or dollars/cents.
+
+        :param value: Given value of markup
+        :param percent: Bool indicating whether the value represents a percentage of the existing price
+        :return: True if successful
+        """
         if percent:
             self.markup = self.base_price() * value
             return True
@@ -60,7 +78,14 @@ class MenuItem:
             self.markup = value
             return True
 
-    def mark_down(self, value, percent):
+    def mark_down(self, value, percent: bool):
+        """
+        Sets markdown on the price of a drink, by percentage or dollars/cents.
+
+        :param value: Given value of markdown
+        :param percent: Bool indicating whether the value represents a percentage of the existing price
+        :return: True if successful
+        """
         if percent:
             self.markdown = self.current_price() * value
             self.formatted_markdown = f"-{int(value * 100)}%"
@@ -74,9 +99,11 @@ class MenuItem:
             return True
 
     def current_price(self):
-        return round(self.base_price() - self.markdown, 2)
+        """Applies markup/markdown to the menu item price."""
+        return round(self.base_price() - self.markdown + self.markup, 2)
 
     def list_price(self, expanded=False):
+        """Displays formatted current price."""
         price = self.current_price()
         formatted_price = f"[money]${"{:.2f}".format(price)}"
         if self.markdown == 0 or expanded is False:
@@ -85,7 +112,13 @@ class MenuItem:
             return formatted_price + f" ({self.formatted_markdown})"
 
     def list_item(self, expanded=False):
-        # Layout offset (12) and markdown offset (15)
+        """
+        Formats string for listing MenuItems in tables, etc., including relevant info according to type.
+
+        :param expanded: Whether displaying in the full expanded menu window, or the condensed dashboard menu.
+        :return: The formatted string
+        """
+        # Layout offset + markdown offset
         total_spacing = console.size[0] - 29 if expanded else int(console.size[0] // 2) - 19
         name = self.name
 
@@ -116,7 +149,7 @@ class MenuItem:
             return f"[{style}]{name}[/{style}]{standardized_spacing(name, total_spacing)}{self.list_price()}"
 
         else:
-            console.print(f"[error]Menu item {self.name} not triggering Recipe, Beer, or other Alcohol")
+            logger.logprint(f"[error]Menu item {self.name} not triggering Recipe, Beer, or other Alcohol")
 
 
 # TODO: Soda water always available
@@ -142,13 +175,20 @@ class Ingredient:
         else:
             return "a"
 
-    def format_flavor(self):  # Add the necessary space after flavor if there is one
+    def format_flavor(self):  #
+        """Adds the necessary space after flavor if there is one."""
         if self.flavor:
             return f"[fruit]{self.flavor}[/fruit] "
         else:
             return ""
 
     def format_type(self, plural=False):
+        """
+        Gets the object's type, and converts it to a readable and grammatically correct string.
+
+        :param plural: Whether the type should be plural, i.e. "Whiskies"
+        :return: Type string for use in sentences and tables
+        """
         type_name = type(self).__name__
 
         # Check for special formats
@@ -175,13 +215,14 @@ class Ingredient:
         return type_name
 
     def notes_desc(self):
+        """Generates the "notes" section of ingredient description, if notes are present."""
         if self.notes:
             return f" with notes of {self.notes}"
         else:
             return ""
 
     def get_style(self):
-        """Gets the style for the given type or its nearest parent in the theme."""
+        """Gets the style name for the given type or its nearest parent in the theme."""
         typ = self.format_type().lower()
         if typ in styles:
             return typ
@@ -194,6 +235,12 @@ class Ingredient:
         return ""
 
     def description(self, markup=True):  # {Name} is a/an {character} {flavor}{type}{notes}.
+        """
+        Generates a description based on the type, character, flavor, notes, and ABV of an ingredient.
+
+        :param markup: Whether to include markup characters that color and format the string
+        :return: The formatted or raw string of the full sentence
+        """
         style = self.get_style()
         if markup:
             desc = (f"[{style}][italic]{self.name.capitalize()}[/{style}][/italic] "
@@ -205,35 +252,15 @@ class Ingredient:
                     f"{self.format_type().lower()}{self.notes_desc()}.")
         return desc
 
-    def get_attributes(self):
-        """Returns a list of attribute values in the correct order for the constructor."""
-        signature = inspect.signature(type(self).__init__)
-        parameters = signature.parameters
-        attribute_values = [
-            repr(getattr(self, param.name))
-            for param in parameters.values()
-            if param.kind == param.POSITIONAL_OR_KEYWORD and param.name != 'self'
-        ]
-        return attribute_values
-
-    def get_menu_section(self):
-        menu_section = None
-        if isinstance(self, Beer):
-            menu_section = Beer
-        elif isinstance(self, Cider):
-            menu_section = Cider
-        elif isinstance(self, Wine):
-            menu_section = Wine
-        elif isinstance(self, Mead):
-            menu_section = Mead
-        else:
-            return None
-        return menu_section
-
     def get_portions(self):
+        """Returns a dict of portion names and sizes depending on the ingredient type."""
         return {}
 
-    def show_portions(self):
+    def table_portions(self):
+        """
+        Displays ingredient's possible portions in a table for selection.
+        :return: The table and a list of the keys / portion names for command parsing
+        """
         portions_table = Table(show_header=False)
         portions_list = []
 
@@ -245,6 +272,7 @@ class Ingredient:
         return portions_table, portions_list
 
     def price_per_oz(self, bound: Literal["max", "min", "avg"]):
+        """Calculates ceiling price per oz of ingredient using the lowest value purchase volume option."""
         def price_over_vol(index):
             shop_vol = list(self.volumes)[index]
             vol_price = list(self.volumes.values())[index]
@@ -292,6 +320,12 @@ class Alcohol(Drink):
         self.abv = abv
 
     def abv_desc(self, markup=True):
+        """
+        Generates ABV section of ingredient description - "It is X.X% ABV."
+
+        :param markup: Whether to include markup characters that color and format the string when printed.
+        :return: String for use in description sentence, with or without markup
+        """
         if self.abv is not None:
             if markup:
                 return f" It is [abv]{self.abv}% ABV.[/abv]"

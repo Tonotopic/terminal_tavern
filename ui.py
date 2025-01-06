@@ -21,7 +21,11 @@ from ingredients import list_ingredients, Ingredient, Drink
 live_prompt = "Cycling multiple pages... Begin typing to stop."
 
 
-def bump_console_size(down=False):
+def bump_console_height(down=False):
+    """
+    Change console height by 1, affecting how Layouts are drawn.
+    :param down: Leave False to increase height, set to True to decrease height again
+    """
     width, height = console.size
     if down:
         height = height - 1
@@ -30,19 +34,29 @@ def bump_console_size(down=False):
     console.size = (width, height)
 
 
-def draw_sentinel_update(key):
+def draw_sentinel_update(key):  # Unspecified key is used by listener below
+    """Sets global sentinel to True to stop the cycling of the live display."""
     global draw_sentinel
     draw_sentinel = True
     raise keyboard.Listener.StopException()
 
 
 def listen(sec: int):
+    """Listens for a keypress for the given number of seconds after each live page has been drawn."""
     with keyboard.Listener(on_press=draw_sentinel_update) as listener:  # , suppress=True
         listener.join(sec)
 
 
 def draw_live(tables, panel, layout, sec):
-    bump_console_size()
+    """
+    Cycles through rendering the given tables in the given panel, re-drawing the given Layout every {sec} seconds.
+
+    :param tables: Iterable of multiple tables to cycle through displaying
+    :param panel: The panel to render the tables in. This should be contained in the provided Layout object
+    :param layout: The Layout object to refresh, which should include the panel whose renderable is being changed.
+    :param sec: The number of seconds to hold each table on the screen.
+    """
+    bump_console_height()
     with Live(console=console, refresh_per_second=0.00001) as live:
         logger.log("Drawing live display...")
 
@@ -58,7 +72,7 @@ def draw_live(tables, panel, layout, sec):
             live.refresh()
 
             listen(sec=sec)
-    bump_console_size(down=True)
+    bump_console_height(down=True)
 
 
 # </editor-fold>
@@ -66,6 +80,7 @@ def draw_live(tables, panel, layout, sec):
 
 # <editor-fold desc="Screens">
 def startup_screen():
+    """Display and handle the initial screen when the game is started, showing title card and save files."""
     saves_table = Table(expand=True, box=box.SIMPLE, style=styles.get("dimmed"), show_header=False)
     saves_table.add_column(justify="center")
     saves_table.add_row()
@@ -122,6 +137,7 @@ def startup_screen():
 
 
 def dashboard(bar):
+    """Display and handle the dashboard screen of the given bar, showing the menu and stats."""
     # <editor-fold desc="Layout"
     bar_name_panel = Panel(renderable=f"Welcome to [underline]{bar.name}!")
     balance_panel = Panel(renderable=f"Balance: [money]${str(bar.balance)}[/money]  "
@@ -162,6 +178,7 @@ def dashboard(bar):
 
 
 def menu_screen(bar):
+    """Display and handle the bar menu screen, where menu items can be viewed, added, removed, and marked up."""
     bar.set_screen("BAR_MENU")
     global type_displaying
     type_displaying = None
@@ -298,9 +315,9 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
             table_settings["box"] = box.MARKDOWN
 
-            shop_tables, shop_list = bar.stock.show_ing_category(table_settings, current_selection, showing_flavored,
-                                                                 shop=True)
-            inv_table, inv_list = bar.stock.show_ing_category(table_settings, current_selection, showing_flavored)
+            shop_tables, shop_list = bar.stock.table_ing_category(table_settings, current_selection, showing_flavored,
+                                                                  shop=True)
+            inv_table, inv_list = bar.stock.table_ing_category(table_settings, current_selection, showing_flavored)
             inv_table = inv_table[0]
 
             items = list_ingredients(shop_list, current_selection, no_inheritance=True)

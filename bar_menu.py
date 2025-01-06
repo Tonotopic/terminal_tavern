@@ -26,13 +26,21 @@ class BarMenu:
 
     # <editor-fold desc="Sections">
     def full_menu(self):
+        """Returns a single list containing all menu items across categories."""
         return self.cocktails + self.beer + self.cider + self.wine + self.mead
 
     def menu_sections(self):
+        """Returns tuples of each actual menu section, their names, and their type class."""
         return [(self.cocktails, "Cocktails", Recipe), (self.beer, "Beer", Beer), (self.cider, "Cider", Cider),
                 (self.wine, "Wine", Wine), (self.mead, "Mead", Mead)]
 
     def get_section(self, item: str | MenuItem):
+        """
+        Returns the menu section corresponding to a MenuItem currently on the menu
+
+        :param item: The actual MenuItem object, or a string matching its name (not case-sensitive).
+        :return: The section itself i.e. self.cocktails, self.beer
+        """
         if isinstance(item, str):
             for category in self.menu_sections():
                 if item == category[1].lower():
@@ -41,14 +49,21 @@ class BarMenu:
             if menu_item:
                 item = command_to_item(menu_item, self.full_menu())
 
-        for menu_section in self.menu_sections():
-            if isinstance(item, menu_section[2]):
-                return menu_section[0]
+        for section, sect_name, sect_type in self.menu_sections():
+            if isinstance(item, sect_type):
+                return section
 
     # </editor-fold>
 
     # <editor-fold desc="Display">
-    def table_menu(self, display_type=None, expanded=False):
+    def table_menu(self, display_type: type = None, expanded=False):
+        """
+        Tables the sections and items on the bar menu.
+
+        :param display_type: Set to Beer, Wine, Recipe, etc. to view single menu section
+        :param expanded: Whether the menu is displaying fullscreen or condensed as in the dashboard
+        :return: The table and a list of the objects it displays
+        """
         table_settings = {
             "show_header": False,
             "box": box.MINIMAL,
@@ -115,6 +130,10 @@ class BarMenu:
         return filled_tables, lst
 
     def overview(self, item):
+        """
+        Displays information on a single menu item.
+        :param item: The menu item being displayed.
+        """
         if isinstance(item, Ingredient):
             description_panel = Panel(renderable=item.description(), border_style=item.get_style())
             stock_rem = self.bar.stock.inventory[item]
@@ -147,6 +166,7 @@ class BarMenu:
     # <editor-fold desc="Modify">
 
     def reload(self):
+        """Reloads all drinks and ingredients on the menu from the database to reflect any DB changes."""
         for menu_section in self.menu_sections():
             menu_section = menu_section[0]
             new_section = []
@@ -176,6 +196,13 @@ class BarMenu:
         logger.log("Menu reloaded.")
 
     def select_to_add(self, add_typ, add_arg=""):
+        """
+        Displays menu items of a given type that can be added to the menu, and adds the user's selection.
+
+        :param add_typ: The class of MenuItem to display and add, i.e. Recipe or Beer
+        :param add_arg: (Not yet used) Optional ingredient command to skip the display
+        :return: True if item successfully added, False if not
+        """
         self.bar.set_screen("BAR_MENU")
 
         add_commands = ["back", "menu"]
@@ -214,7 +241,7 @@ class BarMenu:
             logger.log("Adding " + add_typ().format_type())
             while adding:
                 if add_typ == Recipe:
-                    add_tool_table, add_tool_list = self.bar.show_recipes(off_menu=True)
+                    add_tool_table, add_tool_list = self.bar.table_recipes(off_menu=True)
                     if "new" not in add_commands:
                         add_commands.append("new")
                 else:
@@ -241,9 +268,16 @@ class BarMenu:
                     return True
 
     def add(self, item):
+        """Adds an item to the menu under the proper section."""
         self.get_section(item).append(item)
 
     def remove(self, remove_arg):
+        """
+        Attempts to remove an item from the menu matching the given argument.
+
+        :param remove_arg: The user's input on which item to remove
+        :return: True if item successfully removed, else False
+        """
         item_cmd = find_command(remove_arg, items_to_commands(self.full_menu()))
         if item_cmd:
             rmv_item = command_to_item(item_cmd, self.full_menu())
@@ -256,6 +290,13 @@ class BarMenu:
             return False
 
     def mark(self, direction, mark_arg):
+        """
+        Markup or markdown a menu item.
+
+        :param direction: "up" or "down"
+        :param mark_arg: User's inputted argument on what to markup/markdown; an item or section i.e. Beer
+        :return: True if markup/markdown successful, else False
+        """
         if mark_arg == "":
             console.print("[error]Syntax: 'markup \\[menu item/category]'")
             return False
@@ -327,6 +368,7 @@ class BarMenu:
     # </editor-fold>
 
     def check_stock(self):
+        """Returns False if any menu items are out of stock, or True if all can currently be poured."""
         for menu_item in self.full_menu():
             if not self.bar.stock.has_enough(menu_item):
                 console.print(

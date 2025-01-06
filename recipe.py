@@ -8,7 +8,7 @@ import ingredients
 import logger
 import rich_console
 from rich_console import console, standardized_spacing, styles
-from ingredients import Ingredient, MenuItem, Fruit
+from ingredients import Ingredient, MenuItem
 
 
 # TODO Specify ingredients like Coffee liqueur
@@ -26,6 +26,7 @@ class Recipe(MenuItem):
     # <editor-fold desc="Display">
     @override
     def list_item(self, expanded=False):
+        """Displays cocktail name and price, including ingredients if viewing the full-screen menu."""
         name = self.name
         total_spacing = console.size[0] - 29 if expanded else int(console.size[0] // 2) - 19
         if expanded:
@@ -120,6 +121,7 @@ class Recipe(MenuItem):
 
     # <editor-fold desc="Ingredients">
     def format_ingredients(self, markup=True):
+        """Gets a string of comma-separated recipe ingredients, with optional markup characters to delineate types by color."""
         r_ings = []
         for entry in self.r_ingredients:
             if isinstance(entry, type):
@@ -147,6 +149,7 @@ class Recipe(MenuItem):
         return formatted_ing_string
 
     def breakdown_ingredients(self):
+        """Table ingredient portions (i.e. "shot of Bourbon") and costs, totaling cost at the bottom."""
         recipe_table = Table(show_header=False, box=None)
         recipe_table.add_column("portion", vertical="middle")
         recipe_table.add_column("of")
@@ -217,6 +220,9 @@ class Recipe(MenuItem):
         return abv
 
     def generate_taste_profile(self):
+        """
+        Generate a dict of tastes (i.e. fruity, bitter) present in the cocktail, and corresponding weight values.
+        """
         logger.log(f"Generating taste profile for {self.name}:")
         taste_profile = {}
 
@@ -278,6 +284,7 @@ class Recipe(MenuItem):
         return sorted_taste_profile
 
     def print_taste_profile(self):
+        """Print the cocktail's tastes and their values, in order and in color markup."""
         taste_spacing = 15
 
         string = ""

@@ -43,24 +43,33 @@ class Bar:
 
     # <editor-fold desc="Recipes">
     # @TODO: '2 whole maraschino cherry'
-    def show_recipes(self, off_menu=False):
+    def table_recipes(self, off_menu=False):
+        """
+        Table all stored recipes, or just those that are not currently on the menu.
+
+        :param off_menu: Set true to exclude recipes already on the menu, such as when adding to the menu
+        :return: A table displaying the cocktail's name and recipe, and a list of the recipe objects
+        """
         recipes_list = []
         recipes_table = Table()
         recipes_table.add_column("name")
         recipes_table.add_column("ingredients")
-        for recipe in self.recipes:
-            if off_menu:
-                if self.recipes[recipe] in self.menu.cocktails:
-                    continue
-            ingredients_string = self.recipes[recipe].format_ingredients()
-            recipes_table.add_row(Text(recipe, style=styles.get("cocktails")), ingredients_string)
+        for recipe_name in self.recipes:
+            if off_menu and self.recipes[recipe_name] in self.menu.cocktails:
+                continue
+            ingredients_string = self.recipes[recipe_name].format_ingredients()
+            recipes_table.add_row(Text(recipe_name, style=styles.get("cocktails")), ingredients_string)
             recipes_table.add_row()
-            recipes_list.append(self.recipes[recipe])
+            recipes_list.append(self.recipes[recipe_name])
         return recipes_table, recipes_list
 
     def new_recipe(self):
+        """
+        Allow the user to search ingredients and assign quantities to a new recipe.
+
+        :return: The name of the newly added recipe
+        """
         logger.log("Drawing new recipe screen...")
-        recipe_table = Table()
 
         type_args = set()
         type_lst = set()
@@ -141,11 +150,18 @@ class Bar:
                         recipe_dict[matching_obj] = portion
 
     def reload_ingredients(self):
+        """
+        Recreate all ingredient objects in stored recipes, the bar menu, and inventory, to update any changes and ensure
+        that all instances of an ingredient point to the same object.
+        """
         self.reload_recipes()
         self.menu.reload()
         self.stock.reload()
 
     def reload_recipes(self):
+        """
+        Reload the ingredient objects in all stored recipes to stay up-to-date with the database.
+        """
         new_recipes = {}
         for cocktail_name in self.recipes:
             recip = self.recipes[cocktail_name]
@@ -171,9 +187,11 @@ class Bar:
     # </editor-fold>
 
     def get_screen(self):
+        """Get the name of the screen the bar is currently on."""
         return self.screen.name
 
     def set_screen(self, screen_arg: str):
+        """Set the bar screen value."""
         screen_arg = screen_arg.strip().upper()
         for screen in Screen:
             if screen_arg == screen.name:

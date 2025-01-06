@@ -16,6 +16,13 @@ class BarStock:
         self.inventory = {}  # Dictionary: {ingredient_object: fluid_ounces}
 
     def buy(self, ingredient: Ingredient = None, arg=""):
+        """
+        Parses volume argument and purchases the given volume of the current ingredient.
+
+        :param ingredient: Ingredient to buy; currently being displayed
+        :param arg: User input for the volume to buy
+        :return: True if purchase successful
+        """
         parts = arg.split()
 
         if len(parts) == 2:  # i.e. buy 24
@@ -26,7 +33,7 @@ class BarStock:
             volume = arg
 
         else:
-            console.print("[error]Incorrect number of arguments. Usage: buy <quantity>")
+            logger.logprint("[error]Incorrect number of arguments. Usage: buy <quantity>")
             return False
 
         try:
@@ -44,16 +51,23 @@ class BarStock:
                     self.inventory[ingredient] = self.inventory.get(ingredient, 0) + volume
                     return True
                 else:
-                    console.print(f"[error]Insufficient funds. Bar balance: [money]${balance}")
+                    logger.logprint(f"[error]Insufficient funds. Bar balance: [money]${balance}")
                     return False
             else:
-                console.print(f"[error]Invalid volume. Available: {[oz for oz in ingredient.volumes.keys()]}")
+                logger.logprint(f"[error]Invalid volume. Available: {[oz for oz in ingredient.volumes.keys()]}")
                 return False
         else:
-            console.print("[error]No ingredient selected. Please select an ingredient first.")
+            logger.logprint("[error]No ingredient selected. Please select an ingredient first.")
             return False
 
     def table_items(self, typ, off_menu=False):
+        """
+        Creates a table of items of the given type in stock.
+
+        :param typ: The type of ingredient to display.
+        :param off_menu: Set to True to display only items not already on the menu
+        :return: The table and a list of the objects it displays.
+        """
         inv_ingredients = list_ingredients(self.inventory, typ)
         add_tool_table = Table(expand=True)
         lst = []
@@ -82,6 +96,8 @@ class BarStock:
         return add_tool_table, lst
 
     def reload(self):
+        """Reloads all ingredients in stock from the database to update any changes and ensure all instances point to the
+        same object."""
         new_ings = {}
         for inv_ing in self.inventory:
             for db_ing in all_ingredients:
@@ -90,7 +106,17 @@ class BarStock:
         self.inventory = new_ings
         logger.log("Stock reloaded.")
 
-    def show_ing_category(self, table_settings, typ: type = Ingredient, showing_flavored=False, shop=False):
+    def table_ing_category(self, table_settings, typ: type = Ingredient, showing_flavored=False, shop=False):
+        """
+        Tables a category of ingredient, not just including ingredients of that type, but also listing sub-categories for
+        selection, as in the shop/stock.
+
+        :param table_settings: Unpackable containing any arguments to specify when constructing the table.
+        :param typ: The current type to display, defaulting to start with Ingredient.
+        :param showing_flavored: Whether the current page is the flavored subsection of the current type.
+        :param shop: Set to True to table the shop, leave False to table your bar stock
+        :return: A list of tables (multiple for overflow), and a list of the contents
+        """
 
         container = all_ingredients if shop else self.inventory
         table_1 = Table(**table_settings)
@@ -134,8 +160,6 @@ class BarStock:
         global table_section
         table_section = table_1
         for item in items:
-            min_price = 0
-            max_price = 0
             if len(table_section.rows) > console.height - 12:
                 table_section = Table(**table_settings)
                 table_section.add_column(justify="center")
@@ -170,6 +194,7 @@ class BarStock:
         return tables, lst
 
     def list_type(self, typ, min_vol=0):
+        """Lists the ingredients in stock of a specified type, with an optional minimum volume."""
         lst = []
         for item in self.inventory:
             if type(item) is typ and self.inventory[item] >= min_vol:
@@ -177,7 +202,7 @@ class BarStock:
         return lst
 
     def check_ingredients(self, recipe):
-        """Checks if there are enough ingredients in stock to make the recipe."""
+        """Checks if there are enough of all ingredients in stock to make the recipe."""
         logger.log(f"Checking ingredients for {recipe.name}...")
         ing_missing = False
         for req_ingredient, req_quantity in recipe.r_ingredients.items():
@@ -234,6 +259,7 @@ class BarStock:
             return True  # All ingredients present
 
     def has_enough(self, menu_item: MenuItem):
+        """Checks whether inventory is sufficient to pour a single MenuItem, whether single ingredient or recipe."""
         if isinstance(menu_item, Recipe):
             if self.check_ingredients(menu_item):
                 return True
@@ -246,6 +272,13 @@ class BarStock:
         return False
 
     def select_ingredients(self, recipe):
+        """
+        For recipes with ingredients that accept any of a type (i.e. Bourbon), allows the user to select which
+        ingredient to use from a list of compatible ingredients in stock.
+
+        :param recipe: The cocktail being served.
+        :return: A dict mirroring the recipe with the final selected ingredients inserted.
+        """
         final_ings = dict()
         for r_ingredient in recipe.r_ingredients:
             if isinstance(r_ingredient, type):
@@ -265,6 +298,7 @@ class BarStock:
         return final_ings
 
     def pour(self, menu_item: MenuItem):
+        """Removes ingredients from the stock in proper portions, initiating ingredient selection where applicable."""
         logger.log(f"Pouring {menu_item.name}...")
         if isinstance(menu_item, Recipe):
             provided_ings = self.select_ingredients(menu_item)

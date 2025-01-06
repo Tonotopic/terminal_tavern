@@ -17,11 +17,13 @@ def filename():
 
 
 def log(msg):
+    """Prints to log only with timestamp."""
     timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")[:12]
     logger.info(f"{timestamp} - {msg}")
 
 
 def logprint(msg):
+    """Prints to the log and the console."""
     console.print(msg)
     log(msg)
 
@@ -35,10 +37,10 @@ def delete_oldest_log(log_dir, max_files):
 
 
 def log_exception(exc_type, exc_value, exc_traceback):
+    """Logs and prints traceback and locals when an exception is encountered."""
     console.print("[error]!!!!!!!!Exception encountered!!!!!!!!!!")
     tb_str = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-    logger.error(tb_str)
-    console.print(tb_str)
+    logprint(tb_str)
 
     # Extract the frame where the exception occurred
     tb = exc_traceback
@@ -47,7 +49,7 @@ def log_exception(exc_type, exc_value, exc_traceback):
     frame = tb.tb_frame
 
     # Get local variables from the frame
-    console.print("[error]Locals:")
+    logprint("[error]Locals:")
 
     local_vars = frame.f_locals
     for var_name, var_value in local_vars.items():
