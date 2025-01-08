@@ -52,13 +52,12 @@ def listen(sec: int):
 
 def draw_live(update_function: Callable, sec):
     """
-    Cycles through rendering the given tables in the given panel, re-drawing the given Layout every {sec} seconds.
+    Update a live display using the {update_function} every {sec} sec
 
-    :param tables: Iterable of multiple tables to cycle through displaying
-    :param panel: The panel to render the tables in. This should be contained in the provided Layout object
-    :param layout: The Layout object to refresh, which should include the panel whose renderable is being changed.
-    :param sec: The number of seconds to hold each table on the screen.
+    :param update_function: A callable that performs the display update. It should accept a 'stop' function
+    :param sec: The number of seconds to wait in between display updates.
     """
+
     bump_console_height()
     with Live(console=console, refresh_per_second=0.00001) as live:
         logger.log("Drawing live display...")
@@ -80,6 +79,14 @@ def draw_live(update_function: Callable, sec):
 
 
 def live_cycle_tables(tables, panel, layout, sec):
+    """
+        Cycles through rendering the given tables in the given panel, re-drawing the given Layout every {sec} seconds.
+
+        :param tables: Iterable of multiple tables to cycle through displaying
+        :param panel: The panel to render the tables in. This should be contained in the provided Layout object
+        :param layout: The Layout object to refresh, which should include the panel whose renderable is being changed.
+        :param sec: The number of seconds to hold each table on the screen.
+        """
     table_iterator = cycle(tables)
 
     def update_table_display(stop, live):

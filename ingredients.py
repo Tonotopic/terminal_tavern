@@ -980,15 +980,8 @@ class Fruit(Additive):
 
 
 # <editor-fold desc="Functions">
-def get_constructor_args(ingredient_type):
-    """Gets the constructor arguments for a given ingredient type.
-
-    Args:
-      ingredient_type: The type of ingredient.
-
-    Returns:
-      A list of constructor arguments.
-    """
+def get_constructor_params(ingredient_type):
+    """Gets the necessary constructor parameter names for the given ingredient type."""
     ingredient_class = globals().get(ingredient_type)
 
     # If the class object is not found, return the arguments for the base Ingredient class.
@@ -1002,12 +995,19 @@ def get_constructor_args(ingredient_type):
     return list(constructor_params)
 
 
-def create_object(ingredient_type, row_data, column_names):
+def create_instance(ingredient_type, row_data):
+    """
+    Creates and returns an ingredient instance.
+
+    :param ingredient_type: The exact type of the ingredient being created, i.e. White Rum
+    :param row_data: A dictionary matching the attribute/column names to the values for this ingredient
+    :return: The created ingredient object
+    """
     # Get the constructor arguments for the ingredient type.
-    constructor_args = get_constructor_args(ingredient_type)
+    constructor_args = get_constructor_params(ingredient_type)
 
     # Create a dictionary mapping argument names to their values
-    arg_dict = {arg: row_data[arg] for arg in column_names if arg in constructor_args}
+    arg_dict = {arg: row_data[arg] for arg in row_data.keys() if arg in constructor_args}
 
     # Extract the values for the constructor arguments
     arg_values = [arg_dict.get(arg) for arg in constructor_args]
@@ -1019,7 +1019,7 @@ def create_object(ingredient_type, row_data, column_names):
 
 
 def load_ingredients_from_db():
-    #  Populates all_ingredients with ingredients from the database, including their available volumes and prices
+    """Populates all_ingredients with ingredients from the database, including their available volumes and prices."""
     connection = sqlite3.connect('tavern_db.db')
     cursor = connection.cursor()
     global all_ingredients
@@ -1034,7 +1034,7 @@ def load_ingredients_from_db():
         volumes = {}
 
         if len(volume_data) < 1:
-            if product_name != "Soda water":
+            if product_name != "soda water":
                 raise Exception(f"No volume data for {product_name}")
         for vol in volume_data:
             volumes[int(vol[0])] = vol[1]
@@ -1042,7 +1042,7 @@ def load_ingredients_from_db():
         ingredient_data = dict(zip(column_names, row))
         ingredient_data['volumes'] = volumes
 
-        ingredient = create_object(ingredient_type, ingredient_data, column_names + ['volumes'])
+        ingredient = create_instance(ingredient_type, ingredient_data)
 
         if ingredient:
             all_ingredients.append(ingredient)
@@ -1050,6 +1050,14 @@ def load_ingredients_from_db():
 
 
 def list_ingredients(container, typ, no_inheritance=False):
+    """
+    Returns a list of ingredients of the given type in the given container.
+
+    :param container: Iterable containing ingredients; usually bar stock, all_ingredients, or a table list.
+    :param typ: The type of ingredient to list.
+    :param no_inheritance: Set to True to require that ingredients be of the exact given type, not a subclass.
+    :return: A list of ingredient objects.
+    """
     lst = []
 
     for ingredient in container:
@@ -1065,6 +1073,7 @@ def list_ingredients(container, typ, no_inheritance=False):
 
 
 def all_ingredient_types(typ=Ingredient):
+    """Returns a set of all classes underneath the given ingredient class."""
     subclasses = set()
     for subclass in typ.__subclasses__():
         subclasses.add(subclass)
@@ -1077,10 +1086,15 @@ def get_ingredient(ingredient_name):
     return all_ingredients[ingredient_name]
 
 
-def categorize_spirits(spirits):
-    """Categorizes spirits into 'Flavored' and 'Unflavored' groups."""
-    flavored = [spirit for spirit in spirits if spirit.flavor]
-    unflavored = [spirit for spirit in spirits if not spirit.flavor]
+def separate_flavored(ingredients):
+    """
+    Categorizes ingredients into 'flavored' and 'unflavored' lists based on the presence of a "flavor" attribute.
+
+    :param ingredients: Iterable of ingredients with and without flavor entries
+    :return: A list of the flavored ingredients, and a list of the unflavored
+    """
+    flavored = [spirit for spirit in ingredients if spirit.flavor]
+    unflavored = [spirit for spirit in ingredients if not spirit.flavor]
     return flavored, unflavored
 
 # </editor-fold>

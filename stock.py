@@ -6,7 +6,7 @@ import logger
 import rich_console
 from rich_console import console, styles
 from recipe import Recipe
-from ingredients import all_ingredients, list_ingredients, Ingredient, Spirit, Liqueur, categorize_spirits, \
+from ingredients import all_ingredients, list_ingredients, Ingredient, Spirit, Liqueur, separate_flavored, \
     get_ingredient, MenuItem
 
 
@@ -147,7 +147,7 @@ class BarStock:
                 lst.append(subclass)
 
         if showing_flavorable_spirit:
-            flavored, unflavored = categorize_spirits(items)
+            flavored, unflavored = separate_flavored(items)
             if not showing_flavored:  # Group flavored into a category and only list unflavored
                 table_1.add_row(Text(f"Flavored ({len(flavored)})",
                                      style=styles.get("additive")), end_section=True)
