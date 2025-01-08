@@ -3,6 +3,7 @@ import sys
 import os
 import pickle
 import random
+import time
 
 import logger
 from rich_console import console
@@ -106,3 +107,24 @@ def roll_probabilities(choices):
             return random.choices(list(choices.keys()), weights=list(choices.values()))
 
     return random.choices(list(choices))[0]
+
+
+def game_clock():
+    game_mins_per_sec = 0.5  # 1 min = 2 sec
+
+    start_real_time = time.perf_counter()
+    start_game_time = 16 * 60  # 16:00 bar opening time
+
+    try:
+        while True:
+            elapsed_real_time = time.perf_counter() - start_real_time
+            elapsed_game_time = int(elapsed_real_time * game_mins_per_sec)
+
+            current_game_time = start_game_time + elapsed_game_time
+            game_hours = (current_game_time // 60) % 24
+            game_minutes = current_game_time % 60
+
+            console.print(f"In-game time: {game_hours:02}:{game_minutes:02}", end="\r")
+            time.sleep(0.01)
+    except KeyboardInterrupt:
+        console.print("Clock stopped.")

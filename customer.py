@@ -16,6 +16,7 @@ for row in rows:
 connection.close()
 
 
+# TODO: Remove used customers from a bar-specific list of customers not yet created
 class Customer():
     def __init__(self):
         self.name = None

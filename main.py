@@ -22,8 +22,7 @@ load_ingredients_from_db()
 ui.startup_screen()
 current_bar = utils.current_bar
 
-test_customer = customer.Customer()
-test_customer.generate_customer()
+utils.game_clock()
 
 while True:
     if current_bar.get_screen() == "MAIN":
