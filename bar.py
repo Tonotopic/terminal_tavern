@@ -21,7 +21,8 @@ class Screen(Enum):
     MAIN = 1
     SHOP = 2
     BAR_MENU = 3
-    ADD = 4
+    MENU_ADD = 4
+    PLAY = 5
 
 
 reputation_levels = {

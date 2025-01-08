@@ -434,4 +434,10 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             console.print("[error]Command not handled")
 
         # </editor-fold>
+
+
+def play_screen(bar, start_game_minutes):
+    pass
+
+
 # </editor-fold>

@@ -11,17 +11,7 @@ from rich_console import console
 current_bar = None
 
 
-def debugging():
-    """Returns True if running in the PyCharm debugger."""
-    from sys import gettrace
-    if gettrace():
-        return True
-    elif sys.monitoring.get_tool(sys.monitoring.DEBUGGER_ID) is not None:
-        return True
-    else:
-        return False
-
-
+# <editor-fold desc="Savefiles">
 def save_bar(bar_obj):
     """Saves the game state to a file.
 
@@ -61,6 +51,19 @@ def load_bar(index):
     except Exception as e:
         console.print(f"Error loading save file: {e}")
         return None
+
+
+# </editor-fold>
+
+def debugging():
+    """Returns True if running in the PyCharm debugger."""
+    from sys import gettrace
+    if gettrace():
+        return True
+    elif sys.monitoring.get_tool(sys.monitoring.DEBUGGER_ID) is not None:
+        return True
+    else:
+        return False
 
 
 def quit():
@@ -109,22 +112,20 @@ def roll_probabilities(choices):
     return random.choices(list(choices))[0]
 
 
-def game_clock():
+def run_clock(start_game_mins):
     game_mins_per_sec = 0.5  # 1 min = 2 sec
 
     start_real_time = time.perf_counter()
-    start_game_time = 16 * 60  # 16:00 bar opening time
-
     try:
         while True:
-            elapsed_real_time = time.perf_counter() - start_real_time
-            elapsed_game_time = int(elapsed_real_time * game_mins_per_sec)
+            elapsed_real_secs = time.perf_counter() - start_real_time
+            elapsed_game_mins = int(elapsed_real_secs * game_mins_per_sec)
 
-            current_game_time = start_game_time + elapsed_game_time
-            game_hours = (current_game_time // 60) % 24
-            game_minutes = current_game_time % 60
+            current_game_mins = start_game_mins + elapsed_game_mins
+            clock_hours = (current_game_mins // 60) % 24
+            clock_minutes = current_game_mins % 60
 
-            console.print(f"In-game time: {game_hours:02}:{game_minutes:02}", end="\r")
+            console.print(f"In-game time: {clock_hours:02}:{clock_minutes:02}", end="\r")
             time.sleep(0.01)
     except KeyboardInterrupt:
-        console.print("Clock stopped.")
+        pass
