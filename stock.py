@@ -233,6 +233,8 @@ class BarStock:
                         logger.logprint("[error] No {req_ingredient().format_type()}!")
                     # Continue looping so all missing ingredients are printed
             else:  # Specific ingredient required
+                if req_ingredient.name == "soda water":
+                    continue
                 req_quantity = req_ingredient.get_portions()[req_quantity]
                 if req_ingredient in self.inventory:
                     if self.inventory[req_ingredient] >= req_quantity:
@@ -304,7 +306,8 @@ class BarStock:
             provided_ings = self.select_ingredients(menu_item)
             for ingredient in provided_ings:
                 vol = provided_ings[ingredient]
-                self.inventory[ingredient] -= vol
+                if ingredient.name != "soda water":
+                    self.inventory[ingredient] -= vol
                 logger.log(f"   Pouring {vol} of {ingredient.name} - stock now at {self.inventory[ingredient]}")
         else:
             self.inventory[menu_item] -= menu_item.pour_vol()

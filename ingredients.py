@@ -152,7 +152,6 @@ class MenuItem:
             logger.logprint(f"[error]Menu item {self.name} not triggering Recipe, Beer, or other Alcohol")
 
 
-# TODO: Soda water always available
 # <editor-fold desc="Ingredients">
 class Ingredient:
     def __init__(self, name=None, flavor=None, character=None, notes=None,
@@ -288,6 +287,8 @@ class Ingredient:
                 for i in self.volumes:
                     total += price_over_vol(i)
                 return total / len(self.volumes)
+        elif self.name == "soda water":
+            return 0
         else:
             msg = f"[error]self.volumes not present for {self.name}"
             logger.logprint(msg)
@@ -959,7 +960,7 @@ class Fruit(Additive):
 
     def get_portions(self):
         unsliceable = {"maraschino cherry", "raspberry", "lychee", "blackberry", "cranberry"}
-        portions = {"Juice (Tsp)": round(1 / 6, 2), "Juice (Tbsp)": 1 / 2, "Crushed": 1}
+        portions = {"Juice (Tsp)": round(1 / 6, 2), "Juice (Tbsp)": 1 / 2, "Juice (1oz)": 1, "Crushed": 1}
         if self.name in unsliceable:
             portions["Whole"] = round(1 / 8, 2)
             portions["Crushed"] = round(1 / 8, 2)

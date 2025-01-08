@@ -130,7 +130,7 @@ class Bar:
                 console.print("[error]No matching type or ingredient")
                 continue
 
-            portions_table, portions_list = matching_obj.show_portions()
+            portions_table, portions_list = matching_obj.table_portions()
             portions_list.append("back")
 
             portioning_panel = Panel(title=f"Portioning {ingredient}", renderable=portions_table,
