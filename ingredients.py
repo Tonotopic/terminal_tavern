@@ -1032,6 +1032,9 @@ def load_ingredients_from_db():
         volume_data = cursor.fetchall()
         volumes = {}
 
+        if len(volume_data) < 1:
+            if product_name != "Soda water":
+                raise Exception(f"No volume data for {product_name}")
         for vol in volume_data:
             volumes[int(vol[0])] = vol[1]
 
