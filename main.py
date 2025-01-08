@@ -1,3 +1,4 @@
+import customer
 import utils
 from ingredients import load_ingredients_from_db
 import ui
@@ -21,9 +22,8 @@ load_ingredients_from_db()
 ui.startup_screen()
 current_bar = utils.current_bar
 
-for menu_item in current_bar.menu.full_menu():
-    if current_bar.stock.has_enough(menu_item):
-        current_bar.stock.pour(menu_item)
+test_customer = customer.Customer()
+test_customer.generate_customer()
 
 while True:
     if current_bar.get_screen() == "MAIN":

@@ -1017,7 +1017,6 @@ def create_object(ingredient_type, row_data, column_names):
 
 def load_ingredients_from_db():
     #  Populates all_ingredients with ingredients from the database, including their available volumes and prices
-    # Database connection
     connection = sqlite3.connect('tavern_db.db')
     cursor = connection.cursor()
     global all_ingredients
@@ -1025,19 +1024,17 @@ def load_ingredients_from_db():
     column_names = [description[0] for description in cursor.description]
     for row in cursor.fetchall():
         ingredient_type = dict(zip(column_names, row))["type"]
-        product_name = dict(zip(column_names, row))["name"]  # Get the product name
+        product_name = dict(zip(column_names, row))["name"]
 
-        # Fetch volume data using product_name as the foreign key
         cursor.execute("SELECT volume, price FROM product_volumes WHERE product_name=?", (product_name,))
-        volume_data = cursor.fetchall()  # Fetch all volumes and prices
+        volume_data = cursor.fetchall()
         volumes = {}
 
         for vol in volume_data:
             volumes[int(vol[0])] = vol[1]
 
-        # Pass volume data to the create_object function
         ingredient_data = dict(zip(column_names, row))
-        ingredient_data['volumes'] = volumes  # Store volumes list in ingredient_data
+        ingredient_data['volumes'] = volumes
 
         ingredient = create_object(ingredient_type, ingredient_data, column_names + ['volumes'])
 

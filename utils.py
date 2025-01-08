@@ -2,6 +2,7 @@ import math
 import sys
 import os
 import pickle
+import random
 
 import logger
 from rich_console import console
@@ -95,3 +96,13 @@ def split_with_quotes(inpt):
 
 def quarter_round(price):
     return math.ceil(price * 4) / 4
+
+
+def roll_probabilities(choices):
+    if isinstance(choices, dict):
+        if isinstance(list(choices.values())[0], float):
+            if not 0.99 < sum(choices.values()) < 1.01:
+                logger.log("Probabilities do not sum to 1!")
+            return random.choices(list(choices.keys()), weights=list(choices.values()))
+
+    return random.choices(list(choices))[0]
