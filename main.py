@@ -22,8 +22,6 @@ load_ingredients_from_db()
 ui.startup_screen()
 current_bar = utils.current_bar
 
-utils.run_clock(16 * 60)
-
 while True:
     if current_bar.get_screen() == "MAIN":
         ui.dashboard(current_bar)

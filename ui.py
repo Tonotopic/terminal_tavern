@@ -1,3 +1,5 @@
+from typing import Callable
+
 from pynput import keyboard
 from itertools import cycle
 
@@ -11,6 +13,7 @@ from rich.live import Live
 import commands
 import logger
 import rich_console
+import ui
 import utils
 from rich_console import console, styles
 from commands import items_to_commands, command_to_item, input_loop
@@ -47,7 +50,7 @@ def listen(sec: int):
         listener.join(sec)
 
 
-def draw_live(tables, panel, layout, sec):
+def draw_live(update_function: Callable, sec):
     """
     Cycles through rendering the given tables in the given panel, re-drawing the given Layout every {sec} seconds.
 
@@ -62,17 +65,32 @@ def draw_live(tables, panel, layout, sec):
 
         global draw_sentinel
         draw_sentinel = False
-        for table in cycle(tables):
-            if draw_sentinel:
-                logger.log("Stopping live display.")
-                break
 
+        def stop_display():
+            global draw_sentinel
+            draw_sentinel = True
+            logger.log("Stopping live display.")
+
+        while not draw_sentinel:
+            update_function(stop_display, live)
+            live.refresh()
+            listen(sec=sec)
+
+    bump_console_height(down=True)
+
+
+def live_cycle_tables(tables, panel, layout, sec):
+    table_iterator = cycle(tables)
+
+    def update_table_display(stop, live):
+        try:
+            table = next(table_iterator)
             panel.renderable = table
             live.update(layout, refresh=False)
-            live.refresh()
+        except StopIteration:
+            stop()
 
-            listen(sec=sec)
-    bump_console_height(down=True)
+    draw_live(update_table_display, sec=sec)
 
 
 # </editor-fold>
@@ -159,7 +177,7 @@ def dashboard(bar):
         dash_layout["dash_body"].split_row(Layout(name="menu_layout", renderable=menu_panel),
                                            Layout())
 
-        draw_live(tables=menu_tables, panel=menu_panel, layout=dash_layout, sec=3)
+        ui.live_cycle_tables(tables=menu_tables, panel=menu_panel, layout=dash_layout, sec=3)
 
     else:
         menu_panel.renderable = menu_tables[0]
@@ -194,7 +212,7 @@ def menu_screen(bar):
             bar_menu_layout.split_column(Layout(name="bar_menu_panel", renderable=bar_menu_panel),
                                          Layout(name="footer", size=1, renderable=live_prompt))
 
-            draw_live(tables=menu_tables, panel=bar_menu_panel, layout=bar_menu_layout, sec=5)
+            ui.live_cycle_tables(tables=menu_tables, panel=bar_menu_panel, layout=bar_menu_layout, sec=5)
         else:
             bar_menu_panel.renderable = menu_tables[0]
             console.print(bar_menu_layout)
@@ -380,7 +398,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
                 shop_layout["footed_shop_screen"].split_row(Layout(name="bar", renderable=inv_panel),
                                                             Layout(name="shop", renderable=shop_panel))
 
-                draw_live(tables=shop_tables, panel=shop_panel, layout=shop_layout, sec=3)
+                ui.live_cycle_tables(tables=shop_tables, panel=shop_panel, layout=shop_layout, sec=3)
             else:
                 shop_panel.renderable = shop_tables[0]
                 console.print(shop_layout)
@@ -438,6 +456,5 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
 def play_screen(bar, start_game_minutes):
     pass
-
 
 # </editor-fold>

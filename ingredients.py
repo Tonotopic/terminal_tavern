@@ -289,7 +289,9 @@ class Ingredient:
                     total += price_over_vol(i)
                 return total / len(self.volumes)
         else:
-            console.print(f"[error]self.volumes not present for {self.name}")
+            msg = f"[error]self.volumes not present for {self.name}"
+            logger.logprint(msg)
+            raise Exception(msg)
 
 
 # <editor-fold desc="Drinks">
