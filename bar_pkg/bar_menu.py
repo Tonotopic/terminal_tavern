@@ -6,13 +6,13 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-import ingredients
-import logger
+from data import ingredients
+from utility import logger
 import recipe
-from ingredients import Beer, Cider, Wine, Mead, MenuItem, list_ingredients, Ingredient
+from data.ingredients import Beer, Cider, Wine, Mead, MenuItem, list_ingredients, Ingredient
 from recipe import Recipe
-from rich_console import console, styles
-from commands import items_to_commands, find_command, command_to_item, input_loop
+from display.rich_console import console, styles
+from interface.commands import items_to_commands, find_command, command_to_item, input_loop
 
 
 class BarMenu:

@@ -1,8 +1,8 @@
-import customer
-import utils
-from ingredients import load_ingredients_from_db
-import ui
-from rich_console import console
+from display import live_display
+from utility import utils
+from data.ingredients import load_ingredients_from_db
+from interface import ui
+from display.rich_console import console
 
 if utils.debugging():
     width, height = console.size
@@ -21,6 +21,8 @@ load_ingredients_from_db()
 
 ui.startup_screen()
 current_bar = utils.current_bar
+
+live_display.run_clock(bar=current_bar, start_game_mins=16 * 60)
 
 while True:
     if current_bar.get_screen() == "MAIN":

@@ -1,12 +1,13 @@
 import re
 from typing import override, Literal
-import sqlite3
 from rich.table import Table
 
-import logger
-from rich_console import console, styles, standardized_spacing
-from utils import quarter_round
-import flavors
+from utility import logger
+from display.rich_console import console, styles, standardized_spacing
+from utility.utils import quarter_round
+from data.flavors import tastes
+from data.db_connect import get_connection, close_connection
+
 
 all_ingredients = []
 
@@ -272,6 +273,7 @@ class Ingredient:
 
     def price_per_oz(self, bound: Literal["max", "min", "avg"]):
         """Calculates ceiling price per oz of ingredient using the lowest value purchase volume option."""
+
         def price_over_vol(index):
             shop_vol = list(self.volumes)[index]
             vol_price = list(self.volumes.values())[index]
@@ -446,6 +448,12 @@ class BlondeAle(Ale, MenuItem):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
+class GoldenAle(Ale, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
 class AmberAle(Ale, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
@@ -580,6 +588,7 @@ class Shandy(Beer, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
+
 
 # </editor-fold>
 
@@ -966,10 +975,10 @@ class Fruit(Additive):
             portions["Crushed"] = round(1 / 8, 2)
         else:
             portions["Slice"] = round(1 / 8, 2)
-        if self.name in flavors.tastes["citrus"]:
+        if self.name in tastes["citrus"]:
             portions["Rind"] = round(1 / 8, 2)
             portions["Zest"] = round(1 / 24, 2)
-        if self.name in flavors.tastes["citrus"] or self.name == "pineapple":
+        if self.name in tastes["citrus"] or self.name == "pineapple":
             portions["Wheel"] = 0.25
 
         return portions
@@ -1020,7 +1029,7 @@ def create_instance(ingredient_type, row_data):
 
 def load_ingredients_from_db():
     """Populates all_ingredients with ingredients from the database, including their available volumes and prices."""
-    connection = sqlite3.connect('tavern_db.db')
+    connection = get_connection()
     cursor = connection.cursor()
     global all_ingredients
     cursor.execute("SELECT * FROM ingredients")
@@ -1034,7 +1043,7 @@ def load_ingredients_from_db():
         volumes = {}
 
         if len(volume_data) < 1:
-            if product_name != "soda water":
+            if product_name.lower() != "soda water":
                 raise Exception(f"No volume data for {product_name}")
         for vol in volume_data:
             volumes[int(vol[0])] = vol[1]
@@ -1046,7 +1055,7 @@ def load_ingredients_from_db():
 
         if ingredient:
             all_ingredients.append(ingredient)
-    connection.close()
+    close_connection(connection)
 
 
 def list_ingredients(container, typ, no_inheritance=False):

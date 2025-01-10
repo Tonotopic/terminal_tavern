@@ -1,11 +1,9 @@
-import sqlite3
-
-import flavors
-import ingredients
+from data import ingredients, flavors
 import recipe
-import utils
+from utility import utils
+from data.db_connect import get_connection, close_connection
 
-connection = sqlite3.connect("tavern_db.db")
+connection = get_connection()
 cursor = connection.cursor()
 cursor.execute("SELECT * FROM customer_names")
 rows = cursor.fetchall()
@@ -13,7 +11,7 @@ customer_names = {}
 for row in rows:
     name, gender, tag_field = row
     customer_names[name] = {"gender": gender, "tag_field": tag_field}
-connection.close()
+close_connection(connection)
 
 
 # TODO: Remove used customers from a bar-specific list of customers not yet created

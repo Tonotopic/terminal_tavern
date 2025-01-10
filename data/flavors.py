@@ -1,6 +1,6 @@
-import sqlite3
+from data.db_connect import get_connection, close_connection
 
-connection = sqlite3.connect("tavern_db.db")
+connection = get_connection()
 cursor = connection.cursor()
 cursor.execute("SELECT * FROM tastes")
 rows = cursor.fetchall()
@@ -10,8 +10,7 @@ for row in rows:
     if taste not in tastes:
         tastes[taste] = {}
     tastes[taste][term] = weight
-
-connection.close()
+close_connection(connection)
 
 for fruit_taste in ["berry", "melon", "tropical"]:  # Removed citrus
     tastes["fruity"].update(tastes[fruit_taste])

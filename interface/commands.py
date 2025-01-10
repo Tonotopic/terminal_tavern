@@ -5,12 +5,10 @@ import rich.box
 from rich.panel import Panel
 from unidecode import unidecode
 
-import ingredients
-import logger
-import ui
-import utils
-import rich_console
-from rich_console import console
+from data import ingredients
+from interface import ui
+from utility import utils, logger
+from display.rich_console import console, styles
 
 from recipe import Recipe
 
@@ -92,7 +90,7 @@ def draw_help_panel(term):
     """Prints a panel to the user containing help info for the given term."""
     logger.log("Drawing help panel for " + term)
     panel = Panel(help_panels.get(term), title=f"Help: {term}", box=rich.box.ASCII2,
-                  style=rich_console.styles.get("highlight"), width=100)
+                  style=styles.get("highlight"), width=100)
     console.print(panel)
 
 

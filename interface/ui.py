@@ -1,106 +1,16 @@
-from typing import Callable
-
-from pynput import keyboard
-from itertools import cycle
-
 from rich.layout import Layout
 from rich import box
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
-from rich.live import Live
 
-import commands
-import logger
-import rich_console
-import ui
-import utils
-from rich_console import console, styles
-from commands import items_to_commands, command_to_item, input_loop
-from bar import Bar
-from ingredients import list_ingredients, Ingredient, Drink
-
-# <editor-fold desc="Live Display">
-live_prompt = "Cycling multiple pages... Begin typing to stop."
-
-
-def bump_console_height(down=False):
-    """
-    Change console height by 1, affecting how Layouts are drawn.
-    :param down: Leave False to increase height, set to True to decrease height again
-    """
-    width, height = console.size
-    if down:
-        height = height - 1
-    else:
-        height = height + 1
-    console.size = (width, height)
-
-
-def draw_sentinel_update(key):  # Unspecified key is used by listener below
-    """Sets global sentinel to True to stop the cycling of the live display."""
-    global draw_sentinel
-    draw_sentinel = True
-    raise keyboard.Listener.StopException()
-
-
-def listen(sec: int):
-    """Listens for a keypress for the given number of seconds after each live page has been drawn."""
-    with keyboard.Listener(on_press=draw_sentinel_update) as listener:  # , suppress=True
-        listener.join(sec)
-
-
-def draw_live(update_function: Callable, sec):
-    """
-    Update a live display using the {update_function} every {sec} sec
-
-    :param update_function: A callable that performs the display update. It should accept a 'stop' function
-    :param sec: The number of seconds to wait in between display updates.
-    """
-
-    bump_console_height()
-    with Live(console=console, refresh_per_second=0.00001) as live:
-        logger.log("Drawing live display...")
-
-        global draw_sentinel
-        draw_sentinel = False
-
-        def stop_display():
-            global draw_sentinel
-            draw_sentinel = True
-            logger.log("Stopping live display.")
-
-        while not draw_sentinel:
-            update_function(stop_display, live)
-            live.refresh()
-            listen(sec=sec)
-
-    bump_console_height(down=True)
-
-
-def live_cycle_tables(tables, panel, layout, sec):
-    """
-        Cycles through rendering the given tables in the given panel, re-drawing the given Layout every {sec} seconds.
-
-        :param tables: Iterable of multiple tables to cycle through displaying
-        :param panel: The panel to render the tables in. This should be contained in the provided Layout object
-        :param layout: The Layout object to refresh, which should include the panel whose renderable is being changed.
-        :param sec: The number of seconds to hold each table on the screen.
-        """
-    table_iterator = cycle(tables)
-
-    def update_table_display(stop, live):
-        try:
-            table = next(table_iterator)
-            panel.renderable = table
-            live.update(layout, refresh=False)
-        except StopIteration:
-            stop()
-
-    draw_live(update_table_display, sec=sec)
-
-
-# </editor-fold>
+from interface import commands
+from utility import utils, logger
+from display import live_display, rich_console
+from display.rich_console import console, styles
+from interface.commands import items_to_commands, command_to_item, input_loop
+from bar_pkg.bar import Bar
+from data.ingredients import list_ingredients, Ingredient, Drink
 
 
 # <editor-fold desc="Screens">
@@ -180,11 +90,11 @@ def dashboard(bar):
     menu_tables = bar.menu.table_menu(expanded=False)[0]
     if len(menu_tables) > 1:
         dash_layout["dash"].split_column(Layout(name="dash_body"),
-                                         Layout(name="footer", size=1, renderable=live_prompt))
+                                         Layout(name="footer", size=1, renderable=live_display.live_prompt))
         dash_layout["dash_body"].split_row(Layout(name="menu_layout", renderable=menu_panel),
                                            Layout())
 
-        ui.live_cycle_tables(tables=menu_tables, panel=menu_panel, layout=dash_layout, sec=3)
+        live_display.live_cycle_tables(tables=menu_tables, panel=menu_panel, layout=dash_layout, sec=3)
 
     else:
         menu_panel.renderable = menu_tables[0]
@@ -217,9 +127,9 @@ def menu_screen(bar):
 
         if len(menu_tables) > 1:
             bar_menu_layout.split_column(Layout(name="bar_menu_panel", renderable=bar_menu_panel),
-                                         Layout(name="footer", size=1, renderable=live_prompt))
+                                         Layout(name="footer", size=1, renderable=live_display.live_prompt))
 
-            ui.live_cycle_tables(tables=menu_tables, panel=bar_menu_panel, layout=bar_menu_layout, sec=5)
+            live_display.live_cycle_tables(tables=menu_tables, panel=bar_menu_panel, layout=bar_menu_layout, sec=5)
         else:
             bar_menu_panel.renderable = menu_tables[0]
             console.print(bar_menu_layout)
@@ -401,11 +311,11 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             if len(shop_tables) > 1:
                 shop_layout["shop_screen"].split_column(Layout(name="footed_shop_screen"),
                                                         Layout(name="footer", size=1,
-                                                               renderable=live_prompt))
+                                                               renderable=live_display.live_prompt))
                 shop_layout["footed_shop_screen"].split_row(Layout(name="bar", renderable=inv_panel),
                                                             Layout(name="shop", renderable=shop_panel))
 
-                ui.live_cycle_tables(tables=shop_tables, panel=shop_panel, layout=shop_layout, sec=3)
+                live_display.live_cycle_tables(tables=shop_tables, panel=shop_panel, layout=shop_layout, sec=3)
             else:
                 shop_panel.renderable = shop_tables[0]
                 console.print(shop_layout)

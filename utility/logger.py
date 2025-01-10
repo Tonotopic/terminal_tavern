@@ -7,13 +7,13 @@ import traceback
 import types
 from logging.handlers import RotatingFileHandler
 
-from rich_console import console
+from display.rich_console import console
 
 
 def filename():
     """Generates a filename with a timestamp."""
     now = datetime.datetime.now().strftime("%m-%d--%H-%M-%S")
-    return os.path.join("logs", f"{now}.log")
+    return os.path.join("../logs", f"{now}.log")
 
 
 def log(msg):
@@ -89,8 +89,8 @@ def log_exception(exc_type, exc_value, exc_traceback):
             continue
 
 
-if not os.path.exists("logs"):
-    os.makedirs("logs")
+if not os.path.exists("../logs"):
+    os.makedirs("../logs")
 
 filename = filename()
 
@@ -103,4 +103,4 @@ logger.addHandler(file_handler)
 
 sys.excepthook = log_exception
 
-delete_oldest_log("logs", 5)
+delete_oldest_log("../logs", 5)

@@ -6,12 +6,11 @@ from rich.text import Text
 from rich.panel import Panel
 from rich.table import Table
 
-import bar_menu
-import logger
-import stock
-import commands
-import ingredients
-from rich_console import console, styles
+from bar_pkg import bar_menu, stock
+from utility import logger
+from interface import commands
+from data import ingredients
+from display.rich_console import console, styles
 from recipe import Recipe
 
 global prompt
@@ -213,3 +212,4 @@ class Bar:
             self.reputation += 1
             logger.log(f"Reputation +1 ({self.reputation})")
             return True
+

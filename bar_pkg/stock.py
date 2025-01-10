@@ -1,12 +1,11 @@
 from rich.table import Table
 from rich.text import Text
 
-import commands
-import logger
-import rich_console
-from rich_console import console, styles
+from interface import commands
+from utility import logger
+from display.rich_console import console, styles
 from recipe import Recipe
-from ingredients import all_ingredients, list_ingredients, Ingredient, Spirit, Liqueur, separate_flavored, \
+from data.ingredients import all_ingredients, list_ingredients, Ingredient, Spirit, Liqueur, separate_flavored, \
     get_ingredient, MenuItem
 
 

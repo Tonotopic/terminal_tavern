@@ -3,12 +3,11 @@ from typing import override
 from rich.table import Table
 from rich.text import Text
 
-import flavors
-import ingredients
-import logger
-import rich_console
-from rich_console import console, standardized_spacing, styles
-from ingredients import Ingredient, MenuItem
+from data import ingredients, flavors
+from utility import logger
+from display import rich_console
+from display.rich_console import console, standardized_spacing, styles
+from data.ingredients import Ingredient, MenuItem
 
 
 # TODO Specify ingredients like Coffee liqueur
