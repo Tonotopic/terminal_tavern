@@ -378,6 +378,6 @@ def play_screen(bar, start_game_minutes):
     play_layout.split_column(Layout(name="clock", renderable=clock_panel, size=3),
                              Layout(name="event_log", renderable=log_panel))
 
-    clock.run_clock(bar=bar, start_game_mins=start_game_minutes, panel=clock_panel, layout=play_layout)
+    clock.run_clock(bar=bar, start_game_mins=start_game_minutes, clock_panel=clock_panel, layout=play_layout)
 
 # </editor-fold>

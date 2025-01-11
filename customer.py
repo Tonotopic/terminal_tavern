@@ -29,6 +29,7 @@ class Customer:
         tag_field = None
 
         def select_name():
+            # TODO: Ensure names arent used twice
             name = utils.roll_probabilities(customer_names.keys())
             dict = customer_names[name]
             customer_names.pop(name)
