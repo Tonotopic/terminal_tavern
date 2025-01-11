@@ -1,4 +1,3 @@
-import time
 from itertools import cycle
 from typing import Callable
 
@@ -85,50 +84,3 @@ def live_cycle_tables(tables, panel, layout, sec):
             stop_func()
 
     draw_live(update_table_display, sec=sec)
-
-
-def run_clock(start_game_mins, panel, layout):
-    def start_clock():
-        global start_real_time
-        start_real_time = time.perf_counter()
-
-    def update_clock(stop_func, live):
-        game_mins_per_sec = 1
-        elapsed_real_secs = time.perf_counter() - start_real_time
-        elapsed_game_mins = int(elapsed_real_secs * game_mins_per_sec)
-        current_game_mins = start_game_mins + elapsed_game_mins
-        clock_hours = (current_game_mins // 60) % 24
-        clock_minutes = current_game_mins % 60
-
-        panel.renderable = f"In-game time: {clock_hours:02}:{clock_minutes:02}"
-        live.update(layout, refresh=False)
-
-        if clock_hours == "02":
-            global day_ended
-            day_ended = True
-            stop_func()
-
-    global day_ended
-    day_ended = False
-    start_clock()
-    draw_live(update_function=update_clock, sec=1)
-
-
-'''def run_clock(bar, start_game_mins, panel, layout):
-    game_mins_per_sec = 1  # 1 min = 1 sec
-
-    start_real_time = time.perf_counter()
-    try:
-        while True:
-            elapsed_real_secs = time.perf_counter() - start_real_time
-            elapsed_game_mins = int(elapsed_real_secs * game_mins_per_sec)
-
-            current_game_mins = start_game_mins + elapsed_game_mins
-            clock_hours = (current_game_mins // 60) % 24
-            clock_minutes = current_game_mins % 60
-
-            panel.renderable = f"In-game time: {clock_hours:02}:{clock_minutes:02}"
-
-            time.sleep(1 / game_mins_per_sec)
-    except KeyboardInterrupt:
-        pass'''

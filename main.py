@@ -1,4 +1,3 @@
-from display import live_display
 from utility import utils
 from data.ingredients import load_ingredients_from_db
 from interface import ui
