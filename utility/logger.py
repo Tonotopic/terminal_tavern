@@ -13,7 +13,7 @@ from display.rich_console import console
 def filename():
     """Generates a filename with a timestamp."""
     now = datetime.datetime.now().strftime("%m-%d--%H-%M-%S")
-    return os.path.join("../logs", f"{now}.log")
+    return os.path.join(logs_dir, f"{now}.log")
 
 
 def log(msg):
@@ -89,8 +89,9 @@ def log_exception(exc_type, exc_value, exc_traceback):
             continue
 
 
-if not os.path.exists("../logs"):
-    os.makedirs("../logs")
+logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "logs")  # Go up one directory, then into logs
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)
 
 filename = filename()
 
@@ -103,4 +104,4 @@ logger.addHandler(file_handler)
 
 sys.excepthook = log_exception
 
-delete_oldest_log("../logs", 5)
+delete_oldest_log(logs_dir, 5)

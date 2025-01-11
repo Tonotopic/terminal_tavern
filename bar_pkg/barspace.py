@@ -77,7 +77,6 @@ class BarSpace:
         check_customer_entry()
         check_customers_leaving()
 
-
     def print_event_log(self):
         log_str = ""
         for line in self.event_log:
