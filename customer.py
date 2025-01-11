@@ -23,6 +23,7 @@ class Customer:
         self.fav_tastes = set()
 
         self.times_visited = 0
+        self.bar_love = 0
 
     def generate_customer(self):
 
@@ -70,3 +71,10 @@ def create_customer():
     new_customer = Customer()
     new_customer.generate_customer()
     return new_customer
+
+
+class CustomerGroup:
+    def __init__(self, group_id, customers):
+        self.group_id = group_id
+        self.customers = customers
+        self.arrival = None

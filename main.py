@@ -21,7 +21,7 @@ load_ingredients_from_db()
 ui.startup_screen()
 current_bar = utils.current_bar
 
-ui.play_screen(current_bar, 16 * 60)
+ui.play_screen(current_bar, current_bar.barspace.opening_time)
 
 while True:
     if current_bar.get_screen() == "MAIN":

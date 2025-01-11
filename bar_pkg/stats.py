@@ -5,4 +5,4 @@ class BarStats:
         self.balance = balance
         self.reputation = 0
         self.rep_level = 0
-        self.past_customers = []
+        self.past_customers = {}
