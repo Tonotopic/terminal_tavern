@@ -37,7 +37,7 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
                 stop_func()
 
         update_clock()
-        bar.barspace.check_bar_events(current_game_mins(start_game_mins))
+        bar.barspace.check_bar_events()
         layout["event_log"].update(bar.barspace.print_event_log())
 
     global day_ended

@@ -300,15 +300,17 @@ class BarStock:
 
     def pour(self, menu_item: MenuItem):
         """Removes ingredients from the stock in proper portions, initiating ingredient selection where applicable."""
-        logger.log(f"Pouring {menu_item.name}...")
         if isinstance(menu_item, Recipe):
             provided_ings = self.select_ingredients(menu_item)
             for ingredient in provided_ings:
                 vol = provided_ings[ingredient]
                 if ingredient.name != "soda water":
                     self.inventory[ingredient] -= vol
-                logger.log(f"   Pouring {vol} of {ingredient.name} - stock now at {self.inventory[ingredient]}")
+                msg = f"   Pouring {vol} of {ingredient.name} - stock now at {self.inventory[ingredient]}"
+                logger.log(msg)
+                self.bar.barspace.event_log.append(msg)
         else:
             self.inventory[menu_item] -= menu_item.pour_vol()
-            logger.log(
-                f"   Pouring {menu_item.pour_vol()} of {menu_item.name} - stock now at {self.inventory[menu_item]}")
+            msg = f"Pouring {menu_item.pour_vol()} of {menu_item.name} - stock now at {self.inventory[menu_item]}"
+        logger.log(f"   {msg}")
+        self.bar.barspace.event_log.append(msg)

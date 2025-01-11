@@ -1,3 +1,5 @@
+import random
+
 from data import ingredients, flavors
 import recipe
 from utility import utils
@@ -66,6 +68,10 @@ class Customer:
             generate_drink_pref()
         generate_fav_tastes()
 
+    def order(self, bar):
+        order = random.choices(bar.menu.full_menu())[0]
+        bar.stock.pour(order)
+
 
 def create_customer():
     new_customer = Customer()
@@ -78,3 +84,8 @@ class CustomerGroup:
         self.group_id = group_id
         self.customers = customers
         self.arrival = None
+        self.last_round = None
+
+    def order_round(self, bar):
+        for customer in self.customers:
+            customer.order(bar)

@@ -349,7 +349,7 @@ class BarMenu:
                         if direction == "up":
                             if not menu_item.mark_up(value, percent):
                                 successful = False
-                                logger.logprint("[error]Error marking section {cmd} thrown by {menu_item.name}")
+                                logger.logprint(f"[error]Error marking section {cmd} thrown by {menu_item.name}")
                         elif direction == "down":
                             if not menu_item.mark_down(value, percent):
                                 successful = False

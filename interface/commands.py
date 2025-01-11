@@ -292,7 +292,7 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
             return most_base_cmd
         else:
             if feedback:
-                logger.logprint("Matching commands : {matching_commands}")
+                logger.logprint(f"Matching commands : {matching_commands}")
 
 
 def parse_input(prompt=None, commands=None, force_beginning: bool = False, inpt=""):
