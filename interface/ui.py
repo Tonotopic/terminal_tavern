@@ -373,11 +373,11 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
 def play_screen(bar, start_game_minutes):
     clock_panel = Panel(renderable="no clock")
-    log_panel = Panel(renderable="no log")
+    log_panel = Panel(renderable=bar.barspace.print_event_log())
     play_layout = Layout(name="play_layout")
     play_layout.split_column(Layout(name="clock", renderable=clock_panel, size=3),
                              Layout(name="event_log", renderable=log_panel))
 
-    clock.run_clock(start_game_mins=start_game_minutes, panel=clock_panel, layout=play_layout)
+    clock.run_clock(bar=bar, start_game_mins=start_game_minutes, panel=clock_panel, layout=play_layout)
 
 # </editor-fold>

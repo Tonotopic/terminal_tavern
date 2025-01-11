@@ -13,8 +13,6 @@ from data import ingredients
 from display.rich_console import console, styles
 from recipe import Recipe
 
-global prompt
-
 
 class Screen(Enum):
     MAIN = 1
@@ -38,7 +36,6 @@ class Bar:
         self.barspace = barspace.BarSpace(self)
         self.recipes = {}
         self.screen = Screen.MAIN
-
 
     # <editor-fold desc="Recipes">
     # @TODO: '2 whole maraschino cherry'

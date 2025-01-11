@@ -14,14 +14,15 @@ for row in rows:
 close_connection(connection)
 
 
-# TODO: Remove used customers from a bar-specific list of customers not yet created
-class Customer():
+class Customer:
     def __init__(self):
         self.name = None
         self.gender = None
         self.tags = set()
         self.drink_pref = None
         self.fav_tastes = set()
+
+        self.times_visited = 0
 
     def generate_customer(self):
 
@@ -62,3 +63,9 @@ class Customer():
         if not self.drink_pref:
             generate_drink_pref()
         generate_fav_tastes()
+
+
+def create_customer():
+    new_customer = Customer()
+    new_customer.generate_customer()
+    return new_customer

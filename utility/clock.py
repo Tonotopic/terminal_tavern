@@ -1,4 +1,6 @@
 import time
+
+import customer
 from display.live_display import draw_live
 
 
@@ -16,10 +18,13 @@ def current_game_mins(start_game_mins):
     return current_mins
 
 
-def run_clock(start_game_mins, panel, layout):
+def run_clock(bar, start_game_mins, panel, layout):
     def start_clock():
         global start_real_time
         start_real_time = time.perf_counter()
+
+        global last_customer_entered
+        last_customer_entered = start_game_mins
 
     def update_play_layout(stop_func, live):
         def update_clock():
@@ -34,11 +39,15 @@ def run_clock(start_game_mins, panel, layout):
                 day_ended = True
                 stop_func()
 
-        def check_bar_events(current_game_mins):
-            if current_game_mins > start_game_mins + 5:
-                pass
+        def check_bar_events(bar, current_game_mins):
+            global last_customer_entered
+            if current_game_mins > last_customer_entered + 5:
+                bar.barspace.enter_customer(customer.create_customer())
+                layout["event_log"].update(bar.barspace.print_event_log())
+                last_customer_entered = current_game_mins
 
         update_clock()
+        check_bar_events(bar, current_game_mins(start_game_mins))
 
     global day_ended
     day_ended = False
