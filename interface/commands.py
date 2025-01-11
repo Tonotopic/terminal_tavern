@@ -264,7 +264,7 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
     elif len(matching_commands) == 0:
         if len(sorted_commands) <= 15:
             if feedback:
-                logger.logprint("[error]Valid commands: {sorted_commands}")
+                logger.logprint(f"[error]Valid commands: {sorted_commands}")
         else:
             if feedback:
                 console.print(f"[error]No matching term found for [cmd]{inpt}")
