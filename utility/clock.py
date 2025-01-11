@@ -34,6 +34,10 @@ def run_clock(start_game_mins, panel, layout):
                 day_ended = True
                 stop_func()
 
+        def check_bar_events(current_game_mins):
+            if current_game_mins > start_game_mins + 5:
+                pass
+
         update_clock()
 
     global day_ended

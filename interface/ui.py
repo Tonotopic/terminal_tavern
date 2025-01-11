@@ -74,9 +74,9 @@ def startup_screen():
 def dashboard(bar):
     """Display and handle the dashboard screen of the given bar, showing the menu and stats."""
     # <editor-fold desc="Layout"
-    bar_name_panel = Panel(renderable=f"Welcome to [underline]{bar.name}!")
-    balance_panel = Panel(renderable=f"Balance: [money]${str(bar.balance)}[/money]  "
-                                     f"Reputation: Lvl {bar.rep_level}")
+    bar_name_panel = Panel(renderable=f"Welcome to [underline]{bar.bar_stats.bar_name}!")
+    balance_panel = Panel(renderable=f"Balance: [money]${str(bar.bar_stats.balance)}[/money]  "
+                                     f"Reputation: Lvl {bar.bar_stats.rep_level}")
     menu_panel = Panel(title="~*~ Menu ~*~", renderable="render failed",
                        border_style=styles.get("bar_menu"))
 
@@ -121,7 +121,7 @@ def menu_screen(bar):
 
     while bar.get_screen() == "BAR_MENU":
         menu_tables, menu_list = bar.menu.table_menu(display_type=type_displaying, expanded=True)
-        bar_menu_panel = Panel(title=f"~*~ {bar.name} Menu ~*~", renderable="render failed",
+        bar_menu_panel = Panel(title=f"~*~ {bar.bar_stats.bar_name} Menu ~*~", renderable="render failed",
                                border_style=styles.get("bar_menu"))
         bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
 
@@ -302,7 +302,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
         # 60 just appears to be the sweet spot here regardless of window size
         shop_layout["shop_header"].size = 8 if len(header_text) > header_table.columns[1].width + 60 else 7
-        header_table.add_row(Text(f"${bar.balance}", styles.get("money")), header_text)
+        header_table.add_row(Text(f"${bar.bar_stats.balance}", styles.get("money")), header_text)
 
         # </editor-fold>
 

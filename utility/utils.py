@@ -18,7 +18,7 @@ def save_bar(bar_obj):
         bar_obj: The Bar object to save.
         filename: The name of the file to save to. Defaults to "save_game.pickle".
     """
-    filename = bar_obj.name + ".pickle"
+    filename = bar_obj.bar_stats.bar_name + ".pickle"
     with open(filename, "wb") as f:  # Open the file in binary write mode
         pickle.dump(bar_obj, f)  # Serialize and write the Bar object to the file
         logger.logprint("Game saved as {filename}")

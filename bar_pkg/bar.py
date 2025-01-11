@@ -6,7 +6,7 @@ from rich.text import Text
 from rich.panel import Panel
 from rich.table import Table
 
-from bar_pkg import bar_menu, stock
+from bar_pkg import bar_menu, stock, barspace, stats
 from utility import logger
 from interface import commands
 from data import ingredients
@@ -31,15 +31,14 @@ reputation_levels = {
 
 
 class Bar:
-    def __init__(self, name, balance=1000):
-        self.name = name
-        self.balance = balance  # Float: current balance in dollars
-        self.reputation = 0
-        self.rep_level = 0
+    def __init__(self, bar_name, balance=1000):
+        self.bar_stats = stats.BarStats(self, bar_name, balance)
         self.stock = stock.BarStock(self)
-        self.recipes = {}
         self.menu = bar_menu.BarMenu(self)
+        self.barspace = barspace.BarSpace(self)
+        self.recipes = {}
         self.screen = Screen.MAIN
+
 
     # <editor-fold desc="Recipes">
     # @TODO: '2 whole maraschino cherry'
@@ -207,9 +206,8 @@ class Bar:
     def make_sale(self, menu_item: ingredients.MenuItem):
         if self.stock.has_enough(menu_item):
             self.stock.pour(menu_item)
-            self.balance += menu_item.current_price()
-            logger.log(f"Balance +${menu_item.current_price()} ({self.balance})")
+            self.bar_stats.balance += menu_item.current_price()
+            logger.log(f"Balance +${menu_item.current_price()} ({self.bar_stats.balance})")
             self.reputation += 1
             logger.log(f"Reputation +1 ({self.reputation})")
             return True
-

@@ -3,7 +3,7 @@ from rich.text import Text
 
 from interface import commands
 from utility import logger
-from display.rich_console import console, styles
+from display.rich_console import console, styles, standardized_spacing
 from recipe import Recipe
 from data.ingredients import all_ingredients, list_ingredients, Ingredient, Spirit, Liqueur, separate_flavored, \
     get_ingredient, MenuItem
@@ -44,9 +44,9 @@ class BarStock:
         if ingredient:
             if volume in ingredient.volumes:
                 price = ingredient.volumes[volume]
-                balance = self.bar.balance
+                balance = self.bar.bar_stats.balance
                 if balance >= price:
-                    self.bar.balance -= price
+                    self.bar.bar_stats.balance -= price
                     self.inventory[ingredient] = self.inventory.get(ingredient, 0) + volume
                     return True
                 else:
@@ -179,7 +179,7 @@ class BarStock:
                         spacing -= 8
 
                     table_section.add_row(f"[{style}][italic]{item.name}[/{style}][/italic]"
-                                          f"{rich_console.standardized_spacing(item.name, spacing)}"
+                                          f"{standardized_spacing(item.name, spacing)}"
                                           f"[money]{price_string} /oz")
 
                 else:
