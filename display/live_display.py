@@ -76,19 +76,46 @@ def live_cycle_tables(tables, panel, layout, sec):
         """
     table_iterator = cycle(tables)
 
-    def update_table_display(stop, live):
+    def update_table_display(stop_func, live):
         try:
             table = next(table_iterator)
             panel.renderable = table
-            live.update(layout, refresh=False)
+            live.update(layout)
         except StopIteration:
-            stop()
+            stop_func()
 
     draw_live(update_table_display, sec=sec)
 
 
-def run_clock(bar, start_game_mins):
-    game_mins_per_sec = 0.5  # 1 min = 2 sec
+def run_clock(start_game_mins, panel, layout):
+    def start_clock():
+        global start_real_time
+        start_real_time = time.perf_counter()
+
+    def update_clock(stop_func, live):
+        game_mins_per_sec = 1
+        elapsed_real_secs = time.perf_counter() - start_real_time
+        elapsed_game_mins = int(elapsed_real_secs * game_mins_per_sec)
+        current_game_mins = start_game_mins + elapsed_game_mins
+        clock_hours = (current_game_mins // 60) % 24
+        clock_minutes = current_game_mins % 60
+
+        panel.renderable = f"In-game time: {clock_hours:02}:{clock_minutes:02}"
+        live.update(layout, refresh=False)
+
+        if clock_hours == "02":
+            global day_ended
+            day_ended = True
+            stop_func()
+
+    global day_ended
+    day_ended = False
+    start_clock()
+    draw_live(update_function=update_clock, sec=1)
+
+
+'''def run_clock(bar, start_game_mins, panel, layout):
+    game_mins_per_sec = 1  # 1 min = 1 sec
 
     start_real_time = time.perf_counter()
     try:
@@ -100,8 +127,8 @@ def run_clock(bar, start_game_mins):
             clock_hours = (current_game_mins // 60) % 24
             clock_minutes = current_game_mins % 60
 
-            console.print(f"In-game time: {clock_hours:02}:{clock_minutes:02}", end="\r")
+            panel.renderable = f"In-game time: {clock_hours:02}:{clock_minutes:02}"
 
             time.sleep(1 / game_mins_per_sec)
     except KeyboardInterrupt:
-        pass
+        pass'''

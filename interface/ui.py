@@ -372,6 +372,9 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
 
 def play_screen(bar, start_game_minutes):
-    pass
+    clock_panel = Panel(renderable="no clock")
+    play_layout = Layout(name="play_layout", renderable=clock_panel)
+
+    live_display.run_clock(start_game_mins=start_game_minutes, panel=clock_panel, layout=play_layout)
 
 # </editor-fold>
