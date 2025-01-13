@@ -11,7 +11,7 @@ from data.db_connect import get_connection, close_connection
 # TODO: Mezcal vs Tequila
 # TODO: Show flavor in shop list
 
-all_ingredients = []
+all_ingredients = {}
 
 special_formats = {
     "Kolsch": "Kölsch",
@@ -1056,7 +1056,7 @@ def load_ingredients_from_db():
         ingredient = create_instance(ingredient_type, ingredient_data)
 
         if ingredient:
-            all_ingredients.append(ingredient)
+            all_ingredients[ingredient.name] = ingredient
     close_connection(connection)
 
 

@@ -1,3 +1,5 @@
+import random
+
 from rich.table import Table
 from rich.text import Text
 
@@ -12,7 +14,7 @@ from data.ingredients import all_ingredients, list_ingredients, Ingredient, Spir
 class BarStock:
     def __init__(self, bar):
         self.bar = bar
-        self.inventory = {}  # Dictionary: {ingredient_object: fluid_ounces}
+        self.inventory = {get_ingredient("soda water"): 24}  # Dictionary: {ingredient_object: fluid_ounces}
 
     def buy(self, ingredient: Ingredient = None, arg=""):
         """
@@ -99,7 +101,7 @@ class BarStock:
         same object."""
         new_ings = {}
         for inv_ing in self.inventory:
-            for db_ing in all_ingredients:
+            for db_ing in all_ingredients.values():
                 if inv_ing.name == db_ing.name:
                     new_ings[db_ing] = self.inventory[inv_ing]
         self.inventory = new_ings
@@ -117,7 +119,7 @@ class BarStock:
         :return: A list of tables (multiple for overflow), and a list of the contents
         """
 
-        container = all_ingredients if shop else self.inventory
+        container = all_ingredients.values() if shop else self.inventory
         table_1 = Table(**table_settings)
         table_1.add_column(justify="center")
         tables = [table_1]
@@ -217,7 +219,7 @@ class BarStock:
                             has_enough = True
                             logger.log(
                                 f"   {inv_ingredient.name} in quantity {self.inventory[inv_ingredient]} satisfies "
-                                       f"{req_ingredient().format_type()} requirement")
+                                f"{req_ingredient().format_type()} requirement")
                             break
                         else:
                             logger.log(f"   {inv_ingredient.name} in quantity {self.inventory[inv_ingredient]} "
@@ -225,11 +227,11 @@ class BarStock:
                 if not has_enough:
                     if not ing_missing:
                         ing_missing = True
-                        logger.logprint("[error]Ingredients missing for {recipe.name}:")
+                        logger.logprint(f"[error]Ingredients missing for {recipe.name}:")
                     if found_match:
-                        logger.logprint("[error] Not enough {req_ingredient().format_type()}!")
+                        logger.logprint(f"[error] Not enough {req_ingredient().format_type()}!")
                     else:
-                        logger.logprint("[error] No {req_ingredient().format_type()}!")
+                        logger.logprint(f"[error] No {req_ingredient().format_type()}!")
                     # Continue looping so all missing ingredients are printed
             else:  # Specific ingredient required
                 if req_ingredient.name == "soda water":
@@ -272,27 +274,31 @@ class BarStock:
 
         return False
 
-    def select_ingredients(self, recipe):
+    def select_ingredients(self, recipe, randoms=False):
         """
         For recipes with ingredients that accept any of a type (i.e. Bourbon), allows the user to select which
         ingredient to use from a list of compatible ingredients in stock.
 
         :param recipe: The cocktail being served.
         :return: A dict mirroring the recipe with the final selected ingredients inserted.
+        :param randoms: Set to True to choose a random ingredient from the stock.
         """
         final_ings = dict()
         for r_ingredient in recipe.r_ingredients:
             if isinstance(r_ingredient, type):
-                logger.log(f"Selecting {r_ingredient().format_type()}...")
                 vol = r_ingredient().get_portions()[recipe.r_ingredients[r_ingredient]]
-                available_ings = self.list_type(r_ingredient, min_vol=vol)
-                options_str = [ing.name for ing in available_ings]
-                console.print(f"  {options_str}")
-                logger.log(f"  {options_str}")
-                cmd = commands.input_loop(f"Select {r_ingredient().format_type()}",
-                                          commands.items_to_commands(available_ings))[0]
-                item = commands.command_to_item(cmd, available_ings)
-                final_ings[item] = vol
+                if randoms:
+                    final_ings[random.choice(self.list_type(r_ingredient, min_vol=vol))] = vol
+                else:
+                    logger.log(f"Selecting {r_ingredient().format_type()}...")
+                    available_ings = self.list_type(r_ingredient, min_vol=vol)
+                    options_str = [ing.name for ing in available_ings]
+                    console.print(f"  {options_str}")
+                    logger.log(f"  {options_str}")
+                    cmd = commands.input_loop(f"Select {r_ingredient().format_type()}",
+                                              commands.items_to_commands(available_ings))[0]
+                    item = commands.command_to_item(cmd, available_ings)
+                    final_ings[item] = vol
             else:
                 vol = r_ingredient.get_portions()[recipe.r_ingredients[r_ingredient]]
                 final_ings[r_ingredient] = vol
@@ -301,7 +307,7 @@ class BarStock:
     def pour(self, menu_item: MenuItem):
         """Removes ingredients from the stock in proper portions, initiating ingredient selection where applicable."""
         if isinstance(menu_item, Recipe):
-            provided_ings = self.select_ingredients(menu_item)
+            provided_ings = self.select_ingredients(menu_item, randoms=True)
             for ingredient in provided_ings:
                 vol = provided_ings[ingredient]
                 if ingredient.name != "soda water":
@@ -312,5 +318,6 @@ class BarStock:
         else:
             self.inventory[menu_item] -= menu_item.pour_vol()
             msg = f"Pouring {menu_item.pour_vol()} of {menu_item.name} - stock now at {self.inventory[menu_item]}"
-        logger.log(f"   {msg}")
-        self.bar.barspace.event_log.append(msg)
+
+            logger.log(f"   {msg}")
+            self.bar.barspace.event_log.append(msg)

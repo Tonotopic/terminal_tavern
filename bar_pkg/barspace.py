@@ -54,7 +54,7 @@ class BarSpace:
             global last_entry_time
             if not last_entry_time:
                 last_entry_time = current_game_mins(self.opening_time)
-            if current_game_mins(self.opening_time) > last_entry_time + 5:
+            if current_game_mins(self.opening_time) > last_entry_time + 10:
                 self.enter_customer_group()
                 last_entry_time = current_game_mins(self.opening_time)
 
@@ -63,7 +63,7 @@ class BarSpace:
                 if group.last_round is None:
                     ref_time = group.arrival + 5
                 else:
-                    ref_time = group.last_round + 10
+                    ref_time = group.last_round + 15
                 if current_game_mins(self.opening_time) > ref_time:
                     group.order_round(self.bar)
                     group.last_round = current_game_mins(self.opening_time)
