@@ -194,12 +194,6 @@ class Bar:
                 self.screen = screen
                 break
 
-    def start_day(self):
-        if self.menu.check_stock():
-            return True
-        else:
-            return False
-
     def make_sale(self, menu_item: ingredients.MenuItem):
         if self.stock.has_enough(menu_item):
             self.stock.pour(menu_item)

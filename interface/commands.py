@@ -509,6 +509,12 @@ def check_new(args, bar, ingredient):
         console.print("[error]This bar name is already present in your save files.")
 
 
+def check_open(args, bar, ingredient):
+    """Ensures everything is in order to open the bar."""
+    if bar.menu.check_stock():
+        return "open", args
+
+
 def check_remove(args, bar, ingredient):
     """
     Attempts to remove an item from the menu, checking the result.

@@ -13,6 +13,8 @@ from bar_pkg.bar import Bar
 from data.ingredients import list_ingredients, Ingredient, Drink
 
 
+# TODO: Price-per-oz on ingredient buy screen
+
 # <editor-fold desc="Screens">
 def startup_screen():
     """Display and handle the initial screen when the game is started, showing title card and save files."""
@@ -104,12 +106,14 @@ def dashboard(bar):
         logger.log("Dashboard drawn.")
 
     prompt = "'Shop' or view the 'menu'"
-    inpt = input_loop(prompt, ["shop", "menu"], bar=bar)
+    inpt = input_loop(prompt, ["shop", "menu", "open"], bar=bar)
     primary_cmd, args = inpt
     if primary_cmd == "shop":
         bar.set_screen("SHOP")
     elif primary_cmd == "menu":
         bar.set_screen("BAR_MENU")
+    elif primary_cmd == "open":
+        bar.set_screen("PLAY")
 
 
 def menu_screen(bar):

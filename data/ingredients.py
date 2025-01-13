@@ -8,6 +8,8 @@ from utility.utils import quarter_round
 from data.flavors import tastes
 from data.db_connect import get_connection, close_connection
 
+# TODO: Mezcal vs Tequila
+# TODO: Show flavor in shop list
 
 all_ingredients = []
 
