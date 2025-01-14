@@ -13,8 +13,6 @@ from bar_pkg.bar import Bar
 from data.ingredients import list_ingredients, Ingredient, Drink
 
 
-# TODO: Price-per-oz on ingredient buy screen
-
 # <editor-fold desc="Screens">
 def startup_screen():
     """Display and handle the initial screen when the game is started, showing title card and save files."""
@@ -292,12 +290,14 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
                 **table_settings)
             vol_table.add_column("Volume", justify="center")
             vol_table.add_column("Price", justify="center")
+            vol_table.add_column("Per oz", justify="center")
             vol_table.show_header = True
 
             for volume, price in current_selection.volumes.items():
                 vol_table.add_row()  # Table's leading parameter breaks end_section. Add space between rows manually
                 vol_table.add_row(f"[{style}]{volume}oz[/{style}]",
-                                  Text("${:.2f}".format(price), style=styles.get("money")))
+                                  Text("${:.2f}".format(price), style=styles.get("money")),
+                                  Text("${:.2f}".format(price / volume)), style=styles.get("money"))
             # </editor-fold>
             shop_panel.renderable = vol_table
             inv_panel.renderable = inv_table

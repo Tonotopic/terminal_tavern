@@ -7,7 +7,7 @@ from interface import commands
 from utility import logger
 from display.rich_console import console, styles, standardized_spacing
 from recipe import Recipe
-from data.ingredients import all_ingredients, list_ingredients, Ingredient, Spirit, Liqueur, separate_flavored, \
+from data.ingredients import all_ingredients, list_ingredients, Ingredient, Beer, Spirit, Liqueur, separate_flavored, \
     get_ingredient, MenuItem
 
 
@@ -169,6 +169,10 @@ class BarStock:
             if type(item) is typ:
                 lst.append(item)
                 style = item.get_style()
+                name_string = item.name
+                if (isinstance(item, Liqueur) or isinstance(item, Beer)) and item.flavor != "":
+                    if item.flavor not in item.name.lower():
+                        name_string = name_string + f" ({item.flavor})"
                 if shop:
                     min_price = "{:.2f}".format(item.price_per_oz("min"))
                     max_price = "{:.2f}".format(item.price_per_oz("max"))
@@ -180,13 +184,13 @@ class BarStock:
                         price_string = f"${min_price} - ${max_price}"
                         spacing -= 8
 
-                    table_section.add_row(f"[{style}][italic]{item.name}[/{style}][/italic]"
-                                          f"{standardized_spacing(item.name, spacing)}"
+                    table_section.add_row(f"[{style}][italic]{name_string}[/{style}][/italic]"
+                                          f"{standardized_spacing(name_string, spacing)}"
                                           f"[money]{price_string} /oz")
 
                 else:
                     volume = container.get(item, 0)
-                    table_section.add_row(f"[{style}][italic]{item.name}[/italic] ({volume}oz)")
+                    table_section.add_row(f"[{style}][italic]{name_string}[/italic] ({volume}oz)")
                 table_section.add_row()
 
         if len(table_1.rows) == 0:
