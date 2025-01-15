@@ -1,9 +1,9 @@
 import re
 from typing import Iterable
+from unidecode import unidecode
 
 import rich.box
 from rich.panel import Panel
-from unidecode import unidecode
 
 from data import ingredients
 from interface import ui
@@ -20,7 +20,7 @@ help_panels = {
             f"Command parsing will work the same for the help arg, i.e. [cmd]'help fish pois'[/cmd]"
             f" can return the description for [italic][beer]Little Fish Saison du Poisson.[/italic][/beer]",
 
-    "input": f"Input parsing is [highlight]case-insensitive[/highlight] and allows for partial terms - "
+    "input/commands": f"Input parsing is [highlight]case-insensitive[/highlight] and allows for partial terms - "
              f"[cmd]'rh b f h'[/cmd] is as effective as 'Rhinegeist Beer for Humans', and in the right context, "
              f"[cmd]'sh'[/cmd] will work as effectively as [cmd]'shop'[/cmd].\n\n"
              f"An input of 3 or fewer characters will [highlight]priority match to the beginning[/highlight] of the term.\n"
@@ -37,7 +37,7 @@ help_panels = {
               f"You do [italic]not[/italic] need to have the ingredients in your inventory to write a new recipe.\n"
               f"[cmd]'Help cocktails'[/cmd] to view more on cocktails.",
 
-    "price": f"A menu item's [highlight]price[/highlight] before [highlight]markup[/highlight] is based on its per-unit cost to you.\n\n"
+    "price/pricing": f"A menu item's [highlight]price[/highlight] before [highlight]markup[/highlight] is based on its per-unit cost to you.\n\n"
              f"For cocktails:\n"
              f"[money]$4.50[/money] for drinks costing you less than [money]$1.50[/money] wholesale, \n"
              f"3x wholesale costs between [money]$1.50[/money] and [money]$4.00[/money], \n"

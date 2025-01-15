@@ -376,8 +376,8 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
 
 def play_screen(bar, start_game_minutes):
-    clock_panel = Panel(renderable="no clock")
-    log_panel = Panel(renderable=bar.barspace.print_event_log())
+    clock_panel = Panel(renderable="no clock", border_style=styles.get("sweetener"))
+    log_panel = bar.barspace.event_log_panel()
     play_layout = Layout(name="play_layout")
     play_layout.split_column(Layout(name="clock", renderable=clock_panel, size=3),
                              Layout(name="event_log", renderable=log_panel))

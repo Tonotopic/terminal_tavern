@@ -9,7 +9,6 @@ from data.flavors import tastes
 from data.db_connect import get_connection, close_connection
 
 # TODO: Mezcal vs Tequila
-# TODO: Show flavor in shop list
 
 all_ingredients = {}
 
@@ -24,6 +23,8 @@ special_plurals = {
     "Amaro": "Amari"
 }
 
+
+# TODO: Function to print name w color markup
 
 class MenuItem:
     def __init__(self):

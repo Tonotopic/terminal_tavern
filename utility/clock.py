@@ -1,6 +1,5 @@
 import time
 
-import customer
 from display.live_display import draw_live
 
 
@@ -38,7 +37,7 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
 
         update_clock()
         bar.barspace.check_bar_events()
-        layout["event_log"].update(bar.barspace.print_event_log())
+        layout["event_log"].update(bar.barspace.event_log_panel())
 
     global day_ended
     day_ended = False
