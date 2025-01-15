@@ -1,9 +1,9 @@
 import random
 
-from data import ingredients, flavors
 import recipe
-from utility import utils
+from data import ingredients, flavors
 from data.db_connect import get_connection, close_connection
+from utility import utils
 
 connection = get_connection()
 cursor = connection.cursor()

@@ -1,12 +1,13 @@
 import re
 from typing import override, Literal
+
 from rich.table import Table
 
-from utility import logger
-from display.rich_console import console, styles, standardized_spacing
-from utility.utils import quarter_round
-from data.flavors import tastes
 from data.db_connect import get_connection, close_connection
+from data.flavors import tastes
+from display.rich_console import console, standardized_spacing, all_styles
+from utility import logger
+from utility.utils import quarter_round
 
 # TODO: Mezcal vs Tequila
 
@@ -24,7 +25,6 @@ special_plurals = {
 }
 
 
-# TODO: Function to print name w color markup
 
 class MenuItem:
     def __init__(self):
@@ -235,7 +235,7 @@ class Ingredient:
     def get_style(self):
         """Gets the style name for the given type or its nearest parent in the theme."""
         typ = self.format_type().lower()
-        if typ in styles:
+        if typ in all_styles:
             return typ
         else:
             for parent_class in type(self).__bases__:

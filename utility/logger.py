@@ -1,6 +1,6 @@
+import datetime
 import inspect
 import logging
-import datetime
 import os
 import sys
 import traceback

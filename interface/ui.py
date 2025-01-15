@@ -1,22 +1,22 @@
-from rich.layout import Layout
 from rich import box
+from rich.layout import Layout
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from interface import commands
-from utility import utils, logger, clock
-from display import live_display, rich_console
-from display.rich_console import console, styles
-from interface.commands import items_to_commands, command_to_item, input_loop
 from bar_pkg.bar import Bar
 from data.ingredients import list_ingredients, Ingredient, Drink
+from display import live_display, rich_console
+from display.rich_console import console
+from interface import commands
+from interface.commands import items_to_commands, command_to_item, input_loop
+from utility import utils, logger, clock
 
 
 # <editor-fold desc="Screens">
 def startup_screen():
     """Display and handle the initial screen when the game is started, showing title card and save files."""
-    saves_table = Table(expand=True, box=box.SIMPLE, style=styles.get("dimmed"), show_header=False)
+    saves_table = Table(expand=True, box=box.SIMPLE, style=console.get_style("dimmed"), show_header=False)
     saves_table.add_column(justify="center")
     saves_table.add_row()
 
@@ -42,7 +42,7 @@ def startup_screen():
             break
 
     saves_panel = Panel(title="[tequila]Load Game", box=box.SQUARE_DOUBLE_HEAD, renderable=saves_table,
-                        border_style=styles.get("panel"))
+                        border_style=console.get_style("panel"))
     startup_layout = Layout(name="startup_layout")
     startup_layout["startup_layout"].split_row(Layout(name="info_layout", renderable=title_card, size=title_width),
                                                Layout(name="saves_layout", renderable=saves_panel))
@@ -78,7 +78,7 @@ def dashboard(bar):
     balance_panel = Panel(renderable=f"Balance: [money]${str(bar.bar_stats.balance)}[/money]  "
                                      f"Reputation: Lvl {bar.bar_stats.rep_level}")
     menu_panel = Panel(title="~*~ Menu ~*~", renderable="render failed",
-                       border_style=styles.get("bar_menu"))
+                       border_style=console.get_style("bar_menu"))
 
     dash_layout = Layout(name="dash_layout")
     dash_layout.split_column(Layout(name="dash_header", size=3),
@@ -124,7 +124,7 @@ def menu_screen(bar):
     while bar.get_screen() == "BAR_MENU":
         menu_tables, menu_list = bar.menu.table_menu(display_type=type_displaying, expanded=True)
         bar_menu_panel = Panel(title=f"~*~ {bar.bar_stats.bar_name} Menu ~*~", renderable="render failed",
-                               border_style=styles.get("bar_menu"))
+                               border_style=console.get_style("bar_menu"))
         bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
 
         if len(menu_tables) > 1:
@@ -194,7 +194,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
         panel_settings = {
             "renderable": "render failed",
             "box": box.DOUBLE_EDGE,
-            "border_style": styles.get("shop")
+            "border_style": console.get_style("shop")
         }
 
         header_panel = Panel(**panel_settings, title=f"[money]Shop")
@@ -244,7 +244,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             if current_selection == Ingredient:
                 header_text = "[dimmed]All"
             else:  # Show pluralized category name in its proper style
-                style = styles.get(obj.get_style())
+                style = obj.get_style()
                 if showing_flavored:
                     header_text = Text(f"Flavored {obj.format_type(plural=True)}", style=style)
                 else:
@@ -296,8 +296,8 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             for volume, price in current_selection.volumes.items():
                 vol_table.add_row()  # Table's leading parameter breaks end_section. Add space between rows manually
                 vol_table.add_row(f"[{style}]{volume}oz[/{style}]",
-                                  Text("${:.2f}".format(price), style=styles.get("money")),
-                                  Text("${:.2f}".format(price / volume)), style=styles.get("money"))
+                                  Text("${:.2f}".format(price), style=console.get_style("money")),
+                                  Text("${:.2f}".format(price / volume)), style=console.get_style("money"))
             # </editor-fold>
             shop_panel.renderable = vol_table
             inv_panel.renderable = inv_table
@@ -306,7 +306,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
         # 60 just appears to be the sweet spot here regardless of window size
         shop_layout["shop_header"].size = 8 if len(header_text) > header_table.columns[1].width + 60 else 7
-        header_table.add_row(Text(f"${bar.bar_stats.balance}", styles.get("money")), header_text)
+        header_table.add_row(Text(f"${bar.bar_stats.balance}", console.get_style("money")), header_text)
 
         # </editor-fold>
 
@@ -376,7 +376,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
 
 def play_screen(bar, start_game_minutes):
-    clock_panel = Panel(renderable="no clock", border_style=styles.get("sweetener"))
+    clock_panel = Panel(renderable="no clock", border_style=console.get_style("sweetener"))
     log_panel = bar.barspace.event_log_panel()
     play_layout = Layout(name="play_layout")
     play_layout.split_column(Layout(name="clock", renderable=clock_panel, size=3),

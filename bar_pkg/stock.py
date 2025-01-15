@@ -3,12 +3,12 @@ import random
 from rich.table import Table
 from rich.text import Text
 
-from interface import commands
-from utility import logger
-from display.rich_console import console, styles, standardized_spacing
-from recipe import Recipe
 from data.ingredients import all_ingredients, list_ingredients, Ingredient, Beer, Spirit, Liqueur, separate_flavored, \
     get_ingredient, MenuItem
+from display.rich_console import console, standardized_spacing
+from interface import commands
+from recipe import Recipe
+from utility import logger
 
 
 class BarStock:
@@ -151,7 +151,7 @@ class BarStock:
             flavored, unflavored = separate_flavored(items)
             if not showing_flavored:  # Group flavored into a category and only list unflavored
                 table_1.add_row(Text(f"Flavored ({len(flavored)})",
-                                     style=styles.get("additive")), end_section=True)
+                                     style=console.get_style("additive")), end_section=True)
                 table_1.add_row()  # Manual space between rows
                 lst.append("Flavored")
                 items = unflavored
@@ -194,7 +194,7 @@ class BarStock:
                 table_section.add_row()
 
         if len(table_1.rows) == 0:
-            table_1.add_row(Text("[None]", styles.get("dimmed")))
+            table_1.add_row(Text("[None]", console.get_style("dimmed")))
 
         return tables, lst
 
@@ -314,11 +314,10 @@ class BarStock:
             provided_ings = self.select_ingredients(menu_item, randoms=True)
             for ingredient in provided_ings:
                 vol = provided_ings[ingredient]
+                msg = f"   [dimmed]Pouring {vol} of {ingredient.format_name()}[/dimmed]"
                 if ingredient.name != "soda water":
                     self.inventory[ingredient] -= vol
-                    msg = f"   [dimmed]Pouring {vol} of {ingredient.format_name()} - stock now at {self.inventory[ingredient]}[/dimmed]"
-                else:
-                    msg = f"   [dimmed]Pouring [soda]soda water[/soda]...[/dimmed]"
+                    msg = msg + f"[dimmed]- stock now at {self.inventory[ingredient]}[/dimmed]"
                 logger.log(msg)
                 self.bar.barspace.event_log.append(msg)
         else:

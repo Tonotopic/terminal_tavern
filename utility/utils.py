@@ -1,11 +1,11 @@
 import math
-import sys
 import os
 import pickle
 import random
+import sys
 
-from utility import logger
 from display.rich_console import console
+from utility import logger
 
 current_bar = None
 

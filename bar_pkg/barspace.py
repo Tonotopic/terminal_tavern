@@ -3,7 +3,7 @@ import random
 from rich.panel import Panel
 
 import customer
-import display.rich_console
+from display.rich_console import console
 from utility.clock import current_game_mins
 
 global last_entry_time
@@ -101,5 +101,5 @@ class BarSpace:
         for line in self.event_log:
             log_str = log_str + line + "\n"
         # TODO Why does adding border style cause the live display twitch?
-        panel = Panel(title="Event Log", renderable=log_str, border_style=display.rich_console.styles.get("panel"))
+        panel = Panel(title="Event Log", renderable=log_str, border_style=console.get_style("panel"))
         return panel

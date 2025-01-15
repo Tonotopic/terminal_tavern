@@ -1,6 +1,6 @@
 from rich.console import Console
-from rich.theme import Theme
 from rich.style import Style
+from rich.theme import Theme
 
 title_cards = {"17x70":
                    """[cmd]
@@ -69,83 +69,90 @@ title_cards = {"17x70":
         \___|_| |_||_|          
                    """
                }
-styles = {"abv": Style(color="#d40241"),
-          "money": Style(color="#cfba02"),
-          "shop": Style(color="#628260"),
-          "dimmed": Style(color="#6e6e6e"),
-          "dark": Style(color="#5c263a"),
-          "panel": Style(color="#3c8fc2"),
-          "bar_menu": Style(color="#9c0834"),
-          "prompt": Style(color="#429e45"),
-          "cmd": Style(color="#429e45"),
-          "customer": Style(color="#e09ef7"),
-          "warn": Style(color="#fcba03"),
-          "attention": Style(color="#ede174"),
-          "highlight": Style(color="#a3bfff"),
-          "error": Style(color="#ba2318"),
-          "l": Style(color="#3c8fc2"),
-          # Ingredients
-          "cocktails": Style(color="#5de3c1"),
-          "drink": Style(color="#db1818"),
-          "non-alcoholic drink": Style(color="#8189fc"),
-          "additive": Style(color="#a755fa"),
-          "fruit": Style(color="#ff66bb"),
-          "herb": Style(color="#3b8c0e"),
-          "spice": Style(color="#875933"),
-          "sweetener": Style(color="#fcd29f"),
-          "syrup": Style(color="#a755fa"),
-          "energy drink": Style(color="#57d63e"),
-          "alcohol": Style(color="#db1818"),
-          "hard soda": Style(color="#db5858"),  # Same as soda
-          "beer": Style(color="#f2d280"),
-          "wine": Style(color="#bd24a8"),
-          "brandy": Style(color="#b3566a"),
-          "fortified wine": Style(color="#b3566a"),
-          "cider": Style(color="#e08700"),
-          "mead": Style(color="#b89c00"),
-          "spirit": Style(color="#51c9ab"),
-          "whiskey": Style(color="#ff781f"),
-          "vodka": Style(color="#ff6161"),
-          "gin": Style(color="#57ffa9"),
-          "tequila": Style(color="#40ecff"),
-          "rum": Style(color="#fffa7d"),
-          "liqueur": Style(color="#db1818"),
-          "absinthe": Style(color="#aae68a"),
-          "soda": Style(color="#8fbddb"),
-          "tea": Style(color="#549462")}
-taste_styles = {
-    "aromatic": styles.get("herb"),
-    "berry": styles.get("fruit"),
-    "bitter": styles.get("abv"),
-    "citrus": styles.get("rum"),
-    "creamy": styles.get("sweetener"),
-    "dark": styles.get("dark"),
-    "dry": styles.get("gin"),
-    "easy-drinking": styles.get("beer"),
-    "floral": styles.get("additive"),
-    "fresh": styles.get("tequila"),
-    "fruity": styles.get("fruit"),
-    "grain-forward": styles.get("beer"),
-    "herbal": styles.get("herb"),
-    "melon": styles.get("absinthe"),
-    "nutty": styles.get("spice"),
-    "pungent": styles.get("energy drink"),
-    "rich": styles.get("wine"),
-    "rustic": styles.get("whiskey"),
-    "savory": styles.get("cider"),
-    "smooth": styles.get("soda"),
-    "spicy": styles.get("abv"),
-    "sweet": styles.get("rum"),
-    "tart": styles.get("energy drink"),
-    "thick": styles.get("wine"),
-    "tropical": styles.get("rum"),
-    "unique": styles.get("additive"),
-    "vegetal": styles.get("herb"),
-    "warm": styles.get("whiskey"),
-    "woody": styles.get("spice"),
+styles = {
+    "abv": Style(color="#d40241"),
+    "money": Style(color="#cfba02"),
+    "shop": Style(color="#628260"),
+    "dimmed": Style(color="#6e6e6e"),
+    "dark": Style(color="#5c263a"),
+    "panel": Style(color="#3c8fc2"),
+    "bar_menu": Style(color="#9c0834"),
+    "prompt": Style(color="#429e45"),
+    "cmd": Style(color="#429e45"),
+    "customer": Style(color="#e09ef7"),
+    "warn": Style(color="#fcba03"),
+    "attention": Style(color="#ede174"),
+    "highlight": Style(color="#a3bfff"),
+    "error": Style(color="#ba2318"),
+    "l": Style(color="#3c8fc2"),
 }
 
-theme = Theme(styles)
+ingredient_styles = {
+    "cocktails": Style(color="#5de3c1"),
+    "drink": Style(color="#db1818"),
+    "non-alcoholic drink": Style(color="#8189fc"),
+    "additive": Style(color="#a755fa"),
+    "fruit": Style(color="#ff66bb"),
+    "herb": Style(color="#3b8c0e"),
+    "spice": Style(color="#875933"),
+    "sweetener": Style(color="#fcd29f"),
+    "syrup": Style(color="#a755fa"),
+    "energy drink": Style(color="#57d63e"),
+    "alcohol": Style(color="#db1818"),
+    "hard soda": Style(color="#db5858"),  # Same as soda
+    "beer": Style(color="#f2d280"),
+    "wine": Style(color="#bd24a8"),
+    "brandy": Style(color="#b3566a"),
+    "fortified wine": Style(color="#b3566a"),
+    "cider": Style(color="#e08700"),
+    "mead": Style(color="#b89c00"),
+    "spirit": Style(color="#51c9ab"),
+    "whiskey": Style(color="#ff781f"),
+    "vodka": Style(color="#ff6161"),
+    "gin": Style(color="#57ffa9"),
+    "tequila": Style(color="#40ecff"),
+    "rum": Style(color="#fffa7d"),
+    "liqueur": Style(color="#db1818"),
+    "absinthe": Style(color="#aae68a"),
+    "soda": Style(color="#8fbddb"),
+    "tea": Style(color="#549462")
+}
+taste_styles = {
+    "aromatic": Style(color=ingredient_styles.get("herb").color),
+    "berry": Style(color=ingredient_styles.get("fruit").color),
+    "bitter": Style(color="#d40241"),
+    "citrus": Style(color="#fffa7d"),
+    "creamy": Style(color="#fcd29f"),
+    # possibly don't need duplicate, unless need to reference specific style dicts
+    "dark": Style(color=styles.get("dark").color),
+    "dry": Style(color="#827272"),
+    "easy-drinking": Style(color=ingredient_styles.get("beer").color),
+    "floral": Style(color="#d881db"),
+    "fresh": Style(color=ingredient_styles.get("gin").color),
+    "fruity": Style(color=ingredient_styles.get("fruit").color),
+    "grain-forward": Style(color="#b8865f"),
+    "herbal": Style(color=ingredient_styles.get("herb").color),
+    "melon": Style(color="#aae68a"),
+    "nutty": Style(color=ingredient_styles.get("spice").color),
+    "pungent": Style(color=ingredient_styles.get("energy drink").color),
+    "rich": Style(color=ingredient_styles.get("wine").color),
+    "rustic": Style(color=ingredient_styles.get("whiskey").color),
+    "savory": Style(color=ingredient_styles.get("cider").color),
+    "smooth": Style(color="#8fbddb"),
+    "spicy": Style(color="#d40241"),
+    "sweet": Style(color="#d24dd6"),
+    "tart": Style(color=ingredient_styles.get("energy drink").color),
+    "thick": Style(color=ingredient_styles.get("brandy").color),
+    "tropical": Style(color=ingredient_styles.get("rum").color),
+    "unique": Style(color="#d6d24d"),
+    "vegetal": Style(color=ingredient_styles.get("herb").color),
+    "warm": Style(color="#a64214"),
+    "woody": Style(color="#875933"),
+}
+
+all_styles = styles | ingredient_styles | taste_styles
+
+theme = Theme(all_styles)
 console = Console(theme=theme)
 
 # Make room for the prompt line when anything renders using display size

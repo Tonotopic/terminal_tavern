@@ -6,13 +6,13 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from data import ingredients
-from utility import logger
 import recipe
+from data import ingredients
 from data.ingredients import Beer, Cider, Wine, Mead, MenuItem, list_ingredients, Ingredient
-from recipe import Recipe
-from display.rich_console import console, styles
+from display.rich_console import console
 from interface.commands import items_to_commands, find_command, command_to_item, input_loop
+from recipe import Recipe
+from utility import logger
 
 
 class BarMenu:
@@ -67,7 +67,7 @@ class BarMenu:
         table_settings = {
             "show_header": False,
             "box": box.MINIMAL,
-            "style": styles.get("bar_menu")
+            "style": console.get_style("bar_menu")
         }
         table_1 = Table(**table_settings)
         table_2 = Table(**table_settings)
@@ -84,7 +84,7 @@ class BarMenu:
             table_section = table_1
             for menu_section, sect_name, sect_typ in self.menu_sections():
                 if sect_typ in (recipe.Recipe, ingredients.Beer) or len(menu_section) > 0:
-                    table_section.add_row(Text(sect_name, style=styles.get(sect_name.lower())),
+                    table_section.add_row(Text(sect_name, style=console.get_style(sect_name.lower())),
                                           str(len(menu_section)), end_section=True)
                     lst.append(sect_typ)
                     for menu_item in menu_section:
@@ -109,7 +109,7 @@ class BarMenu:
                 console.print("[error]Display section does not match to an existing menu section")
                 return None
 
-            table_1.add_row(Text(sect_name, style=styles.get(sect_name.lower())), str(len(display_section)),
+            table_1.add_row(Text(sect_name, style=console.get_style(sect_name.lower())), str(len(display_section)),
                             end_section=True)
             table_1.add_row()
 
@@ -140,7 +140,7 @@ class BarMenu:
             pours_left = math.floor(stock_rem / item.pour_vol())
             stock_panel = Panel(
                 renderable=f"[panel]{stock_rem}[/panel]oz in stock ([panel]{pours_left}[/panel] full pours)",
-                border_style=styles.get("panel"))
+                border_style=console.get_style("panel"))
             overview_layout = Layout(name="overview_layout")
             overview_layout.split_column(Layout(name="description", renderable=description_panel,
                                                 size=(4 if len(item.description(markup=False)) > console.width else 3)),
@@ -148,9 +148,9 @@ class BarMenu:
 
         elif isinstance(item, recipe.Recipe):
             ingredients_panel = Panel(renderable=item.breakdown_ingredients(), title=item.name,
-                                      border_style=styles.get("cocktails"))
+                                      border_style=console.get_style("cocktails"))
             taste_panel = Panel(renderable=item.print_taste_profile(), title="Taste Profile",
-                                border_style=styles.get("panel"))
+                                border_style=console.get_style("panel"))
 
             overview_layout = Layout(name="overview_layout")
             overview_layout.split_row(Layout(name="ingredients", renderable=ingredients_panel),
@@ -247,7 +247,7 @@ class BarMenu:
                 else:
                     add_tool_table, add_tool_list = self.bar.stock.table_items(add_typ, off_menu=True)
 
-                add_tool_panel = Panel(add_tool_table, border_style=styles.get("bar_menu"))
+                add_tool_panel = Panel(add_tool_table, border_style=console.get_style("bar_menu"))
                 add_tool_layout = Layout(add_tool_panel)
                 add_commands.extend(items_to_commands(add_tool_list, plural_types=True))
 

@@ -1,13 +1,14 @@
 from decimal import Decimal
 from typing import override
+
 from rich.table import Table
 from rich.text import Text
 
 from data import ingredients, flavors
-from utility import logger
-from display import rich_console
-from display.rich_console import console, standardized_spacing, styles
 from data.ingredients import Ingredient, MenuItem
+from display import rich_console
+from display.rich_console import console, standardized_spacing
+from utility import logger
 
 
 # TODO Specify ingredients like Coffee liqueur
@@ -71,7 +72,7 @@ class Recipe(MenuItem):
 
     @staticmethod
     def get_style():
-        return styles.get("cocktails")
+        return console.get_style("cocktails")
 
     # </editor-fold>
 
@@ -156,7 +157,7 @@ class Recipe(MenuItem):
         recipe_table.add_column("cost")
         recipe_table.add_row()  # Spacing
 
-        money_style = rich_console.styles.get("money")
+        money_style = console.get_style("money")
 
         if len(self.r_ingredients) > 0:
             for ingredient in self.r_ingredients:
@@ -289,7 +290,7 @@ class Recipe(MenuItem):
         string = ""
         for taste, points in self.taste_profile:
             # points = points.normalize()
-            style = rich_console.taste_styles.get(taste)
+            style = console.get_style(taste)
             string = string + (
                 f"[{style}]{taste}[/{style}]{rich_console.standardized_spacing(taste, taste_spacing)}=    "
                 f"{points}\n")

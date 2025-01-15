@@ -1,17 +1,17 @@
-from unidecode import unidecode
 from enum import Enum
 
 from rich.layout import Layout
-from rich.text import Text
 from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
+from unidecode import unidecode
 
 from bar_pkg import bar_menu, stock, barspace, stats
-from utility import logger
-from interface import commands
 from data import ingredients
-from display.rich_console import console, styles
+from display.rich_console import console
+from interface import commands
 from recipe import Recipe
+from utility import logger
 
 
 class Screen(Enum):
@@ -54,7 +54,7 @@ class Bar:
             if off_menu and self.recipes[recipe_name] in self.menu.cocktails:
                 continue
             ingredients_string = self.recipes[recipe_name].format_ingredients()
-            recipes_table.add_row(Text(recipe_name, style=styles.get("cocktails")), ingredients_string)
+            recipes_table.add_row(Text(recipe_name, style=console.get_style("cocktails")), ingredients_string)
             recipes_table.add_row()
             recipes_list.append(self.recipes[recipe_name])
         return recipes_table, recipes_list
@@ -83,7 +83,8 @@ class Bar:
             recipe = Recipe(name="in-progress", r_ingredients=recipe_dict)
             recipe_table = recipe.breakdown_ingredients()
 
-            recipe_panel = Panel(title="New Recipe", border_style=styles.get("cocktails"), renderable=recipe_table)
+            recipe_panel = Panel(title="New Recipe", border_style=console.get_style("cocktails"),
+                                 renderable=recipe_table)
             new_recipe_layout = Layout(recipe_panel)
 
             console.print(new_recipe_layout)
@@ -129,7 +130,7 @@ class Bar:
             portions_list.append("back")
 
             portioning_panel = Panel(title=f"Portioning {ingredient}", renderable=portions_table,
-                                     border_style=styles.get("cocktails"))
+                                     border_style=console.get_style("cocktails"))
             portioning_layout = Layout(portioning_panel)
 
             console.print(portioning_layout)
