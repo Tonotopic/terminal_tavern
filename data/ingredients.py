@@ -171,6 +171,14 @@ class Ingredient:
         else:
             self.volumes = dict(sorted(volumes.items(), key=lambda item: item[1]))
 
+    def format_name(self, capitalize=False):
+        style = self.get_style()
+        if capitalize:
+            name = self.name.capitalize()
+        else:
+            name = self.name
+        return f"[{style}][italic]{name}[/{style}][/italic]"
+
     def format_a(self):
         """Determines whether "a" or "an" should be printed just before the character attribute."""
         if self.character[0] in "aeiou" or self.character.startswith("herb"):
@@ -246,7 +254,7 @@ class Ingredient:
         """
         style = self.get_style()
         if markup:
-            desc = (f"[{style}][italic]{self.name.capitalize()}[/{style}][/italic] "
+            desc = (f"{self.format_name(capitalize=True)} "
                     f"is {self.format_a()} {self.character} {self.format_flavor()}"
                     f"[{style}]{self.format_type().lower()}[/{style}]{self.notes_desc()}.")
         else:
@@ -310,7 +318,7 @@ class Drink(Ingredient):
     def description(self, markup=True):  # Remove capitalization
         style = self.get_style()
         if markup:
-            desc = (f"[{style}][italic]{self.name}[/{style}][/italic] "
+            desc = (f"{self.format_name()} "
                     f"is {self.format_a()} {self.character} {self.format_flavor()}"
                     f"[{style}]{self.format_type().lower()}[/{style}]{self.notes_desc()}.")
         else:

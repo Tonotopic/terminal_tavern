@@ -340,7 +340,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
         if primary_cmd == "buy":
             # Buy has been executed in input loop
-            msg = (f"Bought {args[0]}oz of [{style}]{current_selection.name}[/{style}]. "
+            msg = (f"Bought {args[0]}oz of {current_selection.format_name()}. "
                    f"Current stock: {bar.stock.inventory[current_selection]}oz")
             logger.log(msg)
             shop_screen(bar=bar, current_selection=type(current_selection),

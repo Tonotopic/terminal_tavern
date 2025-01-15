@@ -316,9 +316,9 @@ class BarStock:
                 vol = provided_ings[ingredient]
                 if ingredient.name != "soda water":
                     self.inventory[ingredient] -= vol
-                    msg = f"   Pouring {vol} of {ingredient.name} - stock now at {self.inventory[ingredient]}"
+                    msg = f"   [dimmed]Pouring {vol} of {ingredient.format_name()} - stock now at {self.inventory[ingredient]}[/dimmed]"
                 else:
-                    msg = "   Pouring soda water..."
+                    msg = f"   [dimmed]Pouring [soda]soda water[/soda]...[/dimmed]"
                 logger.log(msg)
                 self.bar.barspace.event_log.append(msg)
         else:

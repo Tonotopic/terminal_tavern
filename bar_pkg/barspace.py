@@ -38,14 +38,15 @@ class BarSpace:
         if len(self.bar.bar_stats.past_customers) >= 6 and random.randrange(3) > 2:
             new_customers = False
 
-        log_msg = f"New customers enter! - " if new_customers else f"Repeat patrons enter! - "
+        log_msg = f"[attention]New customers enter![/attention] - " if new_customers \
+            else f"[attention]Repeat patrons enter![/attention] - "
 
         customers = set()
         group_id = self.new_group_id()
         for i in range(headcount):
             cstmr = customer.create_customer()
             customers.add(cstmr)
-            log_msg = log_msg + cstmr.name + ", "
+            log_msg = log_msg + cstmr.format_name() + ", "
 
         group = customer.CustomerGroup(group_id=group_id, customers=customers)
         group.arrival = current_game_mins(self.opening_time)

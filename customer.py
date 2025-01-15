@@ -68,9 +68,13 @@ class Customer:
             generate_drink_pref()
         generate_fav_tastes()
 
+    def format_name(self):
+        return f"[customer]{self.name}[/customer]"
+
     def order(self, bar):
         order = random.choices(bar.menu.full_menu())[0]
-        bar.barspace.event_log.append(f"{self.name} orders a {order.name}.")
+        style = order.get_style()
+        bar.barspace.event_log.append(f"{self.format_name()} orders a [{style}]{order.name}[/{style}].")
         bar.stock.pour(order)
 
 

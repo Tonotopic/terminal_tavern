@@ -315,10 +315,10 @@ class BarMenu:
                     name = item.name
                     if item.markup != 0:
                         console.print(
-                            f"[{style}]{item.name}[/{style}]'s price is marked up by [money]{"${:.2f}".format(item.markup)}.")
+                            f"{item.format_name(capitalize=True)}'s price is marked up by [money]{"${:.2f}".format(item.markup)}.")
                     if item.markdown != 0:
                         console.print(
-                            f"[{style}]{name}[/{style}] is currently marked down by {item.formatted_markdown}.")
+                            f"{item.format_name(capitalize=True)} is currently marked down by {item.formatted_markdown}.")
 
                 prompt = f"[cmd]Mark{direction} [{style}]{name}[/{style}] by what percentage or dollar value?[/cmd] > "
                 logger.log(f"Marking {direction} {name}...")
