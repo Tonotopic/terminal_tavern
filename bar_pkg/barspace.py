@@ -86,7 +86,7 @@ class BarSpace:
                             log_msg = log_msg + cstmr.name + ", "
                         log_msg = log_msg[:-2] + " are leaving the bar."
                     else:
-                        log_msg = f"{group.customers[0].name} leaves the bar."
+                        log_msg = f"{next(iter(group.customers)).name} leaves the bar."
                     self.event_log.append(log_msg)
 
             for group_leaving in groups_leaving:
