@@ -70,29 +70,31 @@ class BarMenu:
             "style": console.get_style("bar_menu")
         }
         table_1 = Table(**table_settings)
-        table_2 = Table(**table_settings)
-        table_3 = Table(**table_settings)
-        tables = [table_1, table_2, table_3]
+        tables = [table_1]
+        lst = []
+
         width = console.size[0] if expanded else int(console.size[0] / 2)
         for table in tables:
             table.add_column(width=width - 12)
-        lst = []
 
         # Menu overview
         if display_type is None:
 
             table_section = table_1
+            buffer = 9 if expanded else 11
             for menu_section, sect_name, sect_typ in self.menu_sections():
+                if len(table_section.rows) > console.height - buffer - 2:
+                    table_section = Table(**table_settings)
+                    tables.append(table_section)
                 if sect_typ in (recipe.Recipe, ingredients.Beer) or len(menu_section) > 0:
                     table_section.add_row(Text(sect_name, style=console.get_style(sect_name.lower())),
                                           str(len(menu_section)), end_section=True)
                     lst.append(sect_typ)
                     for menu_item in menu_section:
-                        if len(table_1.rows) > console.height - 8:
-                            if len(table_2.rows) > console.height - 8:
-                                table_section = table_3
-                            else:
-                                table_section = table_2
+
+                        if len(table_section.rows) > console.height - buffer:
+                            table_section = Table(**table_settings)
+                            tables.append(table_section)
                         table_section.add_row(menu_item.list_item(expanded=expanded))
                         table_section.add_row()
                         lst.append(menu_item)
@@ -115,19 +117,15 @@ class BarMenu:
 
             table_section = table_1
             for item in display_section:
-                if len(table_1.rows) > console.height - 12:
-                    if len(table_2.rows) > console.height - 12:
-                        table_section = table_3
-                    else:
-                        table_section = table_2
-
+                if len(table_section.rows) > console.height - 12:
+                    table_section = Table(**table_settings)
+                    tables.append(table_section)
                 listing = item.list_item(expanded=expanded)
                 table_section.add_row(listing)
                 table_section.add_row()
                 lst.append(item)
 
-        filled_tables = [table for table in [table_1, table_2, table_3] if len(table.rows) > 0]
-        return filled_tables, lst
+        return tables, lst
 
     def overview(self, item):
         """
