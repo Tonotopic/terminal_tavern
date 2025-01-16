@@ -101,7 +101,7 @@ class BarStock:
         same object."""
         new_ings = {}
         for inv_ing in self.inventory:
-            for db_ing in all_ingredients.values():
+            for db_ing in all_ingredients:
                 if inv_ing.name == db_ing.name:
                     new_ings[db_ing] = self.inventory[inv_ing]
         self.inventory = new_ings
@@ -119,7 +119,7 @@ class BarStock:
         :return: A list of tables (multiple for overflow), and a list of the contents
         """
 
-        container = all_ingredients.values() if shop else self.inventory
+        container = all_ingredients if shop else self.inventory
         table_1 = Table(**table_settings)
         table_1.add_column(justify="center")
         tables = [table_1]

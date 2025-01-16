@@ -11,7 +11,8 @@ from utility.utils import quarter_round
 
 # TODO: Mezcal vs Tequila
 
-all_ingredients = {}
+all_ingredients = []
+all_ingredients_dict = {}
 
 special_formats = {
     "Kolsch": "Kölsch",
@@ -1064,11 +1065,12 @@ def load_ingredients_from_db():
         ingredient = create_instance(ingredient_type, ingredient_data)
 
         if ingredient:
-            all_ingredients[ingredient.name] = ingredient
+            all_ingredients.append(ingredient)
+            all_ingredients_dict[ingredient.name] = ingredient
     close_connection(connection)
 
 
-def list_ingredients(container, typ, no_inheritance=False):
+def list_ingredients(container=all_ingredients, typ=Ingredient, no_inheritance=False):
     """
     Returns a list of ingredients of the given type in the given container.
 
@@ -1102,7 +1104,7 @@ def all_ingredient_types(typ=Ingredient):
 
 def get_ingredient(ingredient_name):
     """Returns the Ingredient object corresponding to the given name."""
-    return all_ingredients[ingredient_name]
+    return all_ingredients_dict[ingredient_name]
 
 
 def separate_flavored(ingredients):

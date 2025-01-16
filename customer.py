@@ -1,7 +1,8 @@
 import random
 
 import recipe
-from data import ingredients, flavors
+from data import flavors, ingredients
+from data.ingredients import list_ingredients, get_ingredient
 from data.db_connect import get_connection, close_connection
 from utility import utils
 
@@ -21,14 +22,16 @@ class Customer:
         self.name = None
         self.gender = None
         self.tags = set()
+
         self.drink_pref = None
+        self.fav_spirit = None
         self.fav_tastes = set()
+        self.fav_ingreds = set()
 
         self.times_visited = 0
         self.bar_love = 0
 
     def generate_customer(self):
-
         tag_field = None
 
         def select_name():
@@ -57,16 +60,34 @@ class Customer:
             probabilities = {ingredients.Beer: 0.4, recipe.Recipe: 0.4, ingredients.Wine: 0.2}
             self.drink_pref = utils.roll_probabilities(probabilities)
 
+        def generate_fav_spirit():
+            self.fav_spirit = utils.roll_probabilities(
+                [ingredients.Vodka, ingredients.Whiskey, ingredients.Gin, ingredients.Tequila, ingredients.Rum])
+
         def generate_fav_tastes():
             for i in range(5):
                 self.fav_tastes.add(utils.roll_probabilities(flavors.tastes.keys()))
+
+        def generate_fav_ingreds():
+            faves = set()
+            possible_ingreds = (
+                    list_ingredients(typ=ingredients.Liqueur) + list_ingredients(typ=ingredients.Fruit) +
+                    list_ingredients(typ=ingredients.Spice) + list_ingredients(typ=ingredients.Herb) +
+                    list_ingredients(typ=ingredients.Tea) + list_ingredients(typ=ingredients.Absinthe) +
+                    [get_ingredient("Coca-Cola"), get_ingredient("Sprite")])
+            for i in range(15):
+                ingredient = utils.roll_probabilities(possible_ingreds)
+                faves.add(ingredient)
+            self.fav_ingreds = faves
 
         select_name()
         if tag_field is not None:
             apply_tags()
         if not self.drink_pref:
             generate_drink_pref()
+        generate_fav_spirit()
         generate_fav_tastes()
+        generate_fav_ingreds()
 
     def format_name(self):
         return f"[customer]{self.name}[/customer]"

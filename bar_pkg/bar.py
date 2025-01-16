@@ -69,7 +69,7 @@ class Bar:
 
         type_args = set()
         type_lst = set()
-        ingredient_args = commands.items_to_commands(ingredients.all_ingredients.values())
+        ingredient_args = commands.items_to_commands(ingredients.all_ingredients)
         for typ in ingredients.all_ingredient_types():
             obj = typ()
             type_cmd = unidecode(obj.format_type().lower())
@@ -119,7 +119,7 @@ class Bar:
             if matching_obj is None:
                 for ingredient_arg in ingredient_args:
                     if cmd == ingredient_arg:
-                        matching_obj = commands.command_to_item(ingredient_arg, ingredients.all_ingredients.values())
+                        matching_obj = commands.command_to_item(ingredient_arg, ingredients.all_ingredients)
                         ingredient = matching_obj.name
 
             if matching_obj is None:
@@ -168,7 +168,7 @@ class Bar:
                 if isinstance(r_ing, type):
                     new_ings[r_ing] = recip.r_ingredients[r_ing]
                 elif isinstance(r_ing, ingredients.Ingredient):
-                    for db_ing in ingredients.all_ingredients.values():
+                    for db_ing in ingredients.all_ingredients:
                         if r_ing.name == db_ing.name:
                             new_ings[db_ing] = recip.r_ingredients[r_ing]
 

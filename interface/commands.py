@@ -373,7 +373,7 @@ def input_loop(prompt: str, commands, force_beginning=False, skip: str = None, i
                 utils.save_bar(bar)
             utils.quit()
         elif primary_cmd == "help":
-            ingredient_cmds = items_to_commands(ingredients.all_ingredients.values())
+            ingredient_cmds = items_to_commands(ingredients.all_ingredients)
             help_args = set(help_panels.keys()).union(ingredient_cmds)
 
             arg_input = " ".join(args)
@@ -389,7 +389,7 @@ def input_loop(prompt: str, commands, force_beginning=False, skip: str = None, i
                 draw_help_panel(arg)
                 continue
             elif arg in ingredient_cmds:
-                arg_ing = command_to_item(cmd=arg, lst=ingredients.all_ingredients.values())
+                arg_ing = command_to_item(cmd=arg, lst=ingredients.all_ingredients)
                 console.print(arg_ing.description())
                 continue
         elif callable(globals().get("check_" + primary_cmd)):
