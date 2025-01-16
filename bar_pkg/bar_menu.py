@@ -178,7 +178,7 @@ class BarMenu:
                             new_section.append(self.bar.recipes[new_recipe])
                             break
                 elif isinstance(menu_item, Ingredient):
-                    for db_ing in ingredients.all_ingredients:
+                    for db_ing in ingredients.all_ingredients.values():
                         if menu_item.name == db_ing.name:
                             new_section.append(db_ing)
                             break

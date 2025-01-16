@@ -13,7 +13,6 @@ from interface.commands import items_to_commands, command_to_item, input_loop
 from utility import utils, logger, clock
 
 
-# <editor-fold desc="Screens">
 def startup_screen():
     """Display and handle the initial screen when the game is started, showing title card and save files."""
     saves_table = Table(expand=True, box=box.SIMPLE, style=console.get_style("dimmed"), show_header=False)
@@ -21,7 +20,7 @@ def startup_screen():
     saves_table.add_row()
 
     screen_width, screen_height = console.size
-    # Panel borders
+    # Effective screen size due to panel borders
     screen_width -= 6
     screen_height -= 4
 
@@ -81,18 +80,15 @@ def dashboard(bar):
                        border_style=console.get_style("bar_menu"))
 
     dash_layout = Layout(name="dash_layout")
-    dash_layout.split_column(Layout(name="dash_header", size=3),
-                             Layout(name="dash"))
+    dash_layout.split_column(Layout(name="dash_header", size=3), Layout(name="dash"))
     dash_layout["dash_header"].split_row(Layout(name="bar_name", renderable=bar_name_panel),
                                          Layout(name="balance", renderable=balance_panel))
 
-    # </editor-fold>
     menu_tables = bar.menu.table_menu(expanded=False)[0]
     if len(menu_tables) > 1:
         dash_layout["dash"].split_column(Layout(name="dash_body"),
                                          Layout(name="footer", size=1, renderable=live_display.live_prompt))
-        dash_layout["dash_body"].split_row(Layout(name="menu_layout", renderable=menu_panel),
-                                           Layout())
+        dash_layout["dash_body"].split_row(Layout(name="menu_layout", renderable=menu_panel), Layout())
 
         live_display.live_cycle_tables(tables=menu_tables, panel=menu_panel, layout=dash_layout, sec=3)
 
@@ -102,6 +98,7 @@ def dashboard(bar):
                                       Layout())
         console.print(dash_layout)
         logger.log("Dashboard drawn.")
+    # </editor-fold>
 
     prompt = "'Shop' or view the 'menu'"
     inpt = input_loop(prompt, ["shop", "menu", "open"], bar=bar)
@@ -116,11 +113,12 @@ def dashboard(bar):
 
 def menu_screen(bar):
     """Display and handle the bar menu screen, where menu items can be viewed, added, removed, and marked up."""
-    bar.set_screen("BAR_MENU")
-    global type_displaying
-    type_displaying = None
     prompt = "Category/item name, 'add \\[type]', 'remove \\[item]', 'markup \\[item]', 'markdown \\[item]', or go back"
 
+    global type_displaying
+    type_displaying = None
+
+    bar.set_screen("BAR_MENU")
     while bar.get_screen() == "BAR_MENU":
         menu_tables, menu_list = bar.menu.table_menu(display_type=type_displaying, expanded=True)
         bar_menu_panel = Panel(title=f"~*~ {bar.bar_stats.bar_name} Menu ~*~", renderable="render failed",
@@ -128,9 +126,9 @@ def menu_screen(bar):
         bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
 
         if len(menu_tables) > 1:
-            bar_menu_layout.split_column(Layout(name="bar_menu_panel", renderable=bar_menu_panel),
-                                         Layout(name="footer", size=1, renderable=live_display.live_prompt))
-
+            bar_menu_layout["bar_menu_layout"].split_column(Layout(name="menu", renderable=bar_menu_panel),
+                                                            Layout(name="footer", size=1,
+                                                                   renderable=live_display.live_prompt))
             live_display.live_cycle_tables(tables=menu_tables, panel=bar_menu_panel, layout=bar_menu_layout, sec=5)
         else:
             bar_menu_panel.renderable = menu_tables[0]
@@ -180,17 +178,8 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
           :param current_selection: The current category or product being displayed.
           :param msg: One-time specific prompt, such as confirming a successful purchase.
         """
-    bar.set_screen("SHOP")
-    showing_flavored = False
 
-    while bar.get_screen() == "SHOP":
-        # <editor-fold desc="Layout">
-        global prompt
-        table_settings = {
-            "title_style": "underline",
-            "show_header": False,
-            "expand": True
-        }
+    def shop_layout():
         panel_settings = {
             "renderable": "render failed",
             "box": box.DOUBLE_EDGE,
@@ -211,9 +200,6 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             Layout(name="shop", renderable=shop_panel)
         )
 
-        # </editor-fold>
-
-        # <editor-fold desc="Header">
         global header_text
         header_table = Table(**table_settings)
         header_table.show_header = True
@@ -223,12 +209,69 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
         header_panel.renderable = header_table
         header_panel.renderable.justify = "center"
-        # </editor-fold>
+
+        return shop_layout, header_table, shop_panel, inv_panel
+
+    def set_header():
+        if current_selection == Ingredient:
+            text = "[dimmed]All"
+        else:  # Show pluralized category name in its proper style
+            header_style = obj.get_style()
+            if showing_flavored:
+                text = Text(f"Flavored {obj.format_type(plural=True)}", style=header_style)
+            else:
+                text = Text(f"{obj.format_type(plural=True)}", style=header_style)
+        return text
+
+    def render_purchase_tables():
+        inv_volume = 0
+        inv_table = Table(box=None,
+                          padding=(5, 0, 0, 0),
+                          **table_settings)
+        inv_table.add_column(justify="center")
+        if current_selection in bar.stock.inventory:
+            inv_volume = bar.stock.inventory.get(current_selection)
+        inv_table.add_row(Text(f"{inv_volume}oz", style))
+        vol_table = Table(
+            **table_settings)
+        vol_table.add_column("Volume", justify="center")
+        vol_table.add_column("Price", justify="center")
+        vol_table.add_column("Per oz", justify="center")
+        vol_table.show_header = True
+
+        for volume, price in current_selection.volumes.items():
+            vol_table.add_row()  # Table's leading parameter breaks end_section. Add space between rows manually
+            vol_table.add_row(f"[{style}]{volume}oz[/{style}]",
+                              Text("${:.2f}".format(price), style=console.get_style("money")),
+                              Text("${:.2f}".format(price / volume)), style=console.get_style("money"))
+        shop_panel.renderable = vol_table
+        inv_panel.renderable = inv_table
+
+    def print_live_layout():
+        layout["shop_screen"].split_column(Layout(name="footed_shop_screen"),
+                                           Layout(name="footer", size=1,
+                                                  renderable=live_display.live_prompt))
+        layout["footed_shop_screen"].split_row(Layout(name="bar", renderable=inv_panel),
+                                               Layout(name="shop", renderable=shop_panel))
+
+        live_display.live_cycle_tables(tables=shop_tables, panel=shop_panel, layout=layout, sec=3)
+
+    bar.set_screen("SHOP")
+    showing_flavored = False
+
+    while bar.get_screen() == "SHOP":
+
+        global prompt
+        table_settings = {
+            "title_style": "underline",
+            "show_header": False,
+            "expand": True
+        }
+        layout, header_table, shop_panel, inv_panel = shop_layout()
 
         # <editor-fold desc="Populating shop panels">
 
         shop_commands = {"back", "shop", "buy"}
-
         shop_list = []
 
         # Type selected, not currently selecting an ingredient
@@ -239,17 +282,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
                 prompt = "Type a category to view"
 
             obj = current_selection()
-
-            # Header
-            if current_selection == Ingredient:
-                header_text = "[dimmed]All"
-            else:  # Show pluralized category name in its proper style
-                style = obj.get_style()
-                if showing_flavored:
-                    header_text = Text(f"Flavored {obj.format_type(plural=True)}", style=style)
-                else:
-                    header_text = Text(f"{obj.format_type(plural=True)}", style=style)
-
+            header_text = set_header()
             table_settings["box"] = box.MARKDOWN
 
             shop_tables, shop_list = bar.stock.table_ing_category(table_settings, current_selection, showing_flavored,
@@ -274,58 +307,28 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             style = current_selection.get_style()
             header_text = current_selection.description()
 
-            # <editor-fold desc="inv_table">
-            inv_volume = 0
-            inv_table = Table(box=None,
-                              padding=(5, 0, 0, 0),
-                              **table_settings)
-            inv_table.add_column(justify="center")
-            if current_selection in bar.stock.inventory:
-                inv_volume = bar.stock.inventory.get(current_selection)
-            inv_table.add_row(Text(f"{inv_volume}oz", style))
-            # </editor-fold>
+            render_purchase_tables()
 
-            # <editor-fold desc="vol_table">
-            vol_table = Table(
-                **table_settings)
-            vol_table.add_column("Volume", justify="center")
-            vol_table.add_column("Price", justify="center")
-            vol_table.add_column("Per oz", justify="center")
-            vol_table.show_header = True
-
-            for volume, price in current_selection.volumes.items():
-                vol_table.add_row()  # Table's leading parameter breaks end_section. Add space between rows manually
-                vol_table.add_row(f"[{style}]{volume}oz[/{style}]",
-                                  Text("${:.2f}".format(price), style=console.get_style("money")),
-                                  Text("${:.2f}".format(price / volume)), style=console.get_style("money"))
-            # </editor-fold>
-            shop_panel.renderable = vol_table
-            inv_panel.renderable = inv_table
         else:
             console.print("[error]Current category is not category or ingredient")
 
         # 60 just appears to be the sweet spot here regardless of window size
-        shop_layout["shop_header"].size = 8 if len(header_text) > header_table.columns[1].width + 60 else 7
+        layout["shop_header"].size = 8 if len(header_text) > header_table.columns[1].width + 60 else 7
         header_table.add_row(Text(f"${bar.bar_stats.balance}", console.get_style("money")), header_text)
 
         # </editor-fold>
 
+        # Print layout
         if isinstance(current_selection, type):
             logger.log(f"Shop screen drawn; viewing {header_text}")
             if len(shop_tables) > 1:
-                shop_layout["shop_screen"].split_column(Layout(name="footed_shop_screen"),
-                                                        Layout(name="footer", size=1,
-                                                               renderable=live_display.live_prompt))
-                shop_layout["footed_shop_screen"].split_row(Layout(name="bar", renderable=inv_panel),
-                                                            Layout(name="shop", renderable=shop_panel))
-
-                live_display.live_cycle_tables(tables=shop_tables, panel=shop_panel, layout=shop_layout, sec=3)
+                print_live_layout()
             else:
                 shop_panel.renderable = shop_tables[0]
-                console.print(shop_layout)
+                console.print(layout)
         else:
             logger.log("Shop screen drawn; viewing " + current_selection.name)
-            console.print(shop_layout)
+            console.print(layout)
 
         # <editor-fold desc="Input">
 
@@ -383,5 +386,3 @@ def play_screen(bar, start_game_minutes):
                              Layout(name="event_log", renderable=log_panel))
 
     clock.run_clock(bar=bar, start_game_mins=start_game_minutes, clock_panel=clock_panel, layout=play_layout)
-
-# </editor-fold>

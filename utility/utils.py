@@ -39,17 +39,13 @@ def load_bar(index):
     """
     global current_bar
     filename = list_saves()[index]
-    try:
-        with open(filename, "rb") as f:
-            current_bar = pickle.load(f)
-            logger.log(f"Game loaded from {filename}")
+    with open(filename, "rb") as f:
+        current_bar = pickle.load(f)
+        logger.log(f"Game loaded from {filename}")
 
-            current_bar.reload_ingredients()
+        current_bar.reload_ingredients()
 
-            return current_bar
-    except Exception as e:
-        console.print(f"Error loading save file: {e}")
-        return None
+        return current_bar
 
 
 # </editor-fold>
