@@ -69,6 +69,7 @@ title_cards = {"17x70":
         \___|_| |_||_|          
                    """
                }
+
 styles = {
     "abv": Style(color="#d40241"),
     "money": Style(color="#cfba02"),
@@ -79,14 +80,13 @@ styles = {
     "bar_menu": Style(color="#9c0834"),
     "prompt": Style(color="#429e45"),
     "cmd": Style(color="#429e45"),
-    "customer": Style(color="#e09ef7"),
+    "customer": Style(color="#4e53d9"),
     "warn": Style(color="#fcba03"),
-    "attention": Style(color="#ede174"),
+    "attention": Style(color="#fae41e", underline=True),
     "highlight": Style(color="#a3bfff"),
     "error": Style(color="#ba2318"),
     "l": Style(color="#3c8fc2"),
 }
-
 ingredient_styles = {
     "cocktails": Style(color="#5de3c1"),
     "drink": Style(color="#db1818"),

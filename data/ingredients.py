@@ -6,7 +6,7 @@ from rich.table import Table
 from data.db_connect import get_connection, close_connection
 from data.flavors import tastes
 from display.rich_console import console, standardized_spacing, all_styles
-from utility import logger
+from utility import logger, utils
 from utility.utils import quarter_round
 
 # TODO: Mezcal vs Tequila
@@ -180,7 +180,6 @@ class Ingredient:
         return f"[{style}][italic]{name}[/{style}][/italic]"
 
     def format_a(self):
-        """Determines whether "a" or "an" should be printed just before the character attribute."""
         if self.character[0] in "aeiou" or self.character.startswith("herb"):
             return "an"
         else:
@@ -255,11 +254,11 @@ class Ingredient:
         style = self.get_style()
         if markup:
             desc = (f"{self.format_name(capitalize=True)} "
-                    f"is {self.format_a()} {self.character} {self.format_flavor()}"
+                    f"is {utils.format_a(self.character)} {self.character} {self.format_flavor()}"
                     f"[{style}]{self.format_type().lower()}[/{style}]{self.notes_desc()}.")
         else:
             desc = (f"{self.name.capitalize()} "
-                    f"is {self.format_a()} {self.character} {self.format_flavor()}"
+                    f"is {utils.format_a(self.character)} {self.character} {self.format_flavor()}"
                     f"{self.format_type().lower()}{self.notes_desc()}.")
         return desc
 
@@ -319,11 +318,11 @@ class Drink(Ingredient):
         style = self.get_style()
         if markup:
             desc = (f"{self.format_name()} "
-                    f"is {self.format_a()} {self.character} {self.format_flavor()}"
+                    f"is {utils.format_a(self.character)} {self.character} {self.format_flavor()}"
                     f"[{style}]{self.format_type().lower()}[/{style}]{self.notes_desc()}.")
         else:
             desc = (f"{self.name} "
-                    f"is {self.format_a()} {self.character} {self.format_flavor()}"
+                    f"is {utils.format_a(self.character)} {self.character} {self.format_flavor()}"
                     f"{self.format_type().lower()}{self.notes_desc()}.")
         return desc
 

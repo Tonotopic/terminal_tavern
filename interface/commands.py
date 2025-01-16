@@ -140,7 +140,7 @@ def command_to_item(cmd, lst, plural=False):
             if cmd == unidecode(entry.name.lower()):
                 return entry
         elif isinstance(entry, str):
-            if cmd == entry:
+            if cmd == entry.lower():
                 return entry
         else:
             console.print("[error]command_to_item argument not registering as type or Ingredient")
@@ -389,7 +389,7 @@ def input_loop(prompt: str, commands, force_beginning=False, skip: str = None, i
                 draw_help_panel(arg)
                 continue
             elif arg in ingredient_cmds:
-                arg_ing = command_to_item(arg, ingredients.all_ingredients)
+                arg_ing = command_to_item(cmd=arg, lst=ingredients.all_ingredients.values())
                 console.print(arg_ing.description())
                 continue
         elif callable(globals().get("check_" + primary_cmd)):

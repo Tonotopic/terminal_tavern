@@ -3,6 +3,7 @@ import random
 from rich.panel import Panel
 
 import customer
+import utility.clock
 from display.rich_console import console
 from utility.clock import current_game_mins
 
@@ -25,6 +26,24 @@ class BarSpace:
         self.group_id_counter += 1
         return group_id
 
+    def current_customer_count(self):
+        counter = 0
+        for group in self.current_customer_groups:
+            for cstmr in group.customers:
+                counter += 1
+        return counter
+
+    def print_customers(self):
+        string = ""
+        for group in self.current_customer_groups:
+            for cstmr in group.customers:
+                string = string + cstmr.format_name() + ", "
+        return string[:-2]
+
+    def log(self, msg):
+        timestamp = utility.clock.print_time(utility.clock.current_game_mins(self.opening_time))
+        self.event_log.append(f"{timestamp}: {msg}")
+
     def enter_customer_group(self):
         group_sizes = {1: 4,
                        2: 2.5,
@@ -46,13 +65,21 @@ class BarSpace:
         for i in range(headcount):
             cstmr = customer.create_customer()
             customers.add(cstmr)
-            log_msg = log_msg + cstmr.format_name() + ", "
+            if i == headcount - 1 and headcount > 1:
+                log_msg = log_msg + "and "
+            log_msg = log_msg + cstmr.format_name()
+            if headcount > 2:
+                log_msg = log_msg + ", "
+            else:
+                log_msg = log_msg + " "
+        if headcount > 2:
+            log_msg = log_msg[:-2]
 
         group = customer.CustomerGroup(group_id=group_id, customers=customers)
         group.arrival = current_game_mins(self.opening_time)
 
         self.current_customer_groups.add(group)
-        self.event_log.append(log_msg[:-2])
+        self.log(log_msg)
 
     def check_bar_events(self):
         def check_customer_entry():
@@ -82,12 +109,20 @@ class BarSpace:
 
                     log_msg = ""
                     if len(group.customers) > 1:
-                        for cstmr in group.customers:
-                            log_msg = log_msg + cstmr.name + ", "
-                        log_msg = log_msg[:-2] + " are leaving the bar."
+                        for i, cstmr in enumerate(group.customers):
+                            if i == len(group.customers) - 1:
+                                log_msg = log_msg + "and "
+                            log_msg = "" + log_msg + cstmr.format_name()
+                            if len(group.customers) > 2:
+                                log_msg = log_msg + ", "
+                            else:
+                                log_msg = log_msg + " "
+                        if len(group.customers) > 2:
+                            log_msg = log_msg[:-2] + " "
+                        log_msg = log_msg + "are leaving the bar."
                     else:
-                        log_msg = f"{next(iter(group.customers)).name} leaves the bar."
-                    self.event_log.append(log_msg)
+                        log_msg = f"{next(iter(group.customers)).format_name()} leaves the bar."
+                    self.log(log_msg)
 
             for group_leaving in groups_leaving:
                 self.current_customer_groups.remove(group_leaving)
@@ -98,7 +133,12 @@ class BarSpace:
 
     def event_log_panel(self):
         log_str = ""
-        for line in self.event_log:
+        log_lines = self.event_log
+        occupied_height = 5
+        if len(self.event_log) > console.height - occupied_height:
+            log_lines = self.event_log[-(console.height - occupied_height):]
+
+        for line in log_lines:
             log_str = log_str + line + "\n"
         # TODO Why does adding border style cause the live display twitch?
         panel = Panel(title="Event Log", renderable=log_str, border_style=console.get_style("panel"))

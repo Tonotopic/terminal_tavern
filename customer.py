@@ -74,7 +74,7 @@ class Customer:
     def order(self, bar):
         order = random.choices(bar.menu.full_menu())[0]
         style = order.get_style()
-        bar.barspace.event_log.append(f"{self.format_name()} orders a [{style}]{order.name}[/{style}].")
+        bar.barspace.log(f"{self.format_name()} orders {utils.format_a(order.name)} [{style}]{order.name}[/{style}].")
         bar.stock.pour(order)
 
 

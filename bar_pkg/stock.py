@@ -319,10 +319,8 @@ class BarStock:
                     self.inventory[ingredient] -= vol
                     msg = msg + f"[dimmed]- stock now at {self.inventory[ingredient]}[/dimmed]"
                 logger.log(msg)
-                self.bar.barspace.event_log.append(msg)
         else:
             self.inventory[menu_item] -= menu_item.pour_vol()
-            msg = f"Pouring {menu_item.pour_vol()} of {menu_item.name} - stock now at {self.inventory[menu_item]}"
+            msg = f"    [dimmed]Pouring {menu_item.pour_vol()} of {menu_item.format_name()} - stock now at {self.inventory[menu_item]}[/dimmed]"
 
-            logger.log(f"   {msg}")
-            self.bar.barspace.event_log.append(msg)
+            logger.log(msg)

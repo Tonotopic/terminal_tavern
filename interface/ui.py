@@ -379,10 +379,24 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
 
 def play_screen(bar, start_game_minutes):
-    clock_panel = Panel(renderable="no clock", border_style=console.get_style("sweetener"))
+    clock_panel = Panel(renderable="no clock")
+    occupancy_panel = Panel(renderable=f"Customers: {bar.barspace.current_customer_count()}",
+                            border_style=console.get_style("customer"))
+    balance_panel = Panel(renderable=f"Balance: [money]${bar.bar_stats.balance}",
+                          border_style=console.get_style("money"))
     log_panel = bar.barspace.event_log_panel()
+    customers_panel = Panel(title=f"Customers ({bar.barspace.current_customer_count()})",
+                            renderable=bar.barspace.print_customers(), style=console.get_style("customer"))
+
     play_layout = Layout(name="play_layout")
-    play_layout.split_column(Layout(name="clock", renderable=clock_panel, size=3),
-                             Layout(name="event_log", renderable=log_panel))
+    play_layout.split_column(Layout(name="top_bar", size=3),
+                             Layout(name="body", renderable=log_panel))
+    play_layout["top_bar"].split_row(Layout(name="clock", renderable=clock_panel),
+                                     Layout(name="occupancy", renderable=occupancy_panel, size=17),
+                                     Layout(name="balance", renderable=balance_panel, size=22))
+
+    play_layout["body"].split_row(Layout(name="event_log", renderable=log_panel),
+                                  Layout(name="right_side"))
+    play_layout["right_side"].split_column(Layout(name="customers", renderable=customers_panel, size=8))
 
     clock.run_clock(bar=bar, start_game_mins=start_game_minutes, clock_panel=clock_panel, layout=play_layout)

@@ -50,6 +50,13 @@ def load_bar(index):
 
 # </editor-fold>
 
+def format_a(following_string: str):
+    """Determines whether "a" or "an" should be printed depending on the following word."""
+    if following_string.lower()[0] in "aeiou" or following_string.startswith("herb"):
+        return "an"
+    else:
+        return "a"
+
 def debugging():
     """Returns True if running in the PyCharm debugger."""
     from sys import gettrace
