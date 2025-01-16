@@ -1,4 +1,5 @@
 import math
+from typing import overload
 
 from rich import box
 from rich.layout import Layout
@@ -48,10 +49,16 @@ class BarMenu:
             menu_item = find_command(item, items_to_commands(self.full_menu()))
             if menu_item:
                 item = command_to_item(menu_item, self.full_menu())
+        elif isinstance(item, type):
+            for section in self.menu_sections():
+                if section[2] == item:
+                    return section[0]
+        else:
+            for section, sect_name, sect_type in self.menu_sections():
+                if isinstance(item, sect_type):
+                    return section
 
-        for section, sect_name, sect_type in self.menu_sections():
-            if isinstance(item, sect_type):
-                return section
+
 
     # </editor-fold>
 

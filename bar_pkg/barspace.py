@@ -85,8 +85,9 @@ class BarSpace:
         def check_customer_entry():
             global last_entry_time
             if not last_entry_time:
+                self.enter_customer_group()
                 last_entry_time = current_game_mins(self.opening_time)
-            if current_game_mins(self.opening_time) > last_entry_time + 10:
+            elif current_game_mins(self.opening_time) > last_entry_time + 20:
                 self.enter_customer_group()
                 last_entry_time = current_game_mins(self.opening_time)
 
@@ -95,7 +96,7 @@ class BarSpace:
                 if group.last_round is None:
                     ref_time = group.arrival + 5
                 else:
-                    ref_time = group.last_round + 15
+                    ref_time = group.last_round + 30
                 if current_game_mins(self.opening_time) > ref_time:
                     group.order_round(self.bar)
                     group.last_round = current_game_mins(self.opening_time)
@@ -103,7 +104,7 @@ class BarSpace:
         def check_customers_leaving():
             groups_leaving = set()
             for group in self.current_customer_groups:
-                if current_game_mins(self.opening_time) > group.arrival + 30:
+                if current_game_mins(self.opening_time) > group.arrival + 90:
                     self.bar.bar_stats.past_customers[group.group_id] = group
                     groups_leaving.add(group)
 

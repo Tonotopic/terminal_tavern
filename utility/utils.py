@@ -57,6 +57,7 @@ def format_a(following_string: str):
     else:
         return "a"
 
+
 def debugging():
     """Returns True if running in the PyCharm debugger."""
     from sys import gettrace
@@ -104,11 +105,24 @@ def quarter_round(price):
     return math.ceil(price * 4) / 4
 
 
+def percentize(numbers: list | dict):
+    if isinstance(numbers, list):
+        total = sum(numbers)
+        percents = [number / total for number in numbers]
+    elif isinstance(numbers, dict):
+        percents = {}
+        total = sum(numbers.values())
+        for number in numbers:
+            percent = numbers[number] / total
+            percents[number] = percent
+    return percents
+
+
 def roll_probabilities(choices):
     if isinstance(choices, dict):
         if isinstance(list(choices.values())[0], float):
             if not 0.99 < sum(choices.values()) < 1.01:
                 logger.log("Probabilities do not sum to 1!")
-            return random.choices(list(choices.keys()), weights=list(choices.values()))
+            return random.choices(list(choices.keys()), weights=list(choices.values()))[0]
 
     return random.choices(list(choices))[0]
