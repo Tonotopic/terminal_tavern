@@ -200,6 +200,8 @@ class Bar:
             self.stock.pour(menu_item)
             self.bar_stats.balance += menu_item.current_price()
             logger.log(f"Balance +${menu_item.current_price()} ({self.bar_stats.balance})")
-            self.reputation += 1
-            logger.log(f"Reputation +1 ({self.reputation})")
+            '''self.reputation += 1
+            logger.log(f"Reputation +1 ({self.reputation})")'''
             return True
+        else:
+            return False

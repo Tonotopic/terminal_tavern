@@ -90,7 +90,7 @@ def dashboard(bar):
                                          Layout(name="footer", size=1, renderable=live_display.live_prompt))
         dash_layout["dash_body"].split_row(Layout(name="menu_layout", renderable=menu_panel), Layout())
 
-        live_display.live_cycle_tables(tables=menu_tables, panel=menu_panel, layout=dash_layout, sec=3)
+        live_display.live_cycle_tables(tables=menu_tables, panel=menu_panel, layout=dash_layout, sec=5)
 
     else:
         menu_panel.renderable = menu_tables[0]
@@ -254,7 +254,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
         layout["footed_shop_screen"].split_row(Layout(name="bar", renderable=inv_panel),
                                                Layout(name="shop", renderable=shop_panel))
 
-        live_display.live_cycle_tables(tables=shop_tables, panel=shop_panel, layout=layout, sec=3)
+        live_display.live_cycle_tables(tables=shop_tables, panel=shop_panel, layout=layout, sec=5)
 
     bar.set_screen("SHOP")
     showing_flavored = False
@@ -382,7 +382,7 @@ def play_screen(bar, start_game_minutes):
     clock_panel = Panel(renderable="no clock")
     occupancy_panel = Panel(renderable=f"Customers: {bar.barspace.current_customer_count()}",
                             border_style=console.get_style("customer"))
-    balance_panel = Panel(renderable=f"Balance: [money]${bar.bar_stats.balance}",
+    balance_panel = Panel(renderable=f"Balance: [money]${"{:.2f}".format(bar.bar_stats.balance)}",
                           border_style=console.get_style("money"))
     log_panel = bar.barspace.event_log_panel()
     customers_panel = Panel(title=f"Customers ({bar.barspace.current_customer_count()})",

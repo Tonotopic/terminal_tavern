@@ -176,7 +176,7 @@ class BarStock:
                 if shop:
                     min_price = "{:.2f}".format(item.price_per_oz("min"))
                     max_price = "{:.2f}".format(item.price_per_oz("max"))
-                    spacing = (console.size[0] / 2) - 6 - 11
+                    spacing = (console.size[0] / 2) - 6 - 12
 
                     if min_price == max_price:
                         price_string = f"${min_price}"

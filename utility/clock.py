@@ -48,9 +48,13 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
             layout["customers"].renderable.title = f"Customers ({bar.barspace.current_customer_count()})"
             layout["customers"].renderable.renderable = bar.barspace.print_customers()
 
+        def update_balance():
+            layout["balance"].renderable.renderable = f"Balance: [money]${"{:.2f}".format(bar.bar_stats.balance)}"
+
         update_clock()
         bar.barspace.check_bar_events()
         update_customer_count()
+        update_balance()
         layout["event_log"].update(bar.barspace.event_log_panel())
 
     global day_ended

@@ -111,6 +111,7 @@ class BarSpace:
                     log_msg = ""
                     if len(group.customers) > 1:
                         for i, cstmr in enumerate(group.customers):
+                            cstmr.times_visited += 1
                             if i == len(group.customers) - 1:
                                 log_msg = log_msg + "and "
                             log_msg = "" + log_msg + cstmr.format_name()
@@ -122,6 +123,7 @@ class BarSpace:
                             log_msg = log_msg[:-2] + " "
                         log_msg = log_msg + "are leaving the bar."
                     else:
+                        group.customers[0].times_visited += 1
                         log_msg = f"{next(iter(group.customers)).format_name()} leaves the bar."
                     self.log(log_msg)
 

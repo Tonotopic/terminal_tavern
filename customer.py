@@ -40,6 +40,7 @@ class Customer:
         self.fav_ingreds = set()
 
         self.times_visited = 0
+        self.order_history = []
         self.bar_love = 0
 
     def generate_customer(self):
@@ -145,9 +146,12 @@ class Customer:
             order = utils.roll_probabilities(bar.menu.get_section(order_typ))
 
         style = order.get_style()
-        bar.barspace.log(f"{self.format_name()} orders {utils.format_a(order.name)} [{style}]{order.name}[/{style}].")
+        bar.barspace.log(
+            f"{self.format_name()} orders {utils.format_a(order.name)} [{style}]{order.name}[/{style}].    "
+            f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
 
-        bar.stock.pour(order)
+        bar.make_sale(order)
+        self.order_history.append(order)
 
 
 def create_customer():

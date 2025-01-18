@@ -265,6 +265,8 @@ class Recipe(MenuItem):
                     if obj.notes:
                         if word in obj.notes:
                             desc_weight += Decimal(0.75)
+                    if word.startswith("jalape"):
+                        pass
                     term_weight = Decimal(flavors.tastes[taste][word])
                     points_added = round(Decimal(term_weight * desc_weight * volume), 2)
                     points += points_added
