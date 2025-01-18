@@ -1,5 +1,5 @@
 from utility import utils
-from data.ingredients import load_ingredients_from_db
+from data.ingredients import load_ingredients_from_db, all_ingredients, MenuItem
 from interface import ui
 from display.rich_console import console
 
@@ -8,6 +8,12 @@ if utils.debugging():
     console.size = 120, height
 
 load_ingredients_from_db()
+
+for ingredient in all_ingredients:
+    if isinstance(ingredient, MenuItem):
+        console.print(f"{ingredient.format_name()} ({ingredient.format_type()})")
+        console.print(ingredient.print_taste_profile())
+
 
 '''for ingredient in all_ingredients:
     if isinstance(ingredient, MenuItem):

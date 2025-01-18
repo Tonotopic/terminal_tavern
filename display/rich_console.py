@@ -75,7 +75,7 @@ styles = {
     "money": Style(color="#cfba02"),
     "shop": Style(color="#628260"),
     "dimmed": Style(color="#6e6e6e"),
-    "dark": Style(color="#5c263a"),
+    "dark": Style(color="#555782"),
     "panel": Style(color="#3c8fc2"),
     "bar_menu": Style(color="#9c0834"),
     "prompt": Style(color="#429e45"),
@@ -119,7 +119,7 @@ ingredient_styles = {
 }
 taste_styles = {
     "aromatic": Style(color=ingredient_styles.get("herb").color),
-    "berry": Style(color=ingredient_styles.get("fruit").color),
+    "berry": Style(color="#911fab"),
     "bitter": Style(color="#d40241"),
     "citrus": Style(color="#fffa7d"),
     "creamy": Style(color="#fcd29f"),
@@ -142,13 +142,15 @@ taste_styles = {
     "spiced": Style(color="#d40241"),
     "hot": Style(color="#db1e09"),
     "sweet": Style(color="#d24dd6"),
-    "tart": Style(color=ingredient_styles.get("energy drink").color),
+    "tart": Style(color="#cfd918"),
     "thick": Style(color=ingredient_styles.get("brandy").color),
     "tropical": Style(color=ingredient_styles.get("rum").color),
-    "unique": Style(color="#d6d24d"),
+    "complex": Style(color="#d6d24d"),
     "vegetal": Style(color=ingredient_styles.get("herb").color),
-    "warm": Style(color="#a64214"),
+    "warm": Style(color="#ad3410"),
     "woody": Style(color="#875933"),
+    "malty": Style(color=ingredient_styles.get("spice").color),
+    "hoppy": Style(color="#86b550")
 }
 
 all_styles = styles | ingredient_styles | taste_styles

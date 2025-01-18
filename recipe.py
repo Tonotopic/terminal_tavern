@@ -223,19 +223,16 @@ class Recipe(MenuItem):
         """
         Generate a dict of tastes (i.e. fruity, bitter) present in the cocktail, and corresponding weight values.
         """
-        logger.log(f"Generating taste profile for {self.name}:")
+
         taste_profile = {}
 
         for ingredient in self.r_ingredients:
+            if isinstance(ingredient, type):
+                continue
 
-            if isinstance(ingredient, Ingredient):
-                name = ingredient.name
-                obj = ingredient
-            elif isinstance(ingredient, type):
-                obj = ingredient()
-                name = obj.format_type()
+            logger.log(f"Generating taste profile for {self.name}:")
 
-            volume = round(Decimal(obj.get_portions()[self.r_ingredients[ingredient]]), 2)
+            volume = round(Decimal(ingredient.get_portions()[self.r_ingredients[ingredient]]), 2)
 
             for typ in [ingredients.Liqueur, ingredients.Spice]:
                 if isinstance(ingredient, typ) or (isinstance(ingredient, type) and ingredient == typ):
@@ -245,54 +242,15 @@ class Recipe(MenuItem):
                         elif 0.2 < volume < 0.5:
                             volume = round(volume * 10, 2)
 
-            for taste in flavors.tastes:
-                points = Decimal()
+            ing_profile = dict(MenuItem.generate_taste_profile(ingredient, volume))
+            for taste in ing_profile:
+                points = ing_profile[taste]
+                try:
+                    taste_profile[taste] += points
+                except KeyError:
+                    taste_profile[taste] = Decimal()
+                    taste_profile[taste] += points
+                logger.log(f"    {points} points in {taste} from {ingredient.name}")
 
-                name_to_type = {typ.__name__: typ for typ in ingredients.all_ingredient_types()}
-                for word in flavors.tastes[taste]:
-                    desc_weight = Decimal()
-                    if word in name_to_type:
-                        typ = name_to_type[word]
-                        if isinstance(obj, typ):
-                            logger.log(f"      {name} is a {word} - adds {taste}")
-                            desc_weight += Decimal(3)
-                    if obj.flavor != "":
-                        if word in obj.flavor:
-                            desc_weight += Decimal(5)
-                    if obj.character:
-                        if word in obj.character:
-                            desc_weight += Decimal(3)
-                    if obj.notes:
-                        if word in obj.notes:
-                            desc_weight += Decimal(0.75)
-                    term_weight = Decimal(flavors.tastes[taste][word])
-                    points_added = round(Decimal(term_weight * desc_weight * volume), 2)
-                    points += points_added
-                    if desc_weight > 0:
-                        logger.log(
-                            f"        {term_weight}(term) * {desc_weight}(desc) * {volume}(vol) = {points_added} points in {taste} from \"{word}\" in {name}")
 
-                if points > 0:
-                    try:
-                        taste_profile[taste] += points
-                    except KeyError:
-                        taste_profile[taste] = Decimal()
-                        taste_profile[taste] += points
-                    logger.log(f"    {points} points in {taste} from {name}")
-
-        sorted_taste_profile = sorted(taste_profile.items(), key=lambda x: x[1], reverse=True)
-        return sorted_taste_profile
-
-    def print_taste_profile(self):
-        """Print the cocktail's tastes and their values, in order and in color markup."""
-        taste_spacing = 15
-
-        string = ""
-        for taste, points in self.taste_profile:
-            # points = points.normalize()
-            style = console.get_style(taste)
-            string = string + (
-                f"[{style}]{taste}[/{style}]{rich_console.standardized_spacing(taste, taste_spacing)}=    "
-                f"{points}\n")
-        return string
     # </editor-fold>

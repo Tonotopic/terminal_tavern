@@ -89,7 +89,7 @@ def log_exception(exc_type, exc_value, exc_traceback):
             continue
 
 
-logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "logs")  # Go up one directory, then into logs
+logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")  # Go up one directory, then into logs
 if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)
 
