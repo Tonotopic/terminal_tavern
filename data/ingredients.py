@@ -1,8 +1,10 @@
 import re
+from decimal import Decimal
 from typing import override, Literal
 
 from rich.table import Table
 
+from data import flavors
 from data.db_connect import get_connection, close_connection
 from data.flavors import tastes
 from display.rich_console import console, standardized_spacing, all_styles
@@ -171,6 +173,7 @@ class Ingredient:
             self.volumes = {}
         else:
             self.volumes = dict(sorted(volumes.items(), key=lambda item: item[1]))
+        self.taste_profile = {}
 
     def format_name(self, capitalize=False):
         style = self.get_style()
@@ -307,6 +310,33 @@ class Ingredient:
             logger.logprint(msg)
             raise Exception(msg)
 
+    def generate_taste_profile(self):
+        taste_profile = {}
+        for taste in flavors.tastes:
+            points = Decimal()
+            for word in flavors.tastes[taste]:
+                desc_weight = Decimal()
+                if self.flavor != "":
+                    if word in self.flavor:
+                        desc_weight += Decimal(5)
+                if self.character:
+                    if word in self.character:
+                        desc_weight += Decimal(3)
+                if self.notes:
+                    if word in self.notes:
+                        desc_weight += Decimal(0.75)
+                term_weight = Decimal(flavors.tastes[taste][word])
+                points_added = round(Decimal(term_weight * desc_weight), 2)
+                points += points_added
+            if points > 0:
+                try:
+                    taste_profile[taste] += points
+                except KeyError:
+                    taste_profile[taste] = Decimal()
+                    taste_profile[taste] += points
+
+        sorted_taste_profile = sorted(taste_profile.items(), key=lambda x: x[1], reverse=True)
+        self.taste_profile = sorted_taste_profile
 
 # <editor-fold desc="Drinks">
 class Drink(Ingredient):
@@ -1034,6 +1064,7 @@ def create_instance(ingredient_type, row_data):
 
     ingredient_class = globals()[ingredient_type]
     ingredient = ingredient_class(*arg_values)
+    ingredient.taste_profile = ingredient.generate_taste_profile()
 
     return ingredient
 

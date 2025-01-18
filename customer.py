@@ -109,6 +109,12 @@ class Customer:
     def format_name(self):
         return f"[customer]{self.name}[/customer]"
 
+    def score(self, drink: ingredients.MenuItem):
+        points = 0
+        for taste in self.fav_tastes:
+            if taste in drink.taste_profile:
+                points += drink.taste_profile[taste]
+
     def order(self, bar):
         def order_type_probabilities():
             probs = {}
