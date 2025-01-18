@@ -248,7 +248,7 @@ class Recipe(MenuItem):
             for taste in flavors.tastes:
                 points = Decimal()
 
-                name_to_type = {typ().format_type(): typ for typ in ingredients.all_ingredient_types()}
+                name_to_type = {typ.__name__: typ for typ in ingredients.all_ingredient_types()}
                 for word in flavors.tastes[taste]:
                     desc_weight = Decimal()
                     if word in name_to_type:

@@ -6,6 +6,7 @@ global game_mins_per_sec
 game_mins_per_sec = 1
 
 
+# TODO: Skipping minutes
 def clock_time(current_game_mins):
     clock_hours = (current_game_mins // 60) % 24
     clock_minutes = current_game_mins % 60

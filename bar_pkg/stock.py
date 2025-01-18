@@ -245,7 +245,6 @@ class BarStock:
                     if self.inventory[req_ingredient] >= req_quantity:
                         logger.log(f"   {req_ingredient.name} in quantity {self.inventory[req_ingredient]} "
                                    f"satisfies requirement")
-                        break
                     else:
                         if not ing_missing:
                             ing_missing = True

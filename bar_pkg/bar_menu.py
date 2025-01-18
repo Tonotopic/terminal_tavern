@@ -374,9 +374,13 @@ class BarMenu:
 
     def check_stock(self):
         """Returns False if any menu items are out of stock, or True if all can currently be poured."""
+        missing_something = False
         for menu_item in self.full_menu():
             if not self.bar.stock.has_enough(menu_item):
+                missing_something = True
                 console.print(
                     f"[error] Not enough {menu_item.name}! Restock or remove from the menu before proceeding.")
-                return False
-        return True
+        if missing_something:
+            return False
+        else:
+            return True

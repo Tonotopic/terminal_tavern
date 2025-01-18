@@ -28,7 +28,6 @@ special_plurals = {
 }
 
 
-
 class MenuItem:
     def __init__(self):
         self.markup = 0.0
@@ -335,8 +334,9 @@ class Ingredient:
                     taste_profile[taste] = Decimal()
                     taste_profile[taste] += points
 
-        sorted_taste_profile = sorted(taste_profile.items(), key=lambda x: x[1], reverse=True)
+        sorted_taste_profile = dict(sorted(taste_profile.items(), key=lambda x: x[1], reverse=True))
         self.taste_profile = sorted_taste_profile
+
 
 # <editor-fold desc="Drinks">
 class Drink(Ingredient):
@@ -1064,7 +1064,7 @@ def create_instance(ingredient_type, row_data):
 
     ingredient_class = globals()[ingredient_type]
     ingredient = ingredient_class(*arg_values)
-    ingredient.taste_profile = ingredient.generate_taste_profile()
+    ingredient.generate_taste_profile()
 
     return ingredient
 

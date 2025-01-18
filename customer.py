@@ -110,10 +110,25 @@ class Customer:
         return f"[customer]{self.name}[/customer]"
 
     def score(self, drink: ingredients.MenuItem):
+        # TODO: Score with the ingredients they chose
         points = 0
+
+        if isinstance(drink, self.drink_pref):
+            points += 50
+
         for taste in self.fav_tastes:
             if taste in drink.taste_profile:
-                points += drink.taste_profile[taste]
+                points += drink.taste_profile[taste] * 5
+
+        if isinstance(drink, recipe.Recipe):
+            for ingredient in drink.r_ingredients:
+                if isinstance(ingredient, self.fav_spirit):
+                    points += 50
+
+                if ingredient in self.fav_ingreds:
+                    points += 80
+
+        return points
 
     def order(self, bar):
         def order_type_probabilities():
@@ -133,7 +148,7 @@ class Customer:
                     probs[typ] += 5
 
             if self.gender == "masc":
-                if probs[ingredients.Beer]:
+                if ingredients.Beer in probs:
                     probs[ingredients.Beer] += prob_points["men order beer"]
             elif self.gender == "fem":
                 if probs[ingredients.Wine]:
@@ -141,7 +156,10 @@ class Customer:
                     probs[ingredients.Beer] += prob_points["women order beer"]
             return probs
 
-        ordering_pref_drink = utils.roll_probabilities(ratio_chances["order preferred drink type"])
+        if len(bar.menu.get_section(self.drink_pref)) > 0:
+            ordering_pref_drink = utils.roll_probabilities(ratio_chances["order preferred drink type"])
+        else:
+            ordering_pref_drink = False
         if ordering_pref_drink:
             order = utils.roll_probabilities(bar.menu.get_section(self.drink_pref))
         else:
@@ -157,6 +175,7 @@ class Customer:
             f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
 
         bar.make_sale(order)
+        self.score(order)
         self.order_history.append(order)
 
 
