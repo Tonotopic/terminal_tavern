@@ -18,7 +18,7 @@ class Recipe(MenuItem):
         super().__init__()
         self.name = name
         self.r_ingredients = r_ingredients
-        self.taste_profile = self.generate_taste_profile() if name else None
+        self.taste_profile = None
         self.markup = 0.0
         self.markdown = 0.0
         self.formatted_markdown = ""
@@ -252,5 +252,13 @@ class Recipe(MenuItem):
                     taste_profile[taste] += points
                 logger.log(f"    {points} points in {taste} from {ingredient.name}")
 
+        sorted_taste_profile = sorted(taste_profile.items(), key=lambda x: x[1], reverse=True)
+        return sorted_taste_profile
+
+
+def create_recipe(name=None, r_ingredients: dict[type[Ingredient] or Ingredient, str] = None):
+    recipe = Recipe(name, r_ingredients)
+    recipe.taste_profile = recipe.generate_taste_profile()
+    return recipe
 
     # </editor-fold>

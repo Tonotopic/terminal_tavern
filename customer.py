@@ -38,6 +38,7 @@ class Customer:
         self.fav_spirit = None
         self.fav_tastes = set()
         self.fav_ingreds = set()
+        self.fav_keywords = set()
 
         self.times_visited = 0
         self.order_history = []
@@ -92,10 +93,16 @@ class Customer:
                     list_ingredients(typ=ingredients.Spice) + list_ingredients(typ=ingredients.Herb) +
                     list_ingredients(typ=ingredients.Tea) + list_ingredients(typ=ingredients.Absinthe) +
                     [get_ingredient("Coca-Cola"), get_ingredient("Sprite")])
-            for i in range(15):
+            for i in range(10):
                 ingredient = utils.roll_probabilities(possible_ingreds)
                 faves.add(ingredient)
             self.fav_ingreds = faves
+
+        def generate_fav_keywords():
+            words = set(random.choices(list(flavors.keywords), k=5))
+            self.fav_keywords = words
+
+
 
         select_name()
         if tag_field is not None:
@@ -105,6 +112,7 @@ class Customer:
         generate_fav_spirit()
         generate_fav_tastes()
         generate_fav_ingreds()
+        generate_fav_keywords()
 
     def format_name(self):
         return f"[customer]{self.name}[/customer]"
@@ -112,6 +120,8 @@ class Customer:
     def score(self, drink: ingredients.MenuItem):
         # TODO: Score with the ingredients they chose
         points = 0
+
+        points += drink.cost_value()[0] * 8
 
         if isinstance(drink, self.drink_pref):
             points += 50
@@ -151,9 +161,11 @@ class Customer:
                 if ingredients.Beer in probs:
                     probs[ingredients.Beer] += prob_points["men order beer"]
             elif self.gender == "fem":
-                if probs[ingredients.Wine]:
+                try:
                     probs[ingredients.Wine] += prob_points["women order wine"]
                     probs[ingredients.Beer] += prob_points["women order beer"]
+                except KeyError:
+                    pass
             return probs
 
         if len(bar.menu.get_section(self.drink_pref)) > 0:
@@ -167,7 +179,10 @@ class Customer:
 
             order_typ = utils.roll_probabilities(utils.percentize(order_type_probs))
 
-            order = utils.roll_probabilities(bar.menu.get_section(order_typ))
+            scores = {}
+            for menu_item in bar.menu.get_section(order_typ):
+                scores[menu_item] = self.score(menu_item)
+            order = utils.roll_probabilities(scores)
 
         style = order.get_style()
         bar.barspace.log(
@@ -175,7 +190,6 @@ class Customer:
             f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
 
         bar.make_sale(order)
-        self.score(order)
         self.order_history.append(order)
 
 

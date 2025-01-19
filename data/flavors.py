@@ -19,7 +19,8 @@ tastes["savory"].update(tastes["vegetal"])
 tastes["smooth"].update(tastes["creamy"])
 
 keywords = {"chocolate", "green apple", "pineapple", "coconut", "orange", "strawberry", "raspberry", "tea", "lemon",
-            "lime", "cherry", "cinnamon"}
+            "lime", "cherry", "cinnamon", "peach", "orange", "mint", "oak", "earthy", "smoke", "silky", "strong",
+            "light-bodied", "full", "aged", "barreled", "hazy", "vibrant", "coffee", "roast"}
 
 hoppy = ["hoppy", "hops", "beer"]
 

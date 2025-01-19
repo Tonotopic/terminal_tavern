@@ -6,6 +6,7 @@ from rich.table import Table
 from rich.text import Text
 from unidecode import unidecode
 
+import recipe
 from bar_pkg import bar_menu, stock, barspace, stats
 from data import ingredients
 from display.rich_console import console
@@ -80,8 +81,8 @@ class Bar:
         writing_recipe = True
         recipe_dict = {}
         while writing_recipe:
-            recipe = Recipe(name="in-progress", r_ingredients=recipe_dict)
-            recipe_table = recipe.breakdown_ingredients()
+            recip = Recipe(name="in-progress", r_ingredients=recipe_dict)
+            recipe_table = recip.breakdown_ingredients()
 
             recipe_panel = Panel(title="New Recipe", border_style=console.get_style("cocktails"),
                                  renderable=recipe_table)
@@ -103,7 +104,7 @@ class Bar:
                     if recipe_name == "":
                         recipe_name = None
 
-                self.recipes[recipe_name] = Recipe(name=recipe_name, r_ingredients=recipe_dict)
+                self.recipes[recipe_name] = recipe.create_recipe(recipe_name, recipe_dict)
                 return recipe_name
             elif cmd == "back":
                 writing_recipe = False
@@ -172,7 +173,7 @@ class Bar:
                         if r_ing.name == db_ing.name:
                             new_ings[db_ing] = recip.r_ingredients[r_ing]
 
-            new_recipe = Recipe(name=cocktail_name, r_ingredients=new_ings)
+            new_recipe = recipe.create_recipe(name=cocktail_name, r_ingredients=new_ings)
             new_recipe.markup = recip.markup
             new_recipe.markdown = recip.markdown
             new_recipe.formatted_markdown = recip.formatted_markdown

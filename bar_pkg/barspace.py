@@ -123,7 +123,8 @@ class BarSpace:
                             log_msg = log_msg[:-2] + " "
                         log_msg = log_msg + "are leaving the bar."
                     else:
-                        group.customers[0].times_visited += 1
+                        for cstmr in group.customers:
+                            cstmr.times_visited += 1
                         log_msg = f"{next(iter(group.customers)).format_name()} leaves the bar."
                     self.log(log_msg)
 
