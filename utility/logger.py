@@ -10,6 +10,8 @@ from logging.handlers import RotatingFileHandler
 from display.rich_console import console
 
 
+# TODO: Rich logs
+
 def filename():
     """Generates a filename with a timestamp."""
     now = datetime.datetime.now().strftime("%m-%d--%H-%M-%S")

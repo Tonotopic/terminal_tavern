@@ -31,7 +31,8 @@ prob_points = {
 
 
 class Customer:
-    def __init__(self):
+    def __init__(self, bar):
+        self.bar = bar
         self.name = None
         self.gender = None
         self.tags = set()
@@ -104,8 +105,6 @@ class Customer:
             words = set(random.choices(list(flavors.keywords), k=5))
             self.fav_keywords = words
 
-
-
         select_name()
         if tag_field is not None:
             apply_tags()
@@ -137,16 +136,41 @@ class Customer:
                 taste_points = drink.taste_profile[taste] * 5
                 points += taste_points
                 logger.log(f"   {taste_points} points from favorite taste {taste}")
+                if taste_points > 10:
+                    self.say(random.choice([f"I'm a big fan of the {taste} flavor in this {drink.name}.",
+                                            f"I love when drinks taste {taste}.",
+                                            f"{taste.capitalize()}... I like it.", f"Very {taste}. I'm interested.",
+                                            f"This {drink.name} tastes nicely {taste}.",
+                                            f"The {taste} flavor is a nice touch.",
+                                            f"I love how {taste} this {drink.name} is.",
+                                            f"{taste.capitalize()} drinks are a favorite of mine."]))
 
         if isinstance(drink, recipe.Recipe):
             for ingredient in drink.r_ingredients:
                 if isinstance(ingredient, self.fav_spirit):
                     logger.log("    50 points from favorite spirit")
                     points += 50
+                    spirit = self.fav_spirit().format_type()
+                    self.say(random.choice([f"{spirit} is calling my name!", f"{spirit} cocktails are the best!",
+                                            f"Uh oh... {spirit} is my weakness.", f"I'll always say yes to {spirit}.",
+                                            f"Oh, {spirit}... What would I do without you?",
+                                            f"Awesome, {spirit} is my weapon of choice.",
+                                            f"I love a good {spirit} cocktail.",
+                                            f"Oooh, you have {spirit} cocktails!"]))
 
                 if ingredient in self.fav_ingreds:
                     logger.log(f"   80 points from favorite ingredient {ingredient.name}")
                     points += 80
+                    if ingredient.name not in {"lime", "lemon"}:
+                        self.say(random.choice([f"Oh man, they've got {ingredient.name} in the {drink.name}!",
+                                                f"Oooh, {ingredient.name} is my favorite.",
+                                                f"I love cocktails with {ingredient.name}.",
+                                                f"Oh, hey, I love {ingredient.name}!",
+                                                f"I've always got {ingredient.name} for cocktails at home.",
+                                                f"{ingredient.name.capitalize()} is a favorite of mine.",
+                                                f"{ingredient.name.capitalize()} goes great in cocktails.",
+                                                f"Aw, {ingredient.name}! I love {ingredient.name}.",
+                                                f"{ingredient.name.capitalize()} cocktail? My lucky day!"]))
 
         logger.log(f"{points} points total")
         return points
@@ -179,9 +203,29 @@ class Customer:
                     pass
             return probs
 
+        typ = self.drink_pref().format_type().lower()
+        if typ == "cocktail":
+            typ = "cocktails"
         if len(bar.menu.get_section(self.drink_pref)) > 0:
+            if len(bar.menu.get_section(self.drink_pref)) < 4:
+                self.say(msg=random.choice([f"There's not a lot of {typ}...",
+                                            f"I was thinking there would be more {typ}...",
+                                            f"They don't have much of a {typ} selection...",
+                                            f"Well, at least there's a couple {self.drink_pref().format_type(plural=True).lower()}...",
+                                            f"Not many {self.drink_pref().format_type(plural=True).lower()} at this place...",
+                                            f"My favorite places have a few more {typ}.",
+                                            f"I'd rather have a {typ}, but there aren't too many here."]))
+
             ordering_pref_drink = utils.roll_probabilities(ratio_chances["order preferred drink type"])
         else:
+            if random.randint(1, 6) > 5:
+                self.say(msg=random.choice([f"Wish I could have a {typ}.",
+                                            f"I could really go for a {typ}.",
+                                            f"Aw, they don't have any {typ}.",
+                                            f"Let's go somewhere with {typ} next.",
+                                            f"I'd be happier with a {typ} in my hand.",
+                                            f"What I could really use is a {typ}.",
+                                            f"I was thinking there'd be {typ}."]))
             ordering_pref_drink = False
         if ordering_pref_drink:
             order = utils.roll_probabilities(bar.menu.get_section(self.drink_pref))
@@ -203,9 +247,12 @@ class Customer:
         bar.make_sale(order)
         self.order_history.append(order)
 
+    def say(self, msg):
+        self.bar.barspace.log(f"[dimmed]{self.name}: {msg}[/dimmed]")
 
-def create_customer():
-    new_customer = Customer()
+
+def create_customer(bar):
+    new_customer = Customer(bar)
     new_customer.generate_customer()
     return new_customer
 

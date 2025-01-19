@@ -121,7 +121,7 @@ taste_styles = {
     "aromatic": Style(color=ingredient_styles.get("herb").color),
     "berry": Style(color="#911fab"),
     "bitter": Style(color="#d40241"),
-    "citrus": Style(color="#fffa7d"),
+    "citrusy": Style(color="#fffa7d"),
     "creamy": Style(color="#fcd29f"),
     # possibly don't need duplicate, unless need to reference specific style dicts
     "dark": Style(color=styles.get("dark").color),
@@ -132,7 +132,7 @@ taste_styles = {
     "fruity": Style(color=ingredient_styles.get("fruit").color),
     "grain-forward": Style(color="#b8865f"),
     "herbal": Style(color=ingredient_styles.get("herb").color),
-    "melon": Style(color="#aae68a"),
+    "melon-flavored": Style(color="#aae68a"),
     "nutty": Style(color=ingredient_styles.get("spice").color),
     "pungent": Style(color=ingredient_styles.get("energy drink").color),
     "rich": Style(color=ingredient_styles.get("wine").color),

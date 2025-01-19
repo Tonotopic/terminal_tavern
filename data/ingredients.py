@@ -321,7 +321,7 @@ class Ingredient:
             logger.log(f"Generating taste profile for {name}:")
 
         if name.startswith("Rhinegeist"):
-            taste_profile["citrus"] = Decimal(4.00)
+            taste_profile["citrusy"] = Decimal(4.00)
             taste_profile["fruity"] = Decimal(1.00)
 
         name_to_type = {typ.__name__: typ for typ in all_ingredient_types()}
@@ -1060,10 +1060,10 @@ class Fruit(Additive):
             portions["Crushed"] = round(1 / 8, 2)
         else:
             portions["Slice"] = round(1 / 8, 2)
-        if self.name in tastes["citrus"]:
+        if self.name in tastes["citrusy"]:
             portions["Rind"] = round(1 / 8, 2)
             portions["Zest"] = round(1 / 24, 2)
-        if self.name in tastes["citrus"] or self.name == "pineapple":
+        if self.name in tastes["citrusy"] or self.name == "pineapple":
             portions["Wheel"] = 0.25
 
         return portions

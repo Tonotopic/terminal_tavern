@@ -65,7 +65,7 @@ class BarSpace:
         customers = set()
         group_id = self.new_group_id()
         for i in range(headcount):
-            cstmr = customer.create_customer()
+            cstmr = customer.create_customer(bar=self.bar)
             customers.add(cstmr)
             if i == headcount - 1 and headcount > 1:
                 log_msg = log_msg + "and "
