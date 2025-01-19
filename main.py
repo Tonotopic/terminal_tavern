@@ -36,4 +36,4 @@ while True:
     elif current_bar.get_screen() == "BAR_MENU":
         ui.menu_screen(current_bar)
     elif current_bar.get_screen() == "PLAY":
-        ui.play_screen(current_bar, current_bar.barspace.opening_time)
+        ui.play_screen(current_bar, current_bar.occupancy.opening_time)

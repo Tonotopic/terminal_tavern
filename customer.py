@@ -1,10 +1,16 @@
 import random
 from decimal import Decimal
+from typing import Iterable
+
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
 
 import recipe
 from data import flavors, ingredients
 from data.ingredients import list_ingredients, get_ingredient
 from data.db_connect import get_connection, close_connection
+from display.rich_console import console
 from utility import utils
 from utility import logger
 
@@ -184,6 +190,8 @@ class Customer:
         return points
 
     def order(self, bar):
+        bar.occupancy.customer_displayed = self
+
         def order_type_probabilities():
             probs = {}
             for section in bar.menu.menu_sections():
@@ -212,8 +220,7 @@ class Customer:
             return probs
 
         typ = self.drink_pref().format_type().lower()
-        if typ == "cocktail":
-            typ = "cocktails"
+        typs = self.drink_pref().format_type(plural=True).lower()
         if len(bar.menu.get_section(self.drink_pref)) > 0:
             if len(bar.menu.get_section(self.drink_pref)) < 4:
                 self.say(msg=random.choice([f"There's not a lot of {typ}...",
@@ -229,11 +236,11 @@ class Customer:
             if random.randint(1, 6) > 5:
                 self.say(msg=random.choice([f"Wish I could have a {typ}.",
                                             f"I could really go for a {typ}.",
-                                            f"Aw, they don't have any {typ}.",
+                                            f"Aw, they don't have any {typs}.",
                                             f"Let's go somewhere with {typ} next.",
                                             f"I'd be happier with a {typ} in my hand.",
                                             f"What I could really use is a {typ}.",
-                                            f"I was thinking there'd be {typ}."]))
+                                            f"I was thinking there'd be {typs}."]))
             ordering_pref_drink = False
         if ordering_pref_drink:
             order = utils.roll_probabilities(bar.menu.get_section(self.drink_pref))
@@ -249,7 +256,7 @@ class Customer:
             self.score(order, drinking=True)
 
         style = order.get_style()
-        bar.barspace.log(
+        bar.occupancy.log(
             f"{self.format_name()} orders {utils.format_a(order.name)} [{style}]{order.name}[/{style}].    "
             f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
 
@@ -257,7 +264,7 @@ class Customer:
         self.order_history.append(order)
 
     def say(self, msg):
-        self.bar.barspace.log(f"[dimmed]{self.name}: {msg}[/dimmed]")
+        self.bar.occupancy.log(f"[dimmed]{self.name}: {msg}[/dimmed]")
 
     def is_revealed(self, pref):
         if isinstance(pref, type):
@@ -302,6 +309,50 @@ class Customer:
             self.revealed_favs["Favorite ingredients"].add(pref)
         elif pref in self.fav_keywords:
             self.revealed_favs["Favorite keywords"].add(pref)
+
+    def customer_panel(self):
+
+        unknown_text = Text("Unknown", style=console.get_style("dimmed"))
+
+        def table_fav(attribute, fav_name):
+            text = Text("")
+            if isinstance(attribute, Iterable):
+                for term in attribute:
+                    if self.is_revealed(term):
+                        if attribute == self.fav_tastes:
+                            text += Text(term + ", ", style=console.get_style(term))
+                        elif attribute == self.fav_ingreds:
+                            text += Text(term.name + ", ", style=console.get_style(term.get_style()))
+                        else:
+                            text += Text(term.name + ", ")
+                    else:
+                        text += unknown_text + ", "
+                text = text[:-2]
+
+            else:
+                if self.revealed_favs[fav_name] is None:
+                    text = unknown_text
+                else:
+                    style = attribute().format_type()
+                    text = Text(attribute, style=console.get_style(style))
+
+            table.add_row(f"{fav_name}:", text)
+            table.add_row()
+
+        table = Table(show_header=False, box=None)
+        table.add_row(self.format_name(), f"{self.times_visited} visits")
+        table.add_row()
+
+        table_fav(attribute=self.drink_pref, fav_name="Preferred drink type")
+        table_fav(attribute=self.fav_spirit, fav_name="Favorite spirit")
+        table_fav(attribute=self.fav_tastes, fav_name="Favorite tastes")
+        table_fav(attribute=self.fav_ingreds, fav_name="Favorite ingredients")
+        table_fav(attribute=self.fav_keywords, fav_name="Favorite keywords")
+
+        table.add_row("Order history:", str([order.name for order in self.order_history[:5]]))
+
+        panel = Panel(renderable=table)
+        return panel
 
 
 def create_customer(bar):

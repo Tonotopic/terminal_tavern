@@ -65,7 +65,7 @@ def startup_screen():
         # Name input and checking handled by input loop
         new_bar = Bar(args[0])
         utils.save_bar(new_bar)
-        utils.load_bar(0)
+        utils.load_bar(utils.list_saves().index(f"{new_bar.bar_stats.bar_name}.pickle"))
     elif startup_cmd == "load":
         utils.load_bar(int(args[0]) - 1)
 
@@ -271,7 +271,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
         # <editor-fold desc="Populating shop panels">
 
-        shop_commands = {"back", "shop", "buy"}
+        shop_commands = {"back", "shop"}
         shop_list = []
 
         # Type selected, not currently selecting an ingredient
@@ -380,13 +380,13 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
 def play_screen(bar, start_game_minutes):
     clock_panel = Panel(renderable="no clock")
-    occupancy_panel = Panel(renderable=f"Customers: {bar.barspace.current_customer_count()}",
+    occupancy_panel = Panel(renderable=f"Customers: {bar.occupancy.current_customer_count()}",
                             border_style=console.get_style("customer"))
     balance_panel = Panel(renderable=f"Balance: [money]${"{:.2f}".format(bar.bar_stats.balance)}",
                           border_style=console.get_style("money"))
-    log_panel = bar.barspace.event_log_panel()
-    customers_panel = Panel(title=f"Customers ({bar.barspace.current_customer_count()})",
-                            renderable=bar.barspace.print_customers(), style=console.get_style("customer"))
+    log_panel = bar.occupancy.event_log_panel()
+    customers_panel = Panel(title=f"Customers ({bar.occupancy.current_customer_count()})",
+                            renderable=bar.occupancy.print_customers(), style=console.get_style("customer"))
 
     play_layout = Layout(name="play_layout")
     play_layout.split_column(Layout(name="top_bar", size=3),
@@ -397,6 +397,8 @@ def play_screen(bar, start_game_minutes):
 
     play_layout["body"].split_row(Layout(name="event_log", renderable=log_panel),
                                   Layout(name="right_side"))
-    play_layout["right_side"].split_column(Layout(name="customers", renderable=customers_panel, size=8))
+    play_layout["right_side"].split_column(Layout(name="customers", renderable=customers_panel, size=8),
+                                           Layout(name="customer_panel"))
+
 
     clock.run_clock(bar=bar, start_game_mins=start_game_minutes, clock_panel=clock_panel, layout=play_layout)

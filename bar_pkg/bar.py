@@ -7,7 +7,7 @@ from rich.text import Text
 from unidecode import unidecode
 
 import recipe
-from bar_pkg import bar_menu, stock, barspace, stats
+from bar_pkg import bar_menu, stock, occupancy, stats
 from data import ingredients
 from display.rich_console import console
 from interface import commands
@@ -34,7 +34,7 @@ class Bar:
         self.bar_stats = stats.BarStats(self, bar_name, balance)
         self.stock = stock.BarStock(self)
         self.menu = bar_menu.BarMenu(self)
-        self.barspace = barspace.BarSpace(self)
+        self.occupancy = occupancy.Occupancy(self)
         self.recipes = {}
         self.screen = Screen.MAIN
 

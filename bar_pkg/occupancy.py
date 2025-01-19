@@ -8,17 +8,19 @@ from utility import logger
 from display.rich_console import console
 from utility.clock import current_game_mins
 
+# TODO: Multi-line log lines don't offset display properly
+
 global last_entry_time
 last_entry_time = None
 
 
-# TODO: Much of this should probably be a bar_manager/floor_manager class
-class BarSpace:
+class Occupancy:
     def __init__(self, bar):
         self.bar = bar
         self.opening_time = 16 * 60
         self.current_customer_groups = set()
         self.event_log = []
+        self.customer_displayed = None
 
         self.group_id_counter = 1
 
