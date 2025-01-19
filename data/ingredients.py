@@ -157,77 +157,6 @@ class MenuItem:
         else:
             logger.logprint(f"[error]Menu item {self.name} not triggering Recipe, Beer, or other Alcohol")
 
-    def generate_taste_profile(self, vol_in_recipe=None):
-
-        taste_profile = {}
-        if not hasattr(self, "name"):
-            name = self.format_type()
-        else:
-            name = self.name
-
-        logger.log(f"Generating taste profile for {name}:")
-
-        if name.startswith("Rhinegeist"):
-            taste_profile["citrus"] = Decimal(4.00)
-            taste_profile["fruity"] = Decimal(1.00)
-
-        name_to_type = {typ.__name__: typ for typ in all_ingredient_types()}
-        for taste in flavors.tastes:
-            points = Decimal()
-            for word in flavors.tastes[taste]:
-                desc_weight = Decimal()
-                if word in name_to_type:
-                    typ = name_to_type[word]
-                    if isinstance(self, typ):
-                        logger.log(f"      {name} is a {typ().format_type()} - adds {taste}")
-                        desc_weight += Decimal(3)
-                if self.flavor != "":
-                    if word in self.flavor:
-                        desc_weight += Decimal(5)
-                if self.character:
-                    if word in self.character:
-                        desc_weight += Decimal(3)
-                if self.notes:
-                    if word in self.notes:
-                        desc_weight += Decimal(0.75)
-                term_weight = Decimal(flavors.tastes[taste][word])
-
-                if vol_in_recipe:
-                    vol = vol_in_recipe
-                    points_added = round(Decimal(term_weight * desc_weight * vol_in_recipe), 2)
-                else:
-                    vol = self.pour_vol()
-                    points_added = round(Decimal(term_weight * desc_weight * self.pour_vol), 2)
-                points += points_added
-                if desc_weight > 0:
-                    logger.log(
-                        f"        {term_weight}(term) * {desc_weight}(desc) * {vol}(vol) = {points_added} points in {taste} from \"{word}\" in {name}")
-
-            if points > 0:
-                try:
-                    taste_profile[taste] += points
-                except KeyError:
-                    taste_profile[taste] = Decimal()
-                    taste_profile[taste] += points
-                logger.log(f"    {points} points in {taste} from {name}")
-
-        sorted_taste_profile = sorted(taste_profile.items(), key=lambda x: x[1], reverse=True)
-        return sorted_taste_profile
-
-    def print_taste_profile(self):
-        """Print the cocktail's tastes and their values, in order and in color markup."""
-        taste_spacing = 15
-
-        string = ""
-        for taste in self.taste_profile:
-            points = self.taste_profile[taste]
-            # points = points.normalize()
-            style = console.get_style(taste)
-            string = string + (
-                f"[{style}]{taste}[/{style}]{standardized_spacing(taste, taste_spacing)}=    "
-                f"{points}\n")
-        return string
-
 
 # <editor-fold desc="Ingredients">
 class Ingredient:
@@ -380,22 +309,30 @@ class Ingredient:
             logger.logprint(msg)
             raise Exception(msg)
 
-    def generate_taste_profile(self):
-        taste_profile = {}
+    def generate_taste_profile(self, vol_in_recipe=None, feedback=False):
 
-        if self.name.startswith("Rhinegeist"):
-            taste_profile["citrus"] = Decimal(4)
-            taste_profile["fruity"] = Decimal(2)
+        taste_profile = {}
+        if not hasattr(self, "name"):
+            name = self.format_type()
+        else:
+            name = self.name
+
+        if feedback:
+            logger.log(f"Generating taste profile for {name}:")
+
+        if name.startswith("Rhinegeist"):
+            taste_profile["citrus"] = Decimal(4.00)
+            taste_profile["fruity"] = Decimal(1.00)
 
         name_to_type = {typ.__name__: typ for typ in all_ingredient_types()}
         for taste in flavors.tastes:
             points = Decimal()
             for word in flavors.tastes[taste]:
                 desc_weight = Decimal()
+                points_added = 0
                 if word in name_to_type:
                     typ = name_to_type[word]
                     if isinstance(self, typ):
-                        logger.log(f"      {self.name} is a {word} - adds {taste}")
                         desc_weight += Decimal(3)
                 if self.flavor != "":
                     if word in self.flavor:
@@ -407,8 +344,19 @@ class Ingredient:
                     if word in self.notes:
                         desc_weight += Decimal(0.75)
                 term_weight = Decimal(flavors.tastes[taste][word])
-                points_added = round(Decimal(term_weight * desc_weight), 2)
+
+                if vol_in_recipe:
+                    vol = vol_in_recipe
+                elif isinstance(self, MenuItem):
+                    vol = self.pour_vol()
+                else:
+                    vol = 1
+                points_added = round(Decimal(term_weight * desc_weight * vol), 2)
                 points += points_added
+                if points_added > 0 and feedback:
+                    logger.log(
+                        f"    {term_weight}(term) * {desc_weight}(desc) * {vol}(vol) = {points_added} points in {taste} from \"{word}\" in {name}")
+
             if points > 0:
                 try:
                     taste_profile[taste] += points
@@ -417,7 +365,21 @@ class Ingredient:
                     taste_profile[taste] += points
 
         sorted_taste_profile = dict(sorted(taste_profile.items(), key=lambda x: x[1], reverse=True))
-        self.taste_profile = sorted_taste_profile
+        return sorted_taste_profile
+
+    def print_taste_profile(self):
+        """Print the item's tastes and their values, in order and in color markup."""
+        taste_spacing = 15
+
+        string = ""
+        for taste in self.taste_profile:
+            points = self.taste_profile[taste]
+            # points = points.normalize()
+            style = console.get_style(taste)
+            string = string + (
+                f"[{style}]{taste}[/{style}]{standardized_spacing(taste, taste_spacing)}=    "
+                f"{points}\n")
+        return string
 
 
 # <editor-fold desc="Drinks">
@@ -1145,10 +1107,10 @@ def create_instance(ingredient_type, row_data):
     arg_values = [arg_dict.get(arg) for arg in constructor_args]
 
     ingredient_class = globals()[ingredient_type]
-    ingredient = ingredient_class(*arg_values)
-    ingredient.generate_taste_profile()
+    ing = ingredient_class(*arg_values)
+    ing.taste_profile = ing.generate_taste_profile()
 
-    return ingredient
+    return ing
 
 
 def load_ingredients_from_db():

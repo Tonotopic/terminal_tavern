@@ -242,7 +242,7 @@ class Recipe(MenuItem):
                         elif 0.2 < volume < 0.5:
                             volume = round(volume * 10, 2)
 
-            ing_profile = dict(MenuItem.generate_taste_profile(ingredient, volume))
+            ing_profile = dict(Ingredient.generate_taste_profile(ingredient, volume))
             for taste in ing_profile:
                 points = ing_profile[taste]
                 try:
@@ -252,8 +252,22 @@ class Recipe(MenuItem):
                     taste_profile[taste] += points
                 logger.log(f"    {points} points in {taste} from {ingredient.name}")
 
-        sorted_taste_profile = sorted(taste_profile.items(), key=lambda x: x[1], reverse=True)
+        sorted_taste_profile = dict(sorted(taste_profile.items(), key=lambda x: x[1], reverse=True))
         return sorted_taste_profile
+
+    def print_taste_profile(self):
+        """Print the item's tastes and their values, in order and in color markup."""
+        taste_spacing = 15
+
+        string = ""
+        for taste in self.taste_profile:
+            points = self.taste_profile[taste]
+            # points = points.normalize()
+            style = console.get_style(taste)
+            string = string + (
+                f"[{style}]{taste}[/{style}]{standardized_spacing(taste, taste_spacing)}=    "
+                f"{points}\n")
+        return string
 
 
 def create_recipe(name=None, r_ingredients: dict[type[Ingredient] or Ingredient, str] = None):

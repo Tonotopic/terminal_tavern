@@ -10,9 +10,8 @@ if utils.debugging():
 load_ingredients_from_db()
 
 for ingredient in all_ingredients:
-    if isinstance(ingredient, MenuItem):
-        console.print(f"{ingredient.format_name()} ({ingredient.format_type()})")
-        console.print(ingredient.print_taste_profile())
+    console.print(f"{ingredient.format_name()} ({ingredient.format_type()})")
+    console.print(ingredient.print_taste_profile())
 
 
 '''for ingredient in all_ingredients:
