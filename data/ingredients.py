@@ -317,7 +317,7 @@ class Ingredient:
         else:
             name = self.name
 
-        if feedback:
+        if feedback and not vol_in_recipe:
             logger.log(f"Generating taste profile for {name}:")
 
         if name.startswith("Rhinegeist"):

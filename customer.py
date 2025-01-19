@@ -1,10 +1,12 @@
 import random
+from decimal import Decimal
 
 import recipe
 from data import flavors, ingredients
 from data.ingredients import list_ingredients, get_ingredient
 from data.db_connect import get_connection, close_connection
 from utility import utils
+from utility import logger
 
 connection = get_connection()
 cursor = connection.cursor()
@@ -119,25 +121,34 @@ class Customer:
 
     def score(self, drink: ingredients.MenuItem):
         # TODO: Score with the ingredients they chose
-        points = 0
+        logger.log(f"{self.name} scoring {drink.name}:")
+        points = Decimal(0)
 
-        points += drink.cost_value()[0] * 8
+        cost_points = round(Decimal(drink.cost_value()[0] * 8), 2)
+        points += cost_points
+        logger.log(f"   {cost_points} points from cost value")
 
         if isinstance(drink, self.drink_pref):
             points += 50
+            logger.log("    50 points from preferred drink type")
 
         for taste in self.fav_tastes:
             if taste in drink.taste_profile:
-                points += drink.taste_profile[taste] * 5
+                taste_points = drink.taste_profile[taste] * 5
+                points += taste_points
+                logger.log(f"   {taste_points} points from favorite taste {taste}")
 
         if isinstance(drink, recipe.Recipe):
             for ingredient in drink.r_ingredients:
                 if isinstance(ingredient, self.fav_spirit):
+                    logger.log("    50 points from favorite spirit")
                     points += 50
 
                 if ingredient in self.fav_ingreds:
+                    logger.log(f"   80 points from favorite ingredient {ingredient.name}")
                     points += 80
 
+        logger.log(f"{points} points total")
         return points
 
     def order(self, bar):

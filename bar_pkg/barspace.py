@@ -4,6 +4,7 @@ from rich.panel import Panel
 
 import customer
 import utility.clock
+from utility import logger
 from display.rich_console import console
 from utility.clock import current_game_mins
 
@@ -43,6 +44,7 @@ class BarSpace:
     def log(self, msg):
         timestamp = utility.clock.print_time(utility.clock.current_game_mins(self.opening_time))
         self.event_log.append(f"{timestamp}: {msg}")
+        logger.log(msg)
 
     def enter_customer_group(self):
         group_sizes = {1: 4,
