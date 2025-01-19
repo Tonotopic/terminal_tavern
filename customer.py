@@ -43,6 +43,8 @@ class Customer:
         self.fav_ingreds = set()
         self.fav_keywords = set()
 
+        self.revealed_favs = {"Preferred drink type": None, "Favorite spirit": None, "Favorite tastes": set(),
+                              "Favorite ingredients": set(), "Favorite keywords": set()}
         self.times_visited = 0
         self.order_history = []
         self.bar_love = 0
@@ -118,7 +120,7 @@ class Customer:
     def format_name(self):
         return f"[customer]{self.name}[/customer]"
 
-    def score(self, drink: ingredients.MenuItem):
+    def score(self, drink: ingredients.MenuItem, drinking=False):
         # TODO: Score with the ingredients they chose
         logger.log(f"{self.name} scoring {drink.name}:")
         points = Decimal(0)
@@ -136,7 +138,7 @@ class Customer:
                 taste_points = drink.taste_profile[taste] * 5
                 points += taste_points
                 logger.log(f"   {taste_points} points from favorite taste {taste}")
-                if taste_points > 10:
+                if drinking and taste_points > 20 and not self.is_revealed(taste):
                     self.say(random.choice([f"I'm a big fan of the {taste} flavor in this {drink.name}.",
                                             f"I love when drinks taste {taste}.",
                                             f"{taste.capitalize()}... I like it.", f"Very {taste}. I'm interested.",
@@ -144,33 +146,39 @@ class Customer:
                                             f"The {taste} flavor is a nice touch.",
                                             f"I love how {taste} this {drink.name} is.",
                                             f"{taste.capitalize()} drinks are a favorite of mine."]))
+                    self.reveal_fav(taste)
 
         if isinstance(drink, recipe.Recipe):
             for ingredient in drink.r_ingredients:
                 if isinstance(ingredient, self.fav_spirit):
                     logger.log("    50 points from favorite spirit")
                     points += 50
-                    spirit = self.fav_spirit().format_type()
-                    self.say(random.choice([f"{spirit} is calling my name!", f"{spirit} cocktails are the best!",
-                                            f"Uh oh... {spirit} is my weakness.", f"I'll always say yes to {spirit}.",
-                                            f"Oh, {spirit}... What would I do without you?",
-                                            f"Awesome, {spirit} is my weapon of choice.",
-                                            f"I love a good {spirit} cocktail.",
-                                            f"Oooh, you have {spirit} cocktails!"]))
+                    if not self.is_revealed(spirit):
+                        spirit = self.fav_spirit().format_type()
+                        self.say(random.choice([f"{spirit} is calling my name!", f"{spirit} cocktails are the best!",
+                                                f"Uh oh... {spirit} is my weakness.",
+                                                f"I'll always say yes to {spirit}.",
+                                                f"Oh, {spirit}... What would I do without you?",
+                                                f"Awesome, {spirit} is my weapon of choice.",
+                                                f"I love a good {spirit} cocktail.",
+                                                f"Oooh, you have {spirit} cocktails!"]))
+                        self.reveal_fav(spirit)
 
                 if ingredient in self.fav_ingreds:
                     logger.log(f"   80 points from favorite ingredient {ingredient.name}")
                     points += 80
-                    if ingredient.name not in {"lime", "lemon"}:
-                        self.say(random.choice([f"Oh man, they've got {ingredient.name} in the {drink.name}!",
-                                                f"Oooh, {ingredient.name} is my favorite.",
-                                                f"I love cocktails with {ingredient.name}.",
-                                                f"Oh, hey, I love {ingredient.name}!",
-                                                f"I've always got {ingredient.name} for cocktails at home.",
-                                                f"{ingredient.name.capitalize()} is a favorite of mine.",
-                                                f"{ingredient.name.capitalize()} goes great in cocktails.",
-                                                f"Aw, {ingredient.name}! I love {ingredient.name}.",
-                                                f"{ingredient.name.capitalize()} cocktail? My lucky day!"]))
+                    if not self.is_revealed(ingredient):
+                        self.reveal_fav(ingredient)
+                        if ingredient.name not in {"lime", "lemon"}:
+                            self.say(random.choice([f"Oh man, they've got {ingredient.name} in the {drink.name}!",
+                                                    f"Oooh, {ingredient.name} is my favorite.",
+                                                    f"I love cocktails with {ingredient.name}.",
+                                                    f"Oh, hey, I love {ingredient.name}!",
+                                                    f"I've always got {ingredient.name} for cocktails at home.",
+                                                    f"{ingredient.name.capitalize()} is a favorite of mine.",
+                                                    f"{ingredient.name.capitalize()} goes great in cocktails.",
+                                                    f"Aw, {ingredient.name}! I love {ingredient.name}.",
+                                                    f"{ingredient.name.capitalize()} cocktail? My lucky day!"]))
 
         logger.log(f"{points} points total")
         return points
@@ -238,6 +246,7 @@ class Customer:
             for menu_item in bar.menu.get_section(order_typ):
                 scores[menu_item] = self.score(menu_item)
             order = utils.roll_probabilities(scores)
+            self.score(order, drinking=True)
 
         style = order.get_style()
         bar.barspace.log(
@@ -249,6 +258,50 @@ class Customer:
 
     def say(self, msg):
         self.bar.barspace.log(f"[dimmed]{self.name}: {msg}[/dimmed]")
+
+    def is_revealed(self, pref):
+        if isinstance(pref, type):
+            if self.revealed_favs["Preferred drink type"] is None:
+                return False
+            elif self.revealed_favs["Preferred drink type"] == pref:
+                return True
+            else:
+                logger.logprint("[error]Customer's revealed preference is not the reference object")
+        elif isinstance(pref, ingredients.Spirit):
+            if self.revealed_favs["Favorite spirit"] is None:
+                return False
+            elif self.revealed_favs["Favorite spirit"] == pref:
+                return True
+            else:
+                logger.logprint("[error]Customer's revealed preference is not the reference object")
+        elif isinstance(pref, ingredients.Ingredient):
+            if pref in self.revealed_favs["Favorite ingredients"]:
+                return True
+            else:
+                return False
+        elif isinstance(pref, str):
+            if pref in flavors.tastes:
+                if pref in self.revealed_favs["Favorite tastes"]:
+                    return True
+                else:
+                    return False
+            elif pref in flavors.keywords:
+                if pref in self.revealed_favs["Favorite keywords"]:
+                    return True
+                else:
+                    return False
+
+    def reveal_fav(self, pref):
+        if pref == self.drink_pref:
+            self.revealed_favs["Preferred drink type"] = pref
+        elif pref == self.fav_spirit:
+            self.revealed_favs["Favorite spirit"] = pref
+        elif pref in self.fav_tastes:
+            self.revealed_favs["Favorite tastes"].add(pref)
+        elif pref in self.fav_ingreds:
+            self.revealed_favs["Favorite ingredients"].add(pref)
+        elif pref in self.fav_keywords:
+            self.revealed_favs["Favorite keywords"].add(pref)
 
 
 def create_customer(bar):
