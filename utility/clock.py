@@ -48,7 +48,7 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
                 stop_func()
 
         def update_customer_count():
-            layout["customers"].renderable.title = f"Customers ({bar.occupancy.current_customer_count()})"
+            layout["customers"].renderable.title = f"Customers ({len(bar.occupancy.current_customers())})"
             layout["customers"].renderable.renderable = bar.occupancy.print_customers()
 
         def update_balance():
@@ -61,7 +61,7 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
                 layout["customer_panel"].update(bar.occupancy.customer_displayed.customer_panel())
 
         update_clock()
-        bar.occupancy.check_bar_events()
+        bar.occupancy.check_bar_events(current_game_mins(start_game_mins))
         update_customer_count()
         update_customer_panel()
         update_balance()
@@ -69,6 +69,8 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
 
     global day_ended
     day_ended = False
+
     start_clock()
     global game_mins_per_sec
     draw_live(update_function=update_play_layout, sec=1 / game_mins_per_sec)
+    return current_game_mins(start_game_mins)

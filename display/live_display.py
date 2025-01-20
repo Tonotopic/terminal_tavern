@@ -43,8 +43,10 @@ def draw_live(update_function: Callable, sec):
     :param update_function: A callable that performs the display update. It should accept a 'stop' function
     :param sec: The number of seconds to wait in between display updates.
     """
-
     bump_console_height()
+    # Effective height for layouts is normally lowered by 1 to make room for the prompt.
+    # "Cycling multiple pages[...]" is part of layout, not a prompt, so layout needs to take the whole screen again
+
     with Live(console=console, refresh_per_second=0.00001) as live:
         logger.log("Drawing live display...")
 

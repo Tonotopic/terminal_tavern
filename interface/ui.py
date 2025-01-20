@@ -380,12 +380,12 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
 def play_screen(bar, start_game_minutes):
     clock_panel = Panel(renderable="no clock")
-    occupancy_panel = Panel(renderable=f"Customers: {bar.occupancy.current_customer_count()}",
+    occupancy_panel = Panel(renderable=f"Customers: {len(bar.occupancy.current_customers())}",
                             border_style=console.get_style("customer"))
     balance_panel = Panel(renderable=f"Balance: [money]${"{:.2f}".format(bar.bar_stats.balance)}",
                           border_style=console.get_style("money"))
     log_panel = bar.occupancy.event_log_panel()
-    customers_panel = Panel(title=f"Customers ({bar.occupancy.current_customer_count()})",
+    customers_panel = Panel(title=f"Customers ({len(bar.occupancy.current_customers())})",
                             renderable=bar.occupancy.print_customers(), style=console.get_style("customer"))
 
     play_layout = Layout(name="play_layout")
@@ -400,5 +400,16 @@ def play_screen(bar, start_game_minutes):
     play_layout["right_side"].split_column(Layout(name="customers", renderable=customers_panel, size=8),
                                            Layout(name="customer_panel"))
 
+    running = True
+    while running:
+        time_paused = clock.run_clock(bar=bar, start_game_mins=start_game_minutes, clock_panel=clock_panel,
+                                      layout=play_layout)
 
-    clock.run_clock(bar=bar, start_game_mins=start_game_minutes, clock_panel=clock_panel, layout=play_layout)
+        customer_names = [cstmr.name.lower() for cstmr in bar.occupancy.current_customers()]
+        commands = customer_names
+
+        primary_cmd, args = input_loop(prompt="Type a customer name for details", commands=commands)
+        if primary_cmd in customer_names:
+            bar.occupancy.customer_displayed = bar.occupancy.get_customer(primary_cmd)
+
+        start_game_minutes = time_paused

@@ -4,9 +4,8 @@ from rich.panel import Panel
 
 import customer
 import utility.clock
-from utility import logger
+from utility import logger, clock
 from display.rich_console import console
-from utility.clock import current_game_mins
 
 # TODO: Multi-line log lines don't offset display properly
 
@@ -24,31 +23,104 @@ class Occupancy:
 
         self.group_id_counter = 1
 
+    def log(self, game_time, msg):
+        timestamp = utility.clock.print_time(game_time)
+        self.event_log.append(f"{timestamp}: {msg}")
+        logger.log(msg)
+
+    def event_log_panel(self):
+        log_str = ""
+        log_lines = self.event_log
+        occupied_height = 5
+        if len(self.event_log) > console.height - occupied_height:
+            log_lines = self.event_log[-(console.height - occupied_height):]
+
+        for line in log_lines:
+            log_str = log_str + line + "\n"
+        # TODO Why does adding border style cause the live display twitch?
+        panel = Panel(title="Event Log", renderable=log_str, border_style=console.get_style("panel"))
+        return panel
+
+    def check_bar_events(self, game_time):
+        def check_customer_entry():
+            global last_entry_time
+            if not last_entry_time:
+                self.enter_customer_group(game_time)
+                last_entry_time = game_time
+            elif game_time > last_entry_time + 20:
+                self.enter_customer_group(game_time)
+                last_entry_time = game_time
+
+        def check_customer_orders():
+            for group in self.current_customer_groups:
+                if group.last_round is None:
+                    ref_time = group.arrival + 5
+                else:
+                    ref_time = group.last_round + 30
+                if game_time > ref_time:
+                    group.order_round(self.bar, game_time)
+                    group.last_round = game_time
+
+        def check_customers_leaving():
+            groups_leaving = set()
+            for group in self.current_customer_groups:
+                if game_time > group.arrival + 90:
+                    self.bar.bar_stats.past_customers[group.group_id] = group
+                    groups_leaving.add(group)
+
+                    log_msg = ""
+                    if len(group.customers) > 1:
+                        for i, cstmr in enumerate(group.customers):
+                            cstmr.times_visited += 1
+                            if i == len(group.customers) - 1:
+                                log_msg = log_msg + "and "
+                            log_msg = "" + log_msg + cstmr.format_name()
+                            if len(group.customers) > 2:
+                                log_msg = log_msg + ", "
+                            else:
+                                log_msg = log_msg + " "
+                        if len(group.customers) > 2:
+                            log_msg = log_msg[:-2] + " "
+                        log_msg = log_msg + "are leaving the bar."
+                    else:
+                        for cstmr in group.customers:
+                            cstmr.times_visited += 1
+                        log_msg = f"{next(iter(group.customers)).format_name()} leaves the bar."
+                    self.log(game_time, log_msg)
+
+            for group_leaving in groups_leaving:
+                self.current_customer_groups.remove(group_leaving)
+
+        check_customer_entry()
+        check_customer_orders()
+        check_customers_leaving()
+
+    def current_customers(self):
+        customers = []
+        for group in self.current_customer_groups:
+            for cstmr in group.customers:
+                customers.append(cstmr)
+
+        return customers
+
+    def print_customers(self):
+        string = ""
+        for cstmr in self.current_customers():
+            string = string + cstmr.format_name() + ", "
+        return string[:-2]
+
+    def get_customer(self, name):
+        name = name.lower()
+        for cstmr in self.current_customers():
+            if name == cstmr.name.lower():
+                return cstmr
+
     def new_group_id(self):
         group_id = self.group_id_counter
         self.group_id_counter += 1
         return group_id
 
-    def current_customer_count(self):
-        counter = 0
-        for group in self.current_customer_groups:
-            for cstmr in group.customers:
-                counter += 1
-        return counter
-
-    def print_customers(self):
-        string = ""
-        for group in self.current_customer_groups:
-            for cstmr in group.customers:
-                string = string + cstmr.format_name() + ", "
-        return string[:-2]
-
-    def log(self, msg):
-        timestamp = utility.clock.print_time(utility.clock.current_game_mins(self.opening_time))
-        self.event_log.append(f"{timestamp}: {msg}")
-        logger.log(msg)
-
-    def enter_customer_group(self):
+    def enter_customer_group(self, game_time):
         group_sizes = {1: 4,
                        2: 2.5,
                        3: 2,
@@ -80,74 +152,7 @@ class Occupancy:
             log_msg = log_msg[:-2]
 
         group = customer.CustomerGroup(group_id=group_id, customers=customers)
-        group.arrival = current_game_mins(self.opening_time)
+        group.arrival = game_time
 
         self.current_customer_groups.add(group)
-        self.log(log_msg)
-
-    def check_bar_events(self):
-        def check_customer_entry():
-            global last_entry_time
-            if not last_entry_time:
-                self.enter_customer_group()
-                last_entry_time = current_game_mins(self.opening_time)
-            elif current_game_mins(self.opening_time) > last_entry_time + 20:
-                self.enter_customer_group()
-                last_entry_time = current_game_mins(self.opening_time)
-
-        def check_customer_orders():
-            for group in self.current_customer_groups:
-                if group.last_round is None:
-                    ref_time = group.arrival + 5
-                else:
-                    ref_time = group.last_round + 30
-                if current_game_mins(self.opening_time) > ref_time:
-                    group.order_round(self.bar)
-                    group.last_round = current_game_mins(self.opening_time)
-
-        def check_customers_leaving():
-            groups_leaving = set()
-            for group in self.current_customer_groups:
-                if current_game_mins(self.opening_time) > group.arrival + 90:
-                    self.bar.bar_stats.past_customers[group.group_id] = group
-                    groups_leaving.add(group)
-
-                    log_msg = ""
-                    if len(group.customers) > 1:
-                        for i, cstmr in enumerate(group.customers):
-                            cstmr.times_visited += 1
-                            if i == len(group.customers) - 1:
-                                log_msg = log_msg + "and "
-                            log_msg = "" + log_msg + cstmr.format_name()
-                            if len(group.customers) > 2:
-                                log_msg = log_msg + ", "
-                            else:
-                                log_msg = log_msg + " "
-                        if len(group.customers) > 2:
-                            log_msg = log_msg[:-2] + " "
-                        log_msg = log_msg + "are leaving the bar."
-                    else:
-                        for cstmr in group.customers:
-                            cstmr.times_visited += 1
-                        log_msg = f"{next(iter(group.customers)).format_name()} leaves the bar."
-                    self.log(log_msg)
-
-            for group_leaving in groups_leaving:
-                self.current_customer_groups.remove(group_leaving)
-
-        check_customer_entry()
-        check_customer_orders()
-        check_customers_leaving()
-
-    def event_log_panel(self):
-        log_str = ""
-        log_lines = self.event_log
-        occupied_height = 5
-        if len(self.event_log) > console.height - occupied_height:
-            log_lines = self.event_log[-(console.height - occupied_height):]
-
-        for line in log_lines:
-            log_str = log_str + line + "\n"
-        # TODO Why does adding border style cause the live display twitch?
-        panel = Panel(title="Event Log", renderable=log_str, border_style=console.get_style("panel"))
-        return panel
+        self.log(game_time, log_msg)

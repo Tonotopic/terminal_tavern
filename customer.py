@@ -126,7 +126,7 @@ class Customer:
     def format_name(self):
         return f"[customer]{self.name}[/customer]"
 
-    def score(self, drink: ingredients.MenuItem, drinking=False):
+    def score(self, game_time, drink: ingredients.MenuItem, drinking=False):
         # TODO: Score with the ingredients they chose
         logger.log(f"{self.name} scoring {drink.name}:")
         points = Decimal(0)
@@ -144,14 +144,20 @@ class Customer:
                 taste_points = drink.taste_profile[taste] * 5
                 points += taste_points
                 logger.log(f"   {taste_points} points from favorite taste {taste}")
-                if drinking and taste_points > 20 and not self.is_revealed(taste):
-                    self.say(random.choice([f"I'm a big fan of the {taste} flavor in this {drink.name}.",
-                                            f"I love when drinks taste {taste}.",
-                                            f"{taste.capitalize()}... I like it.", f"Very {taste}. I'm interested.",
-                                            f"This {drink.name} tastes nicely {taste}.",
-                                            f"The {taste} flavor is a nice touch.",
-                                            f"I love how {taste} this {drink.name} is.",
-                                            f"{taste.capitalize()} drinks are a favorite of mine."]))
+                if drinking and taste_points > 25 and not self.is_revealed(taste):
+                    self.say(game_time, random.choice([f"I'm a big fan of the {taste} flavor in this {drink.name}.",
+                                                       f"I love when drinks taste {taste}.",
+                                                       f"It's {taste}... I like it.", f"Very {taste}. I'm interested.",
+                                                       f"This {drink.name} tastes nicely {taste}.",
+                                                       f"The {taste} flavor is a nice touch.",
+                                                       f"I love how {taste} this {drink.name} is.",
+                                                       f"{taste.capitalize()} drinks are great.",
+                                                       f"I like how it tastes {taste}.",
+                                                       f"That's a good {taste} flavor.",
+                                                       f"The {drink.name} is {taste}. It's good.",
+                                                       f"Tastes pretty {taste}. I'm a fan.",
+                                                       f"I do tend to go for {taste} drinks.",
+                                                       f"I like a good {taste} drink."]))
                     self.reveal_fav(taste)
 
         if isinstance(drink, recipe.Recipe):
@@ -159,9 +165,10 @@ class Customer:
                 if isinstance(ingredient, self.fav_spirit):
                     logger.log("    50 points from favorite spirit")
                     points += 50
-                    if not self.is_revealed(spirit):
+                    if drinking and not self.is_revealed(spirit):
                         spirit = self.fav_spirit().format_type()
-                        self.say(random.choice([f"{spirit} is calling my name!", f"{spirit} cocktails are the best!",
+                        self.say(game_time,
+                                 random.choice([f"{spirit} is calling my name!", f"{spirit} cocktails are the best!",
                                                 f"Uh oh... {spirit} is my weakness.",
                                                 f"I'll always say yes to {spirit}.",
                                                 f"Oh, {spirit}... What would I do without you?",
@@ -173,10 +180,11 @@ class Customer:
                 if ingredient in self.fav_ingreds:
                     logger.log(f"   80 points from favorite ingredient {ingredient.name}")
                     points += 80
-                    if not self.is_revealed(ingredient):
+                    if drinking and not self.is_revealed(ingredient):
                         self.reveal_fav(ingredient)
                         if ingredient.name not in {"lime", "lemon"}:
-                            self.say(random.choice([f"Oh man, they've got {ingredient.name} in the {drink.name}!",
+                            self.say(game_time,
+                                     random.choice([f"Oh man, they've got {ingredient.name} in the {drink.name}!",
                                                     f"Oooh, {ingredient.name} is my favorite.",
                                                     f"I love cocktails with {ingredient.name}.",
                                                     f"Oh, hey, I love {ingredient.name}!",
@@ -189,7 +197,7 @@ class Customer:
         logger.log(f"{points} points total")
         return points
 
-    def order(self, bar):
+    def order(self, bar, game_time):
         bar.occupancy.customer_displayed = self
 
         def order_type_probabilities():
@@ -223,24 +231,24 @@ class Customer:
         typs = self.drink_pref().format_type(plural=True).lower()
         if len(bar.menu.get_section(self.drink_pref)) > 0:
             if len(bar.menu.get_section(self.drink_pref)) < 4:
-                self.say(msg=random.choice([f"There's not a lot of {typ}...",
-                                            f"I was thinking there would be more {typ}...",
-                                            f"They don't have much of a {typ} selection...",
-                                            f"Well, at least there's a couple {self.drink_pref().format_type(plural=True).lower()}...",
-                                            f"Not many {self.drink_pref().format_type(plural=True).lower()} at this place...",
-                                            f"My favorite places have a few more {typ}.",
-                                            f"I'd rather have a {typ}, but there aren't too many here."]))
+                self.say(game_time, msg=random.choice([f"There's not a lot of {typs}...",
+                                                       f"I was thinking there would be more {typs}...",
+                                                       f"They don't have much of a {typ} selection...",
+                                                       f"Well, at least there's a couple {typs}...",
+                                                       f"Not many {typs} at this place...",
+                                                       f"My favorite places have a few more {typs}.",
+                                                       f"I'd rather have a {typ}, but there aren't too many here.", ]))
 
             ordering_pref_drink = utils.roll_probabilities(ratio_chances["order preferred drink type"])
         else:
             if random.randint(1, 6) > 5:
-                self.say(msg=random.choice([f"Wish I could have a {typ}.",
-                                            f"I could really go for a {typ}.",
-                                            f"Aw, they don't have any {typs}.",
-                                            f"Let's go somewhere with {typ} next.",
-                                            f"I'd be happier with a {typ} in my hand.",
-                                            f"What I could really use is a {typ}.",
-                                            f"I was thinking there'd be {typs}."]))
+                self.say(game_time, msg=random.choice([f"Wish I could have a {typ}.", f"I could really go for a {typ}.",
+                                                       f"Aw, they don't have any {typs}.",
+                                                       f"Let's go somewhere with {typ} next.",
+                                                       f"I'd be happier with a {typ} in my hand.",
+                                                       f"What I could really use is a {typ}.",
+                                                       f"I was thinking there'd be {typs}.", f"I'd love a {typ}.",
+                                                       f"I like my {typ} bars a little better."]))
             ordering_pref_drink = False
         if ordering_pref_drink:
             order = utils.roll_probabilities(bar.menu.get_section(self.drink_pref))
@@ -251,20 +259,20 @@ class Customer:
 
             scores = {}
             for menu_item in bar.menu.get_section(order_typ):
-                scores[menu_item] = self.score(menu_item)
+                scores[menu_item] = self.score(game_time, menu_item)
             order = utils.roll_probabilities(scores)
-            self.score(order, drinking=True)
 
         style = order.get_style()
-        bar.occupancy.log(
-            f"{self.format_name()} orders {utils.format_a(order.name)} [{style}]{order.name}[/{style}].    "
-            f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
+        bar.occupancy.log(game_time,
+                          f"{self.format_name()} orders {utils.format_a(order.name)} [{style}]{order.name}[/{style}].    "
+                          f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
+        self.score(game_time, order, drinking=True)
 
         bar.make_sale(order)
         self.order_history.append(order)
 
-    def say(self, msg):
-        self.bar.occupancy.log(f"[dimmed]{self.name}: {msg}[/dimmed]")
+    def say(self, game_time, msg):
+        self.bar.occupancy.log(game_time, f"[dimmed]{self.name}: {msg}[/dimmed]")
 
     def is_revealed(self, pref):
         if isinstance(pref, type):
@@ -368,6 +376,6 @@ class CustomerGroup:
         self.arrival = None
         self.last_round = None
 
-    def order_round(self, bar):
+    def order_round(self, bar, game_time):
         for customer in self.customers:
-            customer.order(bar)
+            customer.order(bar, game_time)
