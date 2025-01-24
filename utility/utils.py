@@ -2,8 +2,8 @@ import math
 import os
 import pickle
 import random
+import re
 import sys
-from typing import re
 
 from display.rich_console import console
 from utility import logger
@@ -51,14 +51,6 @@ def load_bar(index):
 
 # </editor-fold>
 
-def format_a(following_string: str):
-    """Determines whether "a" or "an" should be printed depending on the following word."""
-    if following_string.lower()[0] in "aeiou" or following_string.startswith("herb"):
-        return "an"
-    else:
-        return "a"
-
-
 def debugging():
     """Returns True if running in the PyCharm debugger."""
     from sys import gettrace
@@ -68,6 +60,49 @@ def debugging():
         return True
     else:
         return False
+
+
+def format_a(following_string: str):
+    """Determines whether "a" or "an" should be printed depending on the following word."""
+    if following_string.lower()[0] in "aeiou" or following_string.startswith("herb"):
+        return "an"
+    else:
+        return "a"
+
+
+def index_with_markup(string: str, no_markup_index: int):
+    """
+    Returns the index of the given marked-up string that corresponds with the given index in a no-markup version of the
+    string. I.e. give a position in a plain string, get an index of the same actual char position in the marked-up string
+
+    :param string: Marked-up string to find a corresponding index for
+    :param no_markup_index: The target index in the no-markup/actual-appearance string
+    :return: The corresponding char's index in the original marked-up string
+    """
+    no_markup_str = remove_markup(string)
+    if len(no_markup_str) - 1 < no_markup_index:  # Index at end if shorter than index given
+        no_markup_index = len(no_markup_str) - 1
+
+    no_markup_counter = 0
+    in_tag = False
+    for markup_index, char in enumerate(string):
+        if no_markup_counter >= no_markup_index:
+            if string[markup_index] == no_markup_str[no_markup_index]:
+                return markup_index
+            else:
+                logger.logprint("[error]Markup index char doesn't match no markup index char")
+
+        if char == "[":
+            in_tag = True
+        elif char == "]":
+            in_tag = False
+        elif not in_tag:
+            no_markup_counter += 1
+
+    if string[markup_index] == no_markup_str[no_markup_index]:
+        return markup_index
+    else:
+        logger.logprint("[error]Markup index char doesn't match no markup index char")
 
 
 def numb_lines(string, line_width):
@@ -81,11 +116,100 @@ def numb_lines(string, line_width):
     return 1 + lines_in_remainder
 
 
+def percentize(numbers: list | dict):
+    if isinstance(numbers, list):
+        total = sum(numbers)
+        percents = [number / total for number in numbers]
+    elif isinstance(numbers, dict):
+        percents = {}
+        total = sum(numbers.values())
+        for number in numbers:
+            percent = numbers[number] / total
+            percents[number] = percent
+    return percents
+
+
+def quarter_round(price):
+    return math.ceil(price * 4) / 4
+
+
 def quit():
     """Exit the application."""
     logger.log("Received quit command. Exiting...")
     print("Exiting...")
     sys.exit(0)
+
+
+def remove_markup(string):
+    return re.sub(r"\[.*?\]", "", string)
+
+
+def roll_probabilities(choices):
+    if isinstance(choices, dict):
+        if isinstance(list(choices.values())[0], float):
+            if not 0.99 < sum(choices.values()) < 1.01:
+                logger.log("Probabilities do not sum to 1!")
+            return random.choices(list(choices.keys()), weights=list(choices.values()))[0]
+
+    return random.choices(list(choices))[0]
+
+
+def split_with_markup(string: str, line_width):
+    """
+    Splits string based on line width, handling lonely markup tags.
+
+    :param string: Whole string to split
+    :param line_width: Maximum length of each line
+    :return: List of lines from the string
+    """
+    lines = []
+    num_lines = numb_lines(string, line_width)
+    if num_lines > 1:
+        for line_num in range(num_lines):
+            # Start line_num at 1, not 0, for comparison with num_lines
+            line_num += 1
+
+            # Split at end if shorter than max
+            split_index = line_width if len(remove_markup(string)) > line_width else len(remove_markup(string)) - 1
+            markup_split_index = index_with_markup(string, split_index)
+
+            # Jump to end of markup on last line
+            if line_num == num_lines and len(string) > markup_split_index:
+                markup_split_index = len(string)
+
+            # Backtrack to last space so no terms are cut off
+            if markup_split_index < len(string) - 1:
+                while True:
+                    if string[markup_split_index] == " ":
+                        break
+                    markup_split_index -= 1
+
+            cut_section = string[:markup_split_index]
+            # Remainder for processing next
+            string = string[markup_split_index:]
+
+            all_tags = re.findall(r"\[[^]]*\]", cut_section)
+            open_tags = {}
+
+            tag_fixed_str = cut_section
+            for tag in all_tags:
+                if tag.startswith("[/"):  # Closing tag
+                    tag_word = tag[2:-1]
+                    if tag_word in open_tags and open_tags[tag_word] > 0:
+                        open_tags[tag_word] -= 1  # Mark open tag as closed
+                    else:  # If closing tag is unmatched
+                        tag_fixed_str = f"[{tag_word}]" + tag_fixed_str  # Open tag to match
+                elif tag.startswith("["):  # Opening tag
+                    open_tags[tag[1:-1]] = open_tags.get(tag[1:-1], 0) + 1  # Mark open tag
+
+            # Close tags left open
+            for tag_word, count in open_tags.items():
+                if count > 0:
+                    tag_fixed_str = tag_fixed_str + f"[/{tag_word}]"
+            lines.append(tag_fixed_str)
+    else:
+        lines.append(string)
+    return lines
 
 
 def split_with_quotes(inpt):
@@ -111,34 +235,3 @@ def split_with_quotes(inpt):
     # </editor-fold>
 
     return parts
-
-
-def quarter_round(price):
-    return math.ceil(price * 4) / 4
-
-
-def percentize(numbers: list | dict):
-    if isinstance(numbers, list):
-        total = sum(numbers)
-        percents = [number / total for number in numbers]
-    elif isinstance(numbers, dict):
-        percents = {}
-        total = sum(numbers.values())
-        for number in numbers:
-            percent = numbers[number] / total
-            percents[number] = percent
-    return percents
-
-
-def remove_markup(string):
-    return re.sub(r"\[.*?\]", "", string)
-
-
-def roll_probabilities(choices):
-    if isinstance(choices, dict):
-        if isinstance(list(choices.values())[0], float):
-            if not 0.99 < sum(choices.values()) < 1.01:
-                logger.log("Probabilities do not sum to 1!")
-            return random.choices(list(choices.keys()), weights=list(choices.values()))[0]
-
-    return random.choices(list(choices))[0]

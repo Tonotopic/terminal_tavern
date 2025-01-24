@@ -381,12 +381,12 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 def play_screen(bar, start_game_minutes):
     clock_panel = Panel(renderable="no clock")
     occupancy_panel = Panel(renderable=f"Customers: {len(bar.occupancy.current_customers())}",
-                            border_style=console.get_style("customer"))
+                            border_style=console.get_style("cstmr"))
     balance_panel = Panel(renderable=f"Balance: [money]${"{:.2f}".format(bar.bar_stats.balance)}",
                           border_style=console.get_style("money"))
     log_panel = bar.occupancy.event_log_panel()
     customers_panel = Panel(title=f"Customers ({len(bar.occupancy.current_customers())})",
-                            renderable=bar.occupancy.print_customers(), style=console.get_style("customer"))
+                            renderable=bar.occupancy.print_customers(), style=console.get_style("cstmr"))
 
     play_layout = Layout(name="play_layout")
     play_layout.split_column(Layout(name="top_bar", size=3),

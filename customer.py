@@ -124,7 +124,7 @@ class Customer:
         generate_fav_keywords()
 
     def format_name(self):
-        return f"[customer]{self.name}[/customer]"
+        return f"[cstmr]{self.name}[/cstmr]"
 
     def score(self, game_time, drink: ingredients.MenuItem, drinking=False):
         # TODO: Score with the ingredients they chose
@@ -264,7 +264,7 @@ class Customer:
 
         style = order.get_style()
         bar.occupancy.log(game_time,
-                          f"{self.format_name()} orders {utils.format_a(order.name)} [{style}]{order.name}[/{style}].    "
+                          f"{self.format_name()} orders {utils.format_a(order.name)} [{style}]{order.name}[/{style}]. "
                           f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
         self.score(game_time, order, drinking=True)
 

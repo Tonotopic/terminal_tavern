@@ -25,13 +25,16 @@ class Occupancy:
 
     def log(self, game_time, msg):
         timestamp = utility.clock.print_time(game_time)
-        # msg = timestamp + ": " + msg
+        msg = f"{timestamp}: {msg}"
+        # 6 is panel borders
+        line_width = int((console.width / 2) - 6)
+        lines = utils.split_with_markup(msg, line_width)
 
-        self.event_log.append(f"{timestamp}: {msg}")
+        for line in lines:
+            self.event_log.append(line)
         logger.log(msg)
 
     def event_log_panel(self):
-        line_width = (console.width / 2) - 6
         log_str = ""
         log_lines = self.event_log
         occupied_height = 5
@@ -137,8 +140,8 @@ class Occupancy:
         if len(self.bar.bar_stats.past_customers) >= 6 and random.randrange(3) > 2:
             new_customers = False
 
-        log_msg = f"[attention]New customers enter![/attention] - " if new_customers \
-            else f"[attention]Repeat patrons enter![/attention] - "
+        log_msg = f"[attn]New customers enter![/attn] - " if new_customers \
+            else f"[attn]Repeat patrons enter![/attn] - "
 
         customers = set()
         group_id = self.new_group_id()
