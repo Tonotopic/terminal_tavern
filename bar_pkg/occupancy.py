@@ -4,7 +4,7 @@ from rich.panel import Panel
 
 import customer
 import utility.clock
-from utility import logger, clock
+from utility import logger, clock, utils
 from display.rich_console import console
 
 # TODO: Multi-line log lines don't offset display properly
@@ -25,13 +25,17 @@ class Occupancy:
 
     def log(self, game_time, msg):
         timestamp = utility.clock.print_time(game_time)
+        # msg = timestamp + ": " + msg
+
         self.event_log.append(f"{timestamp}: {msg}")
         logger.log(msg)
 
     def event_log_panel(self):
+        line_width = (console.width / 2) - 6
         log_str = ""
         log_lines = self.event_log
         occupied_height = 5
+
         if len(self.event_log) > console.height - occupied_height:
             log_lines = self.event_log[-(console.height - occupied_height):]
 

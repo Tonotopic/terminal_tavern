@@ -313,7 +313,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             console.print("[error]Current category is not category or ingredient")
 
         # 60 just appears to be the sweet spot here regardless of window size
-        layout["shop_header"].size = 8 if len(header_text) > header_table.columns[1].width + 60 else 7
+        layout["shop_header"].size = 6 + utils.numb_lines(header_text, header_table.columns[1].width + 60)
         header_table.add_row(Text(f"${bar.bar_stats.balance}", console.get_style("money")), header_text)
 
         # </editor-fold>

@@ -3,6 +3,7 @@ import os
 import pickle
 import random
 import sys
+from typing import re
 
 from display.rich_console import console
 from utility import logger
@@ -69,6 +70,17 @@ def debugging():
         return False
 
 
+def numb_lines(string, line_width):
+    line_width = int(line_width)
+    string = remove_markup(string)
+    if len(string) <= line_width:
+        return 1
+    else:
+        remainder = string[line_width:]
+        lines_in_remainder = numb_lines(remainder, line_width)
+    return 1 + lines_in_remainder
+
+
 def quit():
     """Exit the application."""
     logger.log("Received quit command. Exiting...")
@@ -116,6 +128,10 @@ def percentize(numbers: list | dict):
             percent = numbers[number] / total
             percents[number] = percent
     return percents
+
+
+def remove_markup(string):
+    return re.sub(r"\[.*?\]", "", string)
 
 
 def roll_probabilities(choices):

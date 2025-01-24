@@ -1,5 +1,7 @@
 from data.db_connect import get_connection, close_connection
 
+# TODO: Taste profiles as percents
+
 connection = get_connection()
 cursor = connection.cursor()
 cursor.execute("SELECT * FROM tastes")
