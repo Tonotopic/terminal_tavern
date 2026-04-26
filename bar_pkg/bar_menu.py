@@ -211,7 +211,7 @@ class BarMenu:
         self.bar.set_screen("BAR_MENU")
 
         add_commands = ["back", "menu"]
-        add_prompt = "Type a name to add"
+        add_prompt = "Type a beverage name to add"
 
         if add_arg != "":
             inv_ingredients = list_ingredients(self.bar.stock.inventory, add_typ)
@@ -249,6 +249,7 @@ class BarMenu:
                     add_tool_table, add_tool_list = self.bar.table_recipes(off_menu=True)
                     if "new" not in add_commands:
                         add_commands.append("new")
+                    add_prompt = add_prompt + ", or 'new' to create a recipe"
                 else:
                     add_tool_table, add_tool_list = self.bar.stock.table_items(add_typ, off_menu=True)
 
