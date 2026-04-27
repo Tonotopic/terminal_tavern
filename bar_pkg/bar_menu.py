@@ -214,21 +214,27 @@ class BarMenu:
         add_prompt = "Type a beverage name to add"
 
         if add_arg != "":
+            # List drinks that can be added to the menu
             inv_ingredients = list_ingredients(self.bar.stock.inventory, add_typ)
+            # Try to find one of these matching the input
             ing_command = find_command(add_arg, items_to_commands(inv_ingredients))[0]
-            if ing_command is not None:
+
+            if ing_command is not None: # If an ingredient arg was given
+                # Retrieve the ingredient object
                 ingredient = command_to_item(ing_command, inv_ingredients)
                 if ingredient:
+                    # Add to menu
                     self.bar.menu.__getattribute__(add_typ.__name__).append(ingredient)
                     return True
                 else:
-                    console.print("[error]Ingredient arg given to add command, but ingredient not found")
+                    console.print("[error]Valid ingredient arg given to add command, but ingredient not found")
                     return False
             else:
                 console.print("[error]Arg given to add method, but find_command returned None")
                 return False
 
         else:  # No ingredient given
+            # Try to parse as a type of drink to display for adding
             if isinstance(add_typ, str):
                 typ_cmd = find_command(add_typ, [section[1].lower() for section in self.menu_sections()])
                 if not typ_cmd:
@@ -238,6 +244,7 @@ class BarMenu:
                 if add_typ is None:
                     console.print("[error]Add type argument does not match any category")
                     return False
+            # If no ingredient given and we are expecting an ingredient
             if add_typ is Ingredient:
                 console.print("[error]No type or ingredient given to add command. Syntax: add beer")
                 return False

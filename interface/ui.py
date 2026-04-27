@@ -20,16 +20,18 @@ def startup_screen():
     saves_table.add_row()
 
     screen_width, screen_height = console.size
-    # Effective screen size due to panel borders
+    # Subtract the width of the borders to get the effective size the screen contents can be
     screen_width -= 6
     screen_height -= 4
 
-    max_saves_width = 50
-    saves_width = max_saves_width if screen_width // 2 > max_saves_width else screen_width // 2
+    max_width_saves_panel = 50
+    saves_width = max_width_saves_panel if screen_width // 2 > max_width_saves_panel else screen_width // 2
     title_width = screen_width - saves_width
 
-    title_card = "~*~ Terminal Tavern ~*~"
+    # TODO: Center smallest title card on the screen
+    title_card = "~*~ Terminal Tavern ~*~" # Smallest possible title card
     title_card_sizes = [(17, 70), (11, 47), (10, 42), (11, 20)]
+    # Determine and retrieve the largest title card the screen size allows for
     for size in title_card_sizes:
         height, width = size
         if screen_height >= height and title_width >= width:
@@ -46,6 +48,7 @@ def startup_screen():
     startup_layout["startup_layout"].split_row(Layout(name="info_layout", renderable=title_card, size=title_width),
                                                Layout(name="saves_layout", renderable=saves_panel))
 
+    # Populate the saves table
     file_names = utils.list_saves()
     if len(file_names) > 0:
         for i, file_name in enumerate(file_names):
@@ -120,12 +123,14 @@ def menu_screen(bar):
 
     bar.set_screen("BAR_MENU")
     while bar.get_screen() == "BAR_MENU":
+        # <editor-fold desc="Layout">
         menu_tables, menu_list = bar.menu.table_menu(display_type=type_displaying, expanded=True)
+
         bar_menu_panel = Panel(title=f"~*~ {bar.bar_stats.bar_name} Menu ~*~", renderable="render failed",
                                border_style=console.get_style("bar_menu"))
         bar_menu_layout = Layout(name="bar_menu_layout", renderable=bar_menu_panel)
 
-        if len(menu_tables) > 1:
+        if len(menu_tables) > 1: # If there's more than one page of menu
             bar_menu_layout["bar_menu_layout"].split_column(Layout(name="menu", renderable=bar_menu_panel),
                                                             Layout(name="footer", size=1,
                                                                    renderable=live_display.live_prompt))
@@ -133,8 +138,11 @@ def menu_screen(bar):
         else:
             bar_menu_panel.renderable = menu_tables[0]
             console.print(bar_menu_layout)
+        # </editor-fold>
 
+        # <editor-fold desc="Command Handling">
         menu_commands = {"add", "remove", "markup", "markdown", "back", "menu"}
+
         # When viewing a section, don't add menu items as primary commands
         if type_displaying is None:
             logger.log("Bar menu screen drawn - viewing All")
@@ -152,13 +160,17 @@ def menu_screen(bar):
                 bar.set_screen("MAIN")
             else:  # Viewing beer menu, etc.
                 type_displaying = None
+
         elif primary_cmd == "menu":
             bar.set_screen("MAIN")
+
         elif primary_cmd in ["add", "remove", "markup", "markdown"]:
             pass  # Handled by input loop
+
         elif primary_cmd in ["cocktails", "beers", "ciders", "wines", "meads"]:
             item = command_to_item(primary_cmd, menu_list, plural=True)
             type_displaying = item
+
         else:
             section = bar.menu.full_menu() if type_displaying is None else bar.menu.get_section(type_displaying())
             if primary_cmd in [menu_item.name.lower() for menu_item in section]:
@@ -166,6 +178,7 @@ def menu_screen(bar):
                 bar.menu.overview(item)
             else:
                 console.print("[error]No allowed command recognized.")
+        # </editor-fold>
 
 
 def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=None):
@@ -285,6 +298,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             header_text = set_header()
             table_settings["box"] = box.MARKDOWN
 
+            # Setup shop and inventory tables
             shop_tables, shop_list = bar.stock.table_ing_category(table_settings, current_selection, showing_flavored,
                                                                   shop=True)
             inv_table, inv_list = bar.stock.table_ing_category(table_settings, current_selection, showing_flavored)
@@ -293,8 +307,9 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             items = list_ingredients(shop_list, current_selection, no_inheritance=True)
             if items:  # If there are ingredients in this category
                 if not msg:
-                    prompt = "Type a category or product to view"
+                    prompt = "Type a category or product to view" # Add "or product"
 
+            # Add each item in the shop list to available commands
             for command in items_to_commands(shop_list, plural_types=True):
                 shop_commands.add(command)
 
@@ -349,6 +364,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             shop_screen(bar=bar, current_selection=type(current_selection),
                         msg=msg)  # Go back from the ingredient screen
             return
+
         elif primary_cmd == "back":
             if current_selection == Ingredient:
                 bar.set_screen("MAIN")
@@ -362,12 +378,14 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
                     current_selection = current_selection.__base__  # Back to last category
             else:
                 console.print("current_category is not category or ingredient")
+
         elif primary_cmd == "shop":  # exit the shop
             if len(args) > 0:
                 commands.check_shop(args=args, bar=bar, ingredient=None)
             else:
                 bar.set_screen("MAIN")
                 return
+
         elif primary_cmd == "flavored":
             showing_flavored = True
         elif command_to_item(cmd=primary_cmd, lst=shop_list, plural=True):
@@ -379,6 +397,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
 
 def play_screen(bar, start_game_minutes):
+    # Panels
     clock_panel = Panel(renderable="no clock")
     occupancy_panel = Panel(renderable=f"Customers: {len(bar.occupancy.current_customers())}",
                             border_style=console.get_style("cstmr"))
@@ -388,6 +407,7 @@ def play_screen(bar, start_game_minutes):
     customers_panel = Panel(title=f"Customers ({len(bar.occupancy.current_customers())})",
                             renderable=bar.occupancy.print_customers(), style=console.get_style("cstmr"))
 
+    # Layout
     play_layout = Layout(name="play_layout")
     play_layout.split_column(Layout(name="top_bar", size=3),
                              Layout(name="body", renderable=log_panel))
@@ -402,9 +422,11 @@ def play_screen(bar, start_game_minutes):
 
     running = True
     while running:
+        # run_clock runs until input is detected then returns the in-game time at which it was paused
         time_paused = clock.run_clock(bar=bar, start_game_mins=start_game_minutes, clock_panel=clock_panel,
                                       layout=play_layout)
 
+        # Set all current customers as commands
         customer_names = [cstmr.name.lower() for cstmr in bar.occupancy.current_customers()]
         commands = customer_names
 
@@ -412,4 +434,5 @@ def play_screen(bar, start_game_minutes):
         if primary_cmd in customer_names:
             bar.occupancy.customer_displayed = bar.occupancy.get_customer(primary_cmd)
 
+        # Start the clock where it left off
         start_game_minutes = time_paused

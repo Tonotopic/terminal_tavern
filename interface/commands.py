@@ -155,7 +155,7 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
 
     :param inpt: The string from user input.
     :param commands: Optional list of commands to match to.
-    :param force_beginning: Can be set to True to disallow matching to the middle of a command.
+    :param force_beginning: Can be set to True to disallow matching to the middle of a word.
     :param feedback: Whether to print the result to the user.
     """
     # Because "jose" and "silver" on their own will both return multiple products
@@ -168,50 +168,65 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
 
     sorted_commands = sorted(commands)
     sorted_commands.insert(0, "help")
+    # Re-insert "back" at end of list
     if "back" in sorted_commands:
         sorted_commands.remove("back")
         sorted_commands.append("back")
     sorted_commands.append("quit")
+
     if inpt == "" or inpt == '""':
         if feedback:
             console.print(f"Valid commands: {sorted_commands}")
         return None
 
     # <editor-fold desc="Find matching commands">
-    # Startswith matching
+    # Match to words that begin with the input first, then attempt to match to the middle of words
+    # Startswith Matching
     matching_commands = []
     input_words = primary_command.split()
+    # If only one word, that is the primary command
     if len(input_words) == 0:
         input_words[0] = primary_command
 
+    # TODO: Can any of this be abstracted out?
+
     for command in sorted_commands:
         matching = True
-        remaining_command = command
-        while matching:
+        remaining_command = command # This will shrink as words are matched
+
+        while matching: # Until this command is demonstrated not to match the input
+            # If there are too many words in the input, this command does not match
             if len(input_words) > len(command.split()):
                 matching = False
                 break
+
             for input_word in input_words:
                 if not matching:
                     break
                 inpt_word_has_match = False
+                # Try to match the next word in the input to any word in the remaining command
                 for cmd_word in remaining_command.split():
+                    # If 3 or fewer letters are used, or we've forced matching to the beginning of words only
                     if len(input_word) < 4 or force_beginning:
                         if cmd_word.startswith(input_word):
                             inpt_word_has_match = True
+                            #
                             try:
                                 remaining_command = command.split(cmd_word)[1]
                             except IndexError:
                                 remaining_command = command.split(cmd_word)[0]
                             break
                     else:
+                        # Check if the input word is anywhere in the command word
                         pattern = r"\s*".join(input_word)
                         if re.search(pattern, cmd_word):
                             inpt_word_has_match = True
                             break
+                # If any input word does not get a match, this isn't the command
                 if not inpt_word_has_match:
                     matching = False
                     break
+
             if matching:
                 matching_commands.append(command)
                 break
@@ -221,7 +236,9 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
         for command in sorted_commands:
             matching = True
             remaining_command = command
+
             while matching:
+                # If there are too many words in the input, this command does not match
                 if len(input_words) > len(command.split()):
                     matching = False
                 for input_word in input_words:
@@ -229,6 +246,7 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
                         break
                     inpt_word_has_match = False
                     for cmd_word in remaining_command.split():
+                        # Match to beginning of word if <3 letters given
                         if len(input_word) < 3:
                             if cmd_word.startswith(input_word):
                                 inpt_word_has_match = True
@@ -269,26 +287,29 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
                 console.print(f"[error]No matching term found for [cmd]{inpt}")
                 logger.log(f"Valid commands: {sorted_commands}")
         return None
+
+    # If multiple options match, return the shortest/most basic. So that i.e. "lime" on its own can return limes
+    # instead of returning everything lime flavored, leaving no way to find just limes
     elif len(matching_commands) > 1:  # found more than one match
         min_length = 20
-        most_base_cmd = None
+        most_basic_cmd = None
         # Get shortest matching command
         for cmd in matching_commands:
             if len(cmd) < min_length:
                 min_length = len(cmd)
-                most_base_cmd = cmd
+                most_basic_cmd = cmd
         # Check if all command matches contain the shortest
-        if most_base_cmd:
+        if most_basic_cmd:
             all_cmds_contain_base = True
             for cmd in matching_commands:
-                if most_base_cmd not in cmd:
+                if most_basic_cmd not in cmd:
                     all_cmds_contain_base = False
         else:
             all_cmds_contain_base = False
 
         if all_cmds_contain_base:
-            logger.log("Most base command: " + most_base_cmd)
-            return most_base_cmd
+            logger.log("Most basic command: " + most_basic_cmd)
+            return most_basic_cmd
         else:
             if feedback:
                 logger.logprint(f"Matching commands : {matching_commands}")
@@ -309,27 +330,31 @@ def parse_input(prompt=None, commands=None, force_beginning: bool = False, inpt=
     # TODO: As commands with args are added, skip them here
     # If not a command with args, group spaced words together
     parts = inpt.split()
+    # Gather the currently available commands that take args
     arg_commands = ["shop", "buy", "add", "remove", "load", "markup", "markdown"]  # help is added by find_command
     current_arg_cmds = []
     for arg_cmd in arg_commands:
         if arg_cmd in commands:
             current_arg_cmds.append(arg_cmd)
 
-    arg_cmd = find_command(inpt=parts[0], commands=current_arg_cmds, feedback=False)
+    # Determine if a command with args is detected
+    arg_cmd_detected = find_command(inpt=parts[0], commands=current_arg_cmds, feedback=False)
     while True:
-        if arg_cmd is None and not inpt.startswith('"'):
+        # Encase in parentheses either the entire command, or the args if an arg command was detected
+        if arg_cmd_detected is None and not inpt.startswith('"'):
             inpt = f'"{inpt}"'
         elif len(parts) > 1 and not parts[1].startswith('"'):
             parts[1] = '"' + parts[1]
             parts[len(parts) - 1] = parts[len(parts) - 1] + '"'
             inpt = " ".join(parts)
 
+        # Detect command based on all available commands
         inpt_cmd = find_command(inpt=inpt, commands=commands, force_beginning=force_beginning)
 
         # Start over parsing with input wrapped in quotes if the potential arg command we detected isn't accurate
-        if arg_cmd:
-            if inpt_cmd is None or inpt_cmd[0] != arg_cmd:
-                arg_cmd = None
+        if arg_cmd_detected:
+            if inpt_cmd is None or inpt_cmd[0] != arg_cmd_detected:
+                arg_cmd_detected = None
                 inpt = inpt.replace('"', "")
                 continue
 
@@ -341,7 +366,7 @@ def parse_input(prompt=None, commands=None, force_beginning: bool = False, inpt=
                 except ValueError:
                     args[i] = f'"{arg}"'
 
-        else:
+        else: # If no args found
             primary_command = inpt_cmd  # The entire input is one part
             args = []
 
@@ -372,26 +397,34 @@ def input_loop(prompt: str, commands, force_beginning=False, skip: str = None, i
                 bar.set_screen("main")
                 utils.save_bar(bar)
             utils.quit()
+
         elif primary_cmd == "help":
+            # Set all ingredient names as potential args
             ingredient_cmds = items_to_commands(ingredients.all_ingredients)
             help_args = set(help_panels.keys()).union(ingredient_cmds)
 
             arg_input = " ".join(args)
+            # IF no args, draw default help panel
             if arg_input == "":
                 draw_help_panel("help")
                 console.print(f"Help topics: {list(help_panels.keys())}")
                 continue
 
+            # Encase the arg in quotes so all remaining words are processed together
             if not arg_input.startswith('"'):
                 arg_input = f'"{arg_input}"'
-            arg = find_command(arg_input, help_args)
+            arg = find_command(arg_input, help_args) # Find the matching arg
+            # Hard-coded help topics
             if arg in help_panels.keys():
                 draw_help_panel(arg)
                 continue
+            # Ingredient summary
             elif arg in ingredient_cmds:
                 arg_ing = command_to_item(cmd=arg, lst=ingredients.all_ingredients)
                 console.print(arg_ing.description())
                 continue
+
+        # Validate that the input given works for the specific command
         elif callable(globals().get("check_" + primary_cmd)):
             if primary_cmd == skip:
                 return primary_cmd, args
@@ -400,6 +433,7 @@ def input_loop(prompt: str, commands, force_beginning=False, skip: str = None, i
                 return result
             else:
                 continue
+
         else:
             return primary_cmd, args
 
@@ -407,6 +441,8 @@ def input_loop(prompt: str, commands, force_beginning=False, skip: str = None, i
 
 
 # <editor-fold desc="Input Loop Command Checkers">
+# These validate input for all commands, and check the success of many commands
+
 def check_add(args, bar, ingredient):
     """
     Interprets the argument and attempts the process of adding an item to the menu.
@@ -416,17 +452,21 @@ def check_add(args, bar, ingredient):
     :param ingredient: Type being viewed in the menu, if not all. Makes "add" work with no args.
     :return: "add" and args if item added to menu, else None
     """
+    # If no args given
     if ingredient is None and len(args) == 0:
         logger.logprint("[error]Invalid args. Use: 'add cocktail', 'add beer', etc.")
         return None
+    #
     type_displaying = ingredient
-    if type_displaying is None:
+    if type_displaying is None: # If we are looking at the entire menu
+        # Parse arg as a type of beverage to display and add
         typ = command_to_item(find_command(args[0], ["cocktails", "beers", "ciders", "wines", "meads"]),
                               [Recipe, ingredients.Beer, ingredients.Cider, ingredients.Wine, ingredients.Mead],
                               plural=True)
-        if bar.menu.select_to_add(typ):
+        # Display available drinks able to be put on the menu, and attempt to add the user's selection
+        if bar.menu.select_to_add(typ): # If successfully added
             return "add", args
-    else:
+    else: # If we are displaying just one type of beverage on the menu
         if bar.menu.select_to_add(type_displaying):
             return "add", args
 

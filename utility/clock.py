@@ -23,7 +23,7 @@ def print_time(mins):
 
 def current_game_mins(start_game_mins):
     global game_mins_per_sec
-    elapsed_real_secs = time.perf_counter() - start_real_time
+    elapsed_real_secs = time.perf_counter() - real_time_at_start
     elapsed_game_mins = int(elapsed_real_secs * game_mins_per_sec)
     current_mins = start_game_mins + elapsed_game_mins
     return current_mins
@@ -31,8 +31,8 @@ def current_game_mins(start_game_mins):
 
 def run_clock(bar, start_game_mins, clock_panel, layout):
     def start_clock():
-        global start_real_time
-        start_real_time = time.perf_counter()
+        global real_time_at_start
+        real_time_at_start = time.perf_counter()
 
     def update_play_layout(stop_func, live):
         def update_clock():
@@ -72,5 +72,6 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
 
     start_clock()
     global game_mins_per_sec
-    draw_live(update_function=update_play_layout, sec=1 / game_mins_per_sec)
+    draw_live(update_function=update_play_layout, sec=1 / game_mins_per_sec) # Runs until input is detected then pauses
+    # Returns the in-game time that the game was paused at
     return current_game_mins(start_game_mins)
