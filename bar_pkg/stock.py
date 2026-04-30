@@ -202,7 +202,7 @@ class BarStock:
         """Lists the ingredients in stock of a specified type, with an optional minimum volume."""
         lst = []
         for item in self.inventory:
-            if type(item) is typ and self.inventory[item] >= min_vol:
+            if issubclass(type(item), typ) or type(item) is typ and self.inventory[item] >= min_vol:
                 lst.append(item)
         return lst
 
