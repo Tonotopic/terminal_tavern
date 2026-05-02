@@ -49,11 +49,12 @@ class Customer:
         self.fav_ingreds = set()
         self.fav_keywords = set()
 
+        self.times_visited = 0
+        self.bar_love = 0
         self.revealed_favs = {"Preferred drink type": None, "Favorite spirit": None, "Favorite tastes": set(),
                               "Favorite ingredients": set(), "Favorite keywords": set()}
-        self.times_visited = 0
+        self.comments_made = set()
         self.order_history = []
-        self.bar_love = 0
 
     def generate_customer(self):
         tag_field = None
@@ -229,8 +230,10 @@ class Customer:
 
         typ = self.drink_pref().format_type().lower()
         typs = self.drink_pref().format_type(plural=True).lower()
+        # If their favorite type of drink is on the menu
         if len(bar.menu.get_section(self.drink_pref)) > 0:
-            if len(bar.menu.get_section(self.drink_pref)) < 4:
+            # If there's not many of that type of drink on the menu, and this customer hasn't already commented on this
+            if len(bar.menu.get_section(self.drink_pref)) < 4 and f"no {typs}" not in self.comments_made:
                 self.say(game_time, msg=random.choice([f"There's not a lot of {typs}...",
                                                        f"I was thinking there would be more {typs}...",
                                                        f"They don't have much of a {typ} selection...",
@@ -238,10 +241,11 @@ class Customer:
                                                        f"Not many {typs} at this place...",
                                                        f"My favorite places have a few more {typs}.",
                                                        f"I'd rather have a {typ}, but there aren't too many here.", ]))
+                self.comments_made.add(f"no {typs}")
 
             ordering_pref_drink = utils.roll_probabilities(ratio_chances["order preferred drink type"])
-        else:
-            if random.randint(1, 6) > 5:
+        else: # If the bar doesn't have their favorite type of drink
+            if f"not many {typs}" not in self.comments_made and random.randint(1, 3) == 1:
                 self.say(game_time, msg=random.choice([f"Wish I could have a {typ}.", f"I could really go for a {typ}.",
                                                        f"Aw, they don't have any {typs}.",
                                                        f"Let's go somewhere with {typ} next.",
@@ -249,6 +253,8 @@ class Customer:
                                                        f"What I could really use is a {typ}.",
                                                        f"I was thinking there'd be {typs}.", f"I'd love a {typ}.",
                                                        f"I like my {typ} bars a little better."]))
+                self.comments_made.add(f"not many {typs}")
+
             ordering_pref_drink = False
         if ordering_pref_drink:
             order = utils.roll_probabilities(bar.menu.get_section(self.drink_pref))
@@ -361,6 +367,7 @@ class Customer:
 
         panel = Panel(renderable=table)
         return panel
+
 
 
 def create_customer(bar):
