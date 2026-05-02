@@ -208,7 +208,12 @@ class BarStock:
 
     def check_ingredients(self, recipe):
         """Checks if there are enough of all ingredients in stock to make the recipe."""
-        # TODO: This doesn't actually print, or prevent the drink from being sold if it runs out during business hours
+        def print(msg):
+            if self.bar.get_screen() == "PLAY":
+                self.bar.occupancy.print_msg(msg=msg)
+            else:
+                logger.logprint(msg)
+
         logger.log(f"Checking ingredients for {recipe.name}...")
         ing_missing = False
         for req_ingredient, req_quantity in recipe.r_ingredients.items():
@@ -235,11 +240,11 @@ class BarStock:
                 if not has_enough:
                     if not ing_missing:
                         ing_missing = True
-                        logger.logprint(f"[error]Ingredients missing for {recipe.name}:")
+                        print(f"[error]Ingredients missing for {recipe.name}:[/error]")
                     if found_match:
-                        logger.logprint(f"[error] Not enough {req_ingredient().format_type()}!")
+                        print(f"[error] Not enough {req_ingredient().format_type()}![/error]")
                     else:
-                        logger.logprint(f"[error] No {req_ingredient().format_type()}!")
+                        print(f"[error] No {req_ingredient().format_type()}!")
                     # Continue looping so all missing ingredients are printed
 
             else:  # Specific ingredient required
@@ -247,7 +252,7 @@ class BarStock:
                 if req_ingredient.name == "soda water":
                     continue
                 req_quantity = req_ingredient.get_portions()[req_quantity]
-                # Check that the ingredient is in inventory with enugh volume
+                # Check that the ingredient is in inventory with enough volume
                 if req_ingredient in self.inventory:
                     if self.inventory[req_ingredient] >= req_quantity:
                         logger.log(f"   {req_ingredient.name} in quantity {self.inventory[req_ingredient]} "
@@ -255,16 +260,16 @@ class BarStock:
                     else:
                         if not ing_missing:
                             ing_missing = True
-                            console.print(f"[error]Ingredients missing for {recipe.name}:")
+                            print(f"[error]Ingredients missing for {recipe.name}:")
                         logger.log(
                             f"{req_ingredient.name} in quantity {self.inventory[req_ingredient]} "
                             f"not enough to satisfy requirement of {req_quantity}")
-                        logger.logprint(f"[error] Not enough {req_ingredient.name}!")
+                        print(f"[error] Not enough {req_ingredient.name}!")
                 else:
                     if not ing_missing:
                         ing_missing = True
-                        logger.logprint(f"[error]Ingredients missing for {recipe.name}:")
-                    logger.logprint(f"[error] No {req_ingredient.name}!")
+                        print(f"[error]Ingredients missing for {recipe.name}:")
+                    print(f"[error] No {req_ingredient.name}!")
                 # Add quantity check if needed
         if ing_missing:
             return False
@@ -279,9 +284,6 @@ class BarStock:
         else:
             if self.inventory[menu_item] >= menu_item.pour_vol():
                 return True
-            else:
-                console.print(f"[error]Not enough {menu_item.name}!")
-
         return False
 
     def select_ingredients(self, recipe, randoms=False):

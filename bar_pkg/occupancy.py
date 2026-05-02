@@ -21,15 +21,16 @@ class Occupancy:
 
         self.group_id_counter = 1
 
-    def print_msg(self, game_time, msg):
+    def print_msg(self, msg, game_time=None):
         """
         Prints occupancy/customer events to the bar event log on the game screen, and to the logger file.
 
         :param game_time: The in-game time the message's timestamp will bear.
         :param msg: The message to send the player (and the logger).
         """
-        timestamp = utility.clock.print_time(game_time)
-        msg = f"{timestamp}: {msg}"
+        if game_time:
+            timestamp = utility.clock.print_time(game_time)
+            msg = f"{timestamp}: {msg}"
 
         # Divide the message so it wraps when it reaches the panel's width
         line_width = int((console.width / 2) - 6) # Panel borders take up 6 characters' width
@@ -119,7 +120,7 @@ class Occupancy:
                         for cstmr in group.customers:
                             cstmr.times_visited += 1
                         log_msg = f"{next(iter(group.customers)).format_name()} leaves the bar."
-                    self.print_msg(game_time, log_msg)
+                    self.print_msg(log_msg, game_time)
 
             for group_leaving in groups_leaving:
                 self.current_customer_groups.remove(group_leaving)
@@ -195,4 +196,4 @@ class Occupancy:
         group.arrival = game_time
 
         self.current_customer_groups.add(group)
-        self.print_msg(game_time, log_msg)
+        self.print_msg(log_msg, game_time)

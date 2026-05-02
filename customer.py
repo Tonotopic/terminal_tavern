@@ -198,7 +198,9 @@ class Customer:
         logger.log(f"{points} points total")
         return points
 
-    def order(self, bar, game_time):
+    def order(self, bar, game_time, exclude=None):
+        if not exclude:
+            exclude = set()
         bar.occupancy.customer_displayed = self
 
         def order_type_probabilities():
@@ -243,6 +245,7 @@ class Customer:
                                                        f"I'd rather have a {typ}, but there aren't too many here.", ]))
                 self.comments_made.add(f"no {typs}")
 
+            # Roll for whether they order their favorite kind of drink, or branch out
             ordering_pref_drink = utils.roll_probabilities(ratio_chances["order preferred drink type"])
         else: # If the bar doesn't have their favorite type of drink
             if f"not many {typs}" not in self.comments_made and random.randint(1, 3) == 1:
@@ -257,7 +260,12 @@ class Customer:
 
             ordering_pref_drink = False
         if ordering_pref_drink:
-            order = utils.roll_probabilities(bar.menu.get_section(self.drink_pref))
+            # Exclude any we've already tried to order but were out of
+            available_menu = bar.menu.get_section(self.drink_pref)
+            for excluded_item in exclude:
+                available_menu.remove(excluded_item)
+            # Roll for order
+            order = utils.roll_probabilities(available_menu)
         else:
             order_type_probs = order_type_probabilities()
 
@@ -268,17 +276,25 @@ class Customer:
                 scores[menu_item] = self.score(game_time, menu_item)
             order = utils.roll_probabilities(scores)
 
-        style = order.get_style()
-        bar.occupancy.print_msg(game_time,
-                          f"{self.format_name()} orders {utils.format_a(order.name)} [{style}]{order.name}[/{style}]. "
-                          f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
+        # TODO: Do something with drink score
         self.score(game_time, order, drinking=True)
 
-        bar.make_sale(order)
-        self.order_history.append(order)
+        style = order.get_style()
+        if bar.make_sale(order):
+            bar.occupancy.print_msg(game_time=game_time,
+                                    msg=f"{self.format_name()} orders {utils.format_a(order.name)} "
+                                        f"[{style}]{order.name}[/{style}]. "
+                                        f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
+            self.order_history.append(order)
+        else:
+            bar.occupancy.print_msg(game_time=game_time, msg=f"{self.format_name()} tried to order "
+                                                             f"{utils.format_a(order.name)} "
+                                                             f"[{style}]{order.name}[/{style}], but you ran out!")
+            exclude.add(order)
+            self.order(bar, game_time, exclude)
 
     def say(self, game_time, msg):
-        self.bar.occupancy.print_msg(game_time, f"[dimmed]{self.name}: {msg}[/dimmed]")
+        self.bar.occupancy.print_msg(game_time=game_time, msg=f"[dimmed]{self.name}: {msg}[/dimmed]")
 
     def is_revealed(self, pref):
         if isinstance(pref, type):

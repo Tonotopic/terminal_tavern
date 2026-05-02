@@ -214,4 +214,5 @@ class Bar:
             logger.log(f"Reputation +1 ({self.reputation})")'''
             return True
         else:
+            self.occupancy.print_msg(f"[error]Not enough {menu_item.name}![/error]")
             return False
