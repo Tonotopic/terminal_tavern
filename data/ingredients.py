@@ -435,7 +435,7 @@ class Beer(Alcohol, MenuItem):
         MenuItem.__init__(self)
 
     @override
-    def get_portions(self):
+    def  get_portions(self):
         return {"8oz": 8, "5oz": 5, "2oz": 2, "1oz": 1}
 
     def pour_vol(self):

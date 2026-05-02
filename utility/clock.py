@@ -61,7 +61,7 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
                 layout["customer_panel"].update(bar.occupancy.customer_displayed.customer_panel())
 
         update_clock()
-        bar.occupancy.check_bar_events(current_game_mins(start_game_mins))
+        bar.occupancy.check_customer_events(current_game_mins(start_game_mins))
         update_customer_count()
         update_customer_panel()
         update_balance()

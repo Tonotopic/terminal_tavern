@@ -172,10 +172,10 @@ def menu_screen(bar):
             type_displaying = item
 
         else:
-            section = bar.menu.full_menu() if type_displaying is None else bar.menu.get_section(type_displaying())
+            section = bar.menu.list_full_menu() if type_displaying is None else bar.menu.get_section(type_displaying())
             if primary_cmd in [menu_item.name.lower() for menu_item in section]:
                 item = command_to_item(primary_cmd, menu_list)
-                bar.menu.overview(item)
+                bar.menu.drink_overview(item)
             else:
                 console.print("[error]No allowed command recognized.")
         # </editor-fold>

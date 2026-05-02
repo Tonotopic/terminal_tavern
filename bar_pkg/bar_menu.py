@@ -24,12 +24,12 @@ class BarMenu:
         self.wine: list[Wine] = []
         self.mead: list[Mead] = []
 
-    # <editor-fold desc="Sections">
-    def full_menu(self):
+    # <editor-fold desc="List">
+    def list_full_menu(self):
         """Returns a single list containing all menu items across categories."""
         return self.cocktails + self.beer + self.cider + self.wine + self.mead
 
-    def menu_sections(self):
+    def list_menu_by_section(self):
         """Returns tuples of each actual menu section, their names, and their type class."""
         return [(self.cocktails, "Cocktails", Recipe), (self.beer, "Beer", Beer), (self.cider, "Cider", Cider),
                 (self.wine, "Wine", Wine), (self.mead, "Mead", Mead)]
@@ -42,18 +42,18 @@ class BarMenu:
         :return: The section itself i.e. self.cocktails, self.beer
         """
         if isinstance(item, str):
-            for category in self.menu_sections():
+            for category in self.list_menu_by_section():
                 if item == category[1].lower():
                     return category[0]
-            menu_item = find_command(item, items_to_commands(self.full_menu()))
+            menu_item = find_command(item, items_to_commands(self.list_full_menu()))
             if menu_item:
-                item = command_to_item(menu_item, self.full_menu())
+                item = command_to_item(menu_item, self.list_full_menu())
         elif isinstance(item, type):
-            for section in self.menu_sections():
+            for section in self.list_menu_by_section():
                 if section[2] == item:
                     return section[0]
         else:
-            for section, sect_name, sect_type in self.menu_sections():
+            for section, sect_name, sect_type in self.list_menu_by_section():
                 if isinstance(item, sect_type):
                     return section
 
@@ -88,7 +88,7 @@ class BarMenu:
 
             table_section = table_1
             buffer = 9 if expanded else 11
-            for menu_section, sect_name, sect_typ in self.menu_sections():
+            for menu_section, sect_name, sect_typ in self.list_menu_by_section():
                 if len(table_section.rows) > console.height - buffer - 2:
                     table_section = Table(**table_settings)
                     tables.append(table_section)
@@ -109,7 +109,7 @@ class BarMenu:
         # Viewing specifically the Beer menu, Cocktail menu, etc
         else:
             display_section = None
-            for menu_section, sect_name, sect_typ in self.menu_sections():
+            for menu_section, sect_name, sect_typ in self.list_menu_by_section():
                 if display_type == sect_typ:
                     display_section = menu_section
                     break
@@ -133,7 +133,7 @@ class BarMenu:
 
         return tables, lst
 
-    def overview(self, item):
+    def drink_overview(self, item):
         """
         Displays information on a single menu item.
         :param item: The menu item being displayed.
@@ -171,7 +171,7 @@ class BarMenu:
 
     def reload(self):
         """Reloads all drinks and ingredients on the menu from the database to reflect any DB changes."""
-        for menu_section in self.menu_sections():
+        for menu_section in self.list_menu_by_section():
             menu_section = menu_section[0]
             new_section = []
             menu_item = None
@@ -235,7 +235,7 @@ class BarMenu:
         else:  # No ingredient given
             # Try to parse as a type of drink to display for adding
             if isinstance(add_typ, str):
-                typ_cmd = find_command(add_typ, [section[1].lower() for section in self.menu_sections()])
+                typ_cmd = find_command(add_typ, [section[1].lower() for section in self.list_menu_by_section()])
                 if not typ_cmd:
                     console.print(f"[error]{typ_cmd} did not match to a menu category")
                     return False
@@ -248,11 +248,12 @@ class BarMenu:
                 console.print("[error]No type or ingredient given to add command. Syntax: add beer")
                 return False
 
+            # Viewing a particular category to add drinks to
             adding = True
             logger.log("Adding " + add_typ().format_type())
             while adding:
                 if add_typ == Recipe:
-                    add_tool_table, add_tool_list = self.bar.table_recipes(off_menu=True)
+                    add_tool_table, add_tool_list = self.bar.table_recipes(off_menu_only=True)
                     if "new" not in add_commands:
                         add_commands.append("new")
                     add_prompt = add_prompt + ", or 'new' to create a recipe"
@@ -290,9 +291,9 @@ class BarMenu:
         :param remove_arg: The user's input on which item to remove
         :return: True if item successfully removed, else False
         """
-        item_cmd = find_command(remove_arg, items_to_commands(self.full_menu()))
+        item_cmd = find_command(remove_arg, items_to_commands(self.list_full_menu()))
         if item_cmd:
-            rmv_item = command_to_item(item_cmd, self.full_menu())
+            rmv_item = command_to_item(item_cmd, self.list_full_menu())
             menu_section = self.get_section(rmv_item)
             menu_section.remove(rmv_item)
             logger.log(f"Removing {rmv_item.name} from the menu.")
@@ -313,11 +314,11 @@ class BarMenu:
             console.print("[error]Syntax: 'markup \\[menu item/category]'")
             return False
         else:
-            category_strings = [cat[1].lower() for cat in self.menu_sections()]
-            menu_args = items_to_commands(self.full_menu()).union(set(category_strings))
+            category_strings = [cat[1].lower() for cat in self.list_menu_by_section()]
+            menu_args = items_to_commands(self.list_full_menu()).union(set(category_strings))
             cmd = find_command(mark_arg, menu_args)
             if cmd in menu_args:
-                item = command_to_item(cmd, self.full_menu() + [section[2] for section in self.menu_sections()])
+                item = command_to_item(cmd, self.list_full_menu() + [section[2] for section in self.list_menu_by_section()])
                 if isinstance(item, type):
                     obj = item()
                     style = obj.get_style()
@@ -382,7 +383,7 @@ class BarMenu:
     def check_stock(self):
         """Returns False if any menu items are out of stock, or True if all can currently be poured."""
         missing_something = False
-        for menu_item in self.full_menu():
+        for menu_item in self.list_full_menu():
             if not self.bar.stock.has_enough(menu_item):
                 missing_something = True
                 console.print(

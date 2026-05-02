@@ -40,19 +40,22 @@ class Bar:
 
     # <editor-fold desc="Recipes">
     # @TODO: '2 whole maraschino cherry'
-    def table_recipes(self, off_menu=False):
+    def table_recipes(self, off_menu_only=False):
         """
-        Table all stored recipes, or just those that are not currently on the menu.
+        Table all stored recipes, or optionally, just those that are not already on the menu currently.
 
-        :param off_menu: Set true to exclude recipes already on the menu, such as when adding to the menu
+        :param off_menu_only: Set true to exclude recipes already on the menu, such as when adding to the menu
         :return: A table displaying the cocktail's name and recipe, and a list of the recipe objects
         """
         recipes_list = []
         recipes_table = Table()
+
         recipes_table.add_column("name")
         recipes_table.add_column("ingredients")
+
         for recipe_name in self.recipes:
-            if off_menu and self.recipes[recipe_name] in self.menu.cocktails:
+            # Skip if on the menu already, and we're only displaying off-menu drinks
+            if off_menu_only and self.recipes[recipe_name] in self.menu.cocktails:
                 continue
             ingredients_string = self.recipes[recipe_name].format_ingredients()
             recipes_table.add_row(Text(recipe_name, style=console.get_style("cocktails")), ingredients_string)
@@ -81,6 +84,7 @@ class Bar:
         writing_recipe = True
         recipe_dict = {}
         while writing_recipe:
+            # Table a breakdown of the ingredients so far
             recip = Recipe(name="in-progress", r_ingredients=recipe_dict)
             recipe_table = recip.breakdown_ingredients()
 
@@ -90,11 +94,13 @@ class Bar:
 
             console.print(new_recipe_layout)
 
+            # Find the ingredient to add
             rcp_write_prompt = "Enter a type (e.g. bourbon), an ingredient (e.g. lemon, patron silver), or 'finish'"
             cmds = type_args | ingredient_args
             cmds.add("back")
             cmds.add("finish")
 
+            # Get input
             cmd = commands.input_loop(rcp_write_prompt, cmds, bar=self)[0]
 
             if cmd == "finish":
@@ -109,25 +115,28 @@ class Bar:
             elif cmd == "back":
                 writing_recipe = False
 
-            matching_typ = None
-            matching_obj = None
+            # If not a command, try to match input to a type of ingredient
+            matching_type = None
+            matching_type_object = None
             for type_arg in type_args:
                 if cmd == type_arg:
-                    matching_typ = commands.command_to_item(type_arg, type_lst)
-                    matching_obj = matching_typ()
-                    ingredient = matching_obj.format_type()
+                    matching_type = commands.command_to_item(type_arg, type_lst)
+                    matching_type_object = matching_type()
+                    ingredient = matching_type_object.format_type()
 
-            if matching_obj is None:
+            # If not a type of ingredient, match to a specific ingredient
+            if matching_type_object is None:
                 for ingredient_arg in ingredient_args:
                     if cmd == ingredient_arg:
-                        matching_obj = commands.command_to_item(ingredient_arg, ingredients.all_ingredients)
-                        ingredient = matching_obj.name
+                        matching_type_object = commands.command_to_item(ingredient_arg, ingredients.all_ingredients)
+                        ingredient = matching_type_object.name
 
-            if matching_obj is None:
+            if matching_type_object is None:
                 console.print("[error]No matching type or ingredient")
                 continue
 
-            portions_table, portions_list = matching_obj.table_portions()
+            # Select portion
+            portions_table, portions_list = matching_type_object.table_portions()
             portions_list.append("back")
 
             portioning_panel = Panel(title=f"Portioning {ingredient}", renderable=portions_table,
@@ -140,12 +149,12 @@ class Bar:
             portion_command = commands.input_loop(rcp_write_prompt, portions_list, force_beginning=True, bar=self)[0]
             if portion_command == "back":
                 continue
-            for portion in matching_obj.get_portions():
+            for portion in matching_type_object.get_portions():
                 if portion_command == portion.lower():
-                    if matching_typ:
-                        recipe_dict[type(matching_obj)] = portion
+                    if matching_type:
+                        recipe_dict[type(matching_type_object)] = portion
                     else:
-                        recipe_dict[matching_obj] = portion
+                        recipe_dict[matching_type_object] = portion
 
     def reload_ingredients(self):
         """

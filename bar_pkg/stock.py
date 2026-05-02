@@ -208,16 +208,19 @@ class BarStock:
 
     def check_ingredients(self, recipe):
         """Checks if there are enough of all ingredients in stock to make the recipe."""
+        # TODO: This doesn't actually print, or prevent the drink from being sold if it runs out during business hours
         logger.log(f"Checking ingredients for {recipe.name}...")
         ing_missing = False
         for req_ingredient, req_quantity in recipe.r_ingredients.items():
-            if isinstance(req_ingredient, type):  # Check if requirement is a type (accepts any)
+            # If requirement is a type (accepts any ingredient of the type)
+            if isinstance(req_ingredient, type):
+                # Find the amount from the recipe among the ingredient's possible quantities
                 req_quantity = req_ingredient().get_portions()[req_quantity]
                 found_match = False
                 has_enough = False
+                # Find an ingredient in stock of the right type
                 for inv_ingredient in self.inventory:
-                    if isinstance(inv_ingredient,
-                                  req_ingredient):
+                    if isinstance(inv_ingredient, req_ingredient):
                         found_match = True
                         if self.inventory[inv_ingredient] >= req_quantity:
                             has_enough = True
@@ -228,6 +231,7 @@ class BarStock:
                         else:
                             logger.log(f"   {inv_ingredient.name} in quantity {self.inventory[inv_ingredient]} "
                                        f"not enough for {req_ingredient().format_type()} requirement")
+                # If no ingredients found with enough volume to pour, there is an ingredient missing for the recipe
                 if not has_enough:
                     if not ing_missing:
                         ing_missing = True
@@ -237,10 +241,13 @@ class BarStock:
                     else:
                         logger.logprint(f"[error] No {req_ingredient().format_type()}!")
                     # Continue looping so all missing ingredients are printed
+
             else:  # Specific ingredient required
+                # Club soda is infinite
                 if req_ingredient.name == "soda water":
                     continue
                 req_quantity = req_ingredient.get_portions()[req_quantity]
+                # Check that the ingredient is in inventory with enugh volume
                 if req_ingredient in self.inventory:
                     if self.inventory[req_ingredient] >= req_quantity:
                         logger.log(f"   {req_ingredient.name} in quantity {self.inventory[req_ingredient]} "

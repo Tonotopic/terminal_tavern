@@ -202,7 +202,7 @@ class Customer:
 
         def order_type_probabilities():
             probs = {}
-            for section in bar.menu.menu_sections():
+            for section in bar.menu.list_menu_by_section():
                 if len(section[0]) == 0:
                     continue
                 typ = section[2]
@@ -263,7 +263,7 @@ class Customer:
             order = utils.roll_probabilities(scores)
 
         style = order.get_style()
-        bar.occupancy.log(game_time,
+        bar.occupancy.print_msg(game_time,
                           f"{self.format_name()} orders {utils.format_a(order.name)} [{style}]{order.name}[/{style}]. "
                           f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
         self.score(game_time, order, drinking=True)
@@ -272,7 +272,7 @@ class Customer:
         self.order_history.append(order)
 
     def say(self, game_time, msg):
-        self.bar.occupancy.log(game_time, f"[dimmed]{self.name}: {msg}[/dimmed]")
+        self.bar.occupancy.print_msg(game_time, f"[dimmed]{self.name}: {msg}[/dimmed]")
 
     def is_revealed(self, pref):
         if isinstance(pref, type):
