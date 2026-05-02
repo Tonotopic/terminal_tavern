@@ -385,7 +385,6 @@ class Customer:
         return panel
 
 
-
 def create_customer(bar):
     new_customer = Customer(bar)
     new_customer.generate_customer()

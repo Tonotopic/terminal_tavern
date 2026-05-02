@@ -11,8 +11,6 @@ from display.rich_console import console, standardized_spacing, all_styles
 from utility import logger, utils
 from utility.utils import quarter_round
 
-# TODO: Mezcal vs Tequila
-
 all_ingredients = []
 all_ingredients_dict = {}
 
@@ -853,8 +851,12 @@ class OldTomGin(Gin):
 
 # </editor-fold>
 
+class Mezcal(Spirit):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
 
-class Tequila(Spirit):
+class Tequila(Mezcal):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
