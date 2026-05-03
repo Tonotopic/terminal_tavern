@@ -7,10 +7,6 @@ import utility.clock
 from display.rich_console import console
 from utility import logger, utils
 
-global last_entry_time
-last_entry_time = None
-
-
 class Occupancy:
     def __init__(self, bar):
         self.bar = bar
@@ -20,6 +16,8 @@ class Occupancy:
         self.customer_displayed = None
 
         self.group_id_counter = 1
+        self.last_new_customer_time = None
+        self.last_return_customer_time = None
 
     def print_msg(self, msg, game_time=None):
         """
@@ -72,14 +70,13 @@ class Occupancy:
         """
         def check_customer_entry():
             """Triggers customers to enter based on how long it's been since the last customers entered."""
-            global last_entry_time
-            #
-            if not last_entry_time:
+
+            if not self.last_new_customer_time:
                 self.enter_customer_group(game_time)
-                last_entry_time = game_time
-            elif game_time > last_entry_time + 20:
+                self.last_new_customer_time = game_time
+            elif game_time > self.last_new_customer_time + 20:
                 self.enter_customer_group(game_time)
-                last_entry_time = game_time
+                self.last_new_customer_time = game_time
 
         def check_customer_orders():
             """Triggers orders from customers based on when they ordered their last round."""
