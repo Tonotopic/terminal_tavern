@@ -312,8 +312,6 @@ class Customer:
                     return
 
         # Order decided. Try to make the sale
-        self.score(game_time, order, drinking=True)
-
         style = order.get_style()
         # If the drink hasn't run out
         if bar.make_sale(order):
@@ -322,6 +320,7 @@ class Customer:
                                         f"[{style}]{order.name}[/{style}]. "
                                         f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
             self.order_history.append(order)
+            self.score(game_time, order, drinking=True)
         else: # Drink has run out
             # Try to order again with this drink excluded
             bar.occupancy.print_msg(game_time=game_time, msg=f"{self.format_name()} tried to order "
