@@ -72,15 +72,16 @@ class Occupancy:
             """Triggers customers to enter based on how long it's been since the last customers entered."""
 
             if not self.last_new_customer_time:
-                self.enter_customer_group(game_time)
+                self.enter_new_customer_group(game_time)
                 self.last_new_customer_time = game_time
             elif game_time > self.last_new_customer_time + 20:
-                self.enter_customer_group(game_time)
+                self.enter_new_customer_group(game_time)
                 self.last_new_customer_time = game_time
 
         def check_customer_orders():
             """Triggers orders from customers based on when they ordered their last round."""
-            for group in self.current_customer_groups:
+            groups_at_start = self.current_customer_groups.copy() # Ensures set doesn't change size during iteration
+            for group in groups_at_start:
                 # Order the first round 5 minutes in
                 if group.last_round is None:
                     ref_time = group.arrival + 5
@@ -93,34 +94,9 @@ class Occupancy:
 
         def check_customers_leaving():
             """Triggers customers to leave based on how long they've been in the bar."""
-            groups_leaving = set()
-            for group in self.current_customer_groups:
+            for group in self.current_customer_groups.copy():
                 if game_time > group.arrival + 90:
-                    self.bar.bar_stats.past_customers[group.group_id] = group
-                    groups_leaving.add(group)
-
-                    log_msg = ""
-                    if len(group.customers) > 1:
-                        for i, cstmr in enumerate(group.customers):
-                            cstmr.times_visited += 1
-                            if i == len(group.customers) - 1:
-                                log_msg = log_msg + "and "
-                            log_msg = "" + log_msg + cstmr.format_name()
-                            if len(group.customers) > 2:
-                                log_msg = log_msg + ", "
-                            else:
-                                log_msg = log_msg + " "
-                        if len(group.customers) > 2:
-                            log_msg = log_msg[:-2] + " "
-                        log_msg = log_msg + "are leaving the bar."
-                    else:
-                        for cstmr in group.customers:
-                            cstmr.times_visited += 1
-                        log_msg = f"{next(iter(group.customers)).format_name()} leaves the bar."
-                    self.print_msg(log_msg, game_time)
-
-            for group_leaving in groups_leaving:
-                self.current_customer_groups.remove(group_leaving)
+                    group.leave(self.bar, game_time)
 
         check_customer_entry()
         check_customer_orders()
@@ -155,7 +131,7 @@ class Occupancy:
         self.group_id_counter += 1
         return group_id
 
-    def enter_customer_group(self, game_time):
+    def enter_new_customer_group(self, game_time):
         # Chances for different group sizes to spawn
         group_sizes = {1: 4,
                        2: 2.5,
@@ -190,6 +166,8 @@ class Occupancy:
             log_msg = log_msg[:-2]
 
         group = customer.CustomerGroup(group_id=group_id, customers=customers)
+        for member in customers:
+            member.group = group
         group.arrival = game_time
 
         self.current_customer_groups.add(group)

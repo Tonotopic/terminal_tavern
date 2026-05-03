@@ -145,12 +145,16 @@ def remove_markup(string):
 
 
 def roll_probabilities(choices):
+    if not choices:
+        return None
+    # If there are weights, use them
     if isinstance(choices, dict):
         if isinstance(list(choices.values())[0], float):
             if not 0.99 < sum(choices.values()) < 1.01:
                 logger.log("Probabilities do not sum to 1!")
             return random.choices(list(choices.keys()), weights=list(choices.values()))[0]
 
+    # If there are no weights, return a random choice
     return random.choices(list(choices))[0]
 
 

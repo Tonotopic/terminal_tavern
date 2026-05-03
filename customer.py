@@ -199,9 +199,6 @@ class Customer:
         return points
 
     def order(self, bar, game_time, exclude=None):
-        if not exclude:
-            exclude = set()
-        bar.occupancy.customer_displayed = self
 
         def order_type_probabilities():
             probs = {}
@@ -230,6 +227,26 @@ class Customer:
                     pass
             return probs
 
+        def favorite_of_list(list):
+            scores = {}
+            for menu_item in list:
+                scores[menu_item] = self.score(game_time, menu_item)
+            return utils.roll_probabilities(scores)
+
+        def no_drinks():
+            self.say(game_time, random.choice([
+                "Fine, I'm out of here.",
+                "Damn, seriously?",
+                "How does a bar run out of drinks?",
+                "Is this a joke?",
+                "No drinks? Are you serious?",
+                "There's really nothing left to drink?", ]))
+            self.group.leave(bar, game_time)
+
+        if not exclude:
+            exclude = set()
+        bar.occupancy.customer_displayed = self
+
         typ = self.drink_pref().format_type().lower()
         typs = self.drink_pref().format_type(plural=True).lower()
         # If their favorite type of drink is on the menu
@@ -257,39 +274,59 @@ class Customer:
                                                        f"I was thinking there'd be {typs}.", f"I'd love a {typ}.",
                                                        f"I like my {typ} bars a little better."]))
                 self.comments_made.add(f"not many {typs}")
-
             ordering_pref_drink = False
+
         if ordering_pref_drink:
             # Exclude any we've already tried to order but were out of
             available_menu = bar.menu.get_section(self.drink_pref)
             for excluded_item in exclude:
-                available_menu.remove(excluded_item)
-            # Roll for order
-            order = utils.roll_probabilities(available_menu)
-        else:
-            order_type_probs = order_type_probabilities()
+                if excluded_item in  available_menu:
+                    available_menu.remove(excluded_item)
+            # If there are none left of their favorite drink type, proceed to order from another drink type
+            if len(available_menu) < 1:
+                ordering_pref_drink = False
+            else:
+                # Roll to determine which of their favorite type of drink to order
+                order = utils.roll_probabilities(available_menu)
 
-            order_typ = utils.roll_probabilities(utils.percentize(order_type_probs))
+        if not ordering_pref_drink: # If not ordering favorite drink type
+            # Choose a type of drink from the menu based on preferences
+            order_typ = utils.roll_probabilities(utils.percentize(order_type_probabilities()))
+            if not order_typ:
+                no_drinks()
+                return
+            # Choose a drink from the type of drink they want
+            section = bar.menu.get_section(order_typ)
+            for excluded_item in exclude:
+                if excluded_item in section:
+                    section.remove(excluded_item)
+            if section: # If there's at least one of their chosen type of drink
+                order = favorite_of_list(section)
+            else: # If there's none of their chosen type of drink, just find something to drink
+                full_menu = bar.menu.list_full_menu()
+                # If there's at least something to drink, order by score
+                if full_menu: # If there's at least something to drink in the bar
+                    order = favorite_of_list(full_menu)
+                else: # There's no drinks left in the bar
+                    no_drinks()
+                    return
 
-            scores = {}
-            for menu_item in bar.menu.get_section(order_typ):
-                scores[menu_item] = self.score(game_time, menu_item)
-            order = utils.roll_probabilities(scores)
-
-        # TODO: Do something with drink score
+        # Order decided. Try to make the sale
         self.score(game_time, order, drinking=True)
 
         style = order.get_style()
+        # If the drink hasn't run out
         if bar.make_sale(order):
             bar.occupancy.print_msg(game_time=game_time,
                                     msg=f"{self.format_name()} orders {utils.format_a(order.name)} "
                                         f"[{style}]{order.name}[/{style}]. "
                                         f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
             self.order_history.append(order)
-        else:
+        else: # Drink has run out
+            # Try to order again with this drink excluded
             bar.occupancy.print_msg(game_time=game_time, msg=f"{self.format_name()} tried to order "
                                                              f"{utils.format_a(order.name)} "
-                                                             f"[{style}]{order.name}[/{style}], but you ran out!")
+                                                             f"[{style}]{order.name}[/{style}], but you've run out!")
             exclude.add(order)
             self.order(bar, game_time, exclude)
 
@@ -401,3 +438,31 @@ class CustomerGroup:
     def order_round(self, bar, game_time):
         for customer in self.customers:
             customer.order(bar, game_time)
+
+    def leave(self, bar, game_time):
+        log_msg = ""
+        if len(self.customers) > 1:
+            for i, cstmr in enumerate(self.customers):
+                # Each customer has visited 1 more time
+                cstmr.times_visited += 1
+                # Log string formatting
+                if i == len(self.customers) - 1:
+                    log_msg = log_msg + "and "
+                log_msg = "" + log_msg + cstmr.format_name()
+                if len(self.customers) > 2:
+                    log_msg = log_msg + ", "
+                else:
+                    log_msg = log_msg + " "
+            if len(self.customers) > 2:
+                log_msg = log_msg[:-2] + " "
+            log_msg = log_msg + "are leaving the bar."
+        else:
+            for cstmr in self.customers:
+                cstmr.times_visited += 1
+            log_msg = f"{next(iter(self.customers)).format_name()} leaves the bar."
+
+        bar.occupancy.print_msg(log_msg, game_time)
+        bar.bar_stats.past_customers[self.group_id] = self
+        if self in bar.occupancy.current_customer_groups:
+            bar.occupancy.current_customer_groups.remove(self)
+
