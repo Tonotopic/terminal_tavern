@@ -43,7 +43,7 @@ class BarMenu:
         """
         if isinstance(item, str):
             for category in self.list_menu_by_section():
-                if item == category[1].lower():
+                if item.lower() == category[1].lower():
                     return category[0]
             menu_item = find_command(item, items_to_commands(self.list_full_menu()))
             if menu_item:
@@ -56,8 +56,6 @@ class BarMenu:
             for section, sect_name, sect_type in self.list_menu_by_section():
                 if isinstance(item, sect_type):
                     return section
-
-
 
     # </editor-fold>
 
