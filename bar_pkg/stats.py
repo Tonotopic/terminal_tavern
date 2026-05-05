@@ -13,15 +13,47 @@ class BarStats:
         self.rep_level = 0
         self.past_customers = {}
 
+    def cocktail_diversity(self):
+        """Counts how many unique flavors are represented in the top 3 flavors of all cocktails, out of all possible
+        flavors."""
+        flavors = set()
+        for cocktail in self.bar.menu.get_section("Cocktails"):
+            for flavor in list(cocktail.taste_profile.keys())[:3]:
+                flavors.add(flavor)
+        return len(flavors) / len(rich_console.taste_styles.keys())
+
+    def beer_diversity(self):
+        """Scores how well the beer selection covers the typical array of styles."""
+        BEER_STYLE_TARGETS = [Lager, IPA, Stout, SourAle]
+        BONUS_TARGETS = [WheatBeer, Shandy, DoubleIPA, FruitTart]
+        covered = set()
+        for beer_option in self.bar.menu.get_section("Beer"):
+            for target in BEER_STYLE_TARGETS + BONUS_TARGETS:
+                if isinstance(beer_option, target):
+                    covered.add(target)
+        return min(1.0, len(covered) / len(BEER_STYLE_TARGETS))
+
+    def wine_diversity(self):
+        """Scores how many of the basic wine styles are covered on the menu."""
+        WINE_STYLE_TARGETS = [RedWine, WhiteWine, SparklingWine, Rose]
+        BONUS_TARGETS = [Brandy]
+        covered = set()
+        for beer_option in self.bar.menu.get_section("Wine"):
+            for target in WINE_STYLE_TARGETS + BONUS_TARGETS:
+                if isinstance(beer_option, target):
+                    covered.add(target)
+        return min(1.0, len(covered) / len(WINE_STYLE_TARGETS))
+
     def drink_variety(self):
-        def type_coverage():
+        """Scores the bar on various measures of diversity in drink options."""
+        def drink_type_coverage():
             """Scores how many types of drink are on the menu (beer, wine, etc)."""
             TYPE_WEIGHTS = {
                 "Cocktails": 0.35,
-                "Beer": 0.20,
+                "Beer": 0.30,
                 "Wine": 0.20,
-                "Cider": 0.15,
-                "Mead": 0.10
+                "Cider": 0.10,
+                "Mead": 0.05
             }
             score = 0
             menu = self.bar.menu
@@ -50,49 +82,22 @@ class BarStats:
             return total_sqrts / types_being_evaluated if types_being_evaluated > 0 else 0
 
         def diversity_within_type():
-            def cocktail_diversity():
-                """Counts how many unique flavors are represented in the top 3 flavors of all cocktails."""
-                flavors = set()
-                for cocktail in self.bar.menu.get_section("Cocktails"):
-                    for flavor in list(cocktail.taste_profile.keys())[:3]:
-                        flavors.add(flavor)
-                return len(flavors) / len(rich_console.taste_styles.keys())
-
-            def beer_diversity():
-                BEER_STYLE_TARGETS = [Lager, IPA, Stout, SourAle]
-                BONUS_TARGETS = [WheatBeer, Shandy, DoubleIPA, FruitTart]
-                covered = set()
-                for beer_option in self.bar.menu.get_section("Beer"):
-                    for target in BEER_STYLE_TARGETS + BONUS_TARGETS:
-                        if isinstance(beer_option, target):
-                            covered.add(target)
-                return min(1.0, len(covered) / len(BEER_STYLE_TARGETS))
-
-            def wine_diversity():
-                WINE_STYLE_TARGETS = [RedWine, WhiteWine, SparklingWine, Rose]
-                BONUS_TARGETS = [Brandy]
-                covered = set()
-                for beer_option in self.bar.menu.get_section("Wine"):
-                    for target in WINE_STYLE_TARGETS + BONUS_TARGETS:
-                        if isinstance(beer_option, target):
-                            covered.add(target)
-                return min(1.0, len(covered) / len(WINE_STYLE_TARGETS))
-
+            """Combines cocktail, beer, and wine diversity."""
             types_being_evaluated = 0
             total_of_scores = 0
             if len(self.bar.menu.get_section("Cocktails")) > 0:
                 types_being_evaluated += 1
-                total_of_scores += cocktail_diversity()
+                total_of_scores += self.cocktail_diversity()
             if len(self.bar.menu.get_section("Beer")) > 0:
                 types_being_evaluated += 1
-                total_of_scores += beer_diversity()
+                total_of_scores += self.beer_diversity()
             if len(self.bar.menu.get_section("Wine")) > 0:
                 types_being_evaluated += 1
-                total_of_scores += wine_diversity()
+                total_of_scores += self.wine_diversity()
 
             return total_of_scores / types_being_evaluated if types_being_evaluated > 0 else 0
 
-        type_coverage = type_coverage()
+        type_coverage = drink_type_coverage()
         drinks_per_type = drinks_per_type()
         diversity_within_type = diversity_within_type()
 
