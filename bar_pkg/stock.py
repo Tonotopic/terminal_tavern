@@ -264,12 +264,12 @@ class BarStock:
                         logger.log(
                             f"{req_ingredient.name} in quantity {self.inventory[req_ingredient]} "
                             f"not enough to satisfy requirement of {req_quantity}")
-                        print(f"[error] Not enough {req_ingredient.name}!")
+                        print(f"[error] Not enough {req_ingredient.name}![/error]")
                 else:
                     if not ing_missing:
                         ing_missing = True
-                        print(f"[error]Ingredients missing for {recipe.name}:")
-                    print(f"[error] No {req_ingredient.name}!")
+                        print(f"[error]Ingredients missing for {recipe.name}:[/error]")
+                    print(f"[error] No {req_ingredient.name}![/error]")
                 # Add quantity check if needed
         if ing_missing:
             return False

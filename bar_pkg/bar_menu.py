@@ -385,7 +385,7 @@ class BarMenu:
             if not self.bar.stock.has_enough(menu_item):
                 missing_something = True
                 console.print(
-                    f"[error] Not enough {menu_item.name}! Restock or remove from the menu before proceeding.")
+                    f"[error]Not enough {menu_item.name}! Restock or remove from the menu before proceeding.")
         if missing_something:
             return False
         else:

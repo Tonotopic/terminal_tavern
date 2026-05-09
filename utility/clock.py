@@ -5,7 +5,7 @@ from rich.panel import Panel
 from display.live_display import draw_live
 
 global game_mins_per_sec
-game_mins_per_sec = 1
+game_mins_per_sec = 5
 
 
 # TODO: Skipping minutes
@@ -43,10 +43,10 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
             live.update(layout, refresh=False)
 
             if clock_hours == 2:
+                stop_func()
+                bar.end_day()
                 global day_ended
                 day_ended = True
-                stop_func()
-                bar.set_screen("MAIN")
 
         def update_customer_count():
             layout["customers"].renderable.title = f"Customers ({len(bar.occupancy.current_customers())})"
@@ -61,15 +61,17 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
             else:
                 layout["customer_panel"].update(bar.occupancy.customer_displayed.customer_panel())
 
+        global day_ended
+        day_ended = False
         update_clock()
+        # Ensure customer events are not run so that the last customer entry time stays at None after being reset
+        if day_ended:
+            return
         bar.occupancy.check_customer_events(current_game_mins(start_game_mins))
         update_customer_count()
         update_customer_panel()
         update_balance()
         layout["event_log"].update(bar.occupancy.event_log_panel())
-
-    global day_ended
-    day_ended = False
 
     start_clock()
     global game_mins_per_sec
