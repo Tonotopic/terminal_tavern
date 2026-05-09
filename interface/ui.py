@@ -426,6 +426,10 @@ def play_screen(bar, start_game_minutes):
         time_paused = clock.run_clock(bar=bar, start_game_mins=start_game_minutes, clock_panel=clock_panel,
                                       layout=play_layout)
 
+        if time_paused > 26 * 60:
+            bar.set_screen("MAIN")
+            return
+
         # Set all current customers as commands
         customer_names = [cstmr.name.lower() for cstmr in bar.occupancy.current_customers()]
         commands = customer_names

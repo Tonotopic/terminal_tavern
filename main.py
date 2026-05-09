@@ -25,7 +25,6 @@ load_ingredients_from_db()
 
 ui.startup_screen()
 current_bar = utils.current_bar
-total = current_bar.bar_stats.drink_variety()
 
 while True:
     if current_bar.get_screen() == "MAIN":

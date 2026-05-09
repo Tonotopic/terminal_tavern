@@ -42,10 +42,11 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
             clock_panel.renderable = f"Sunday 01 Jan {clock_hours:02}:{clock_minutes:02}"
             live.update(layout, refresh=False)
 
-            if clock_hours == "02":
+            if clock_hours == 2:
                 global day_ended
                 day_ended = True
                 stop_func()
+                bar.set_screen("MAIN")
 
         def update_customer_count():
             layout["customers"].renderable.title = f"Customers ({len(bar.occupancy.current_customers())})"

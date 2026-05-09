@@ -11,6 +11,7 @@ class Occupancy:
     def __init__(self, bar):
         self.bar = bar
         self.opening_time = 16 * 60
+        self.closing_time = 26 * 60
         self.current_customer_groups = set()
         self.event_log = []
         self.customer_displayed = None
