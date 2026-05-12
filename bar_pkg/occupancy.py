@@ -72,12 +72,17 @@ class Occupancy:
         def check_customer_entry():
             """Triggers customers to enter based on how long it's been since the last customers entered."""
 
+            # Stop entering customers at midnight
+            if game_time > 24 * 60:
+                return
+
             if not self.last_new_customer_time:
                 self.enter_new_customer_group(game_time)
-                self.last_new_customer_time = game_time
             elif game_time > self.last_new_customer_time + 20:
                 self.enter_new_customer_group(game_time)
-                self.last_new_customer_time = game_time
+            else:
+                return
+            self.last_new_customer_time = game_time
 
         def check_customer_orders():
             """Triggers orders from customers based on when they ordered their last round."""
