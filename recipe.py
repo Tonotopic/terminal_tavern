@@ -23,6 +23,14 @@ class Recipe(MenuItem):
         self.markdown = 0.0
         self.formatted_markdown = ""
 
+    def format_name(self, capitalize=False):
+        style = self.get_style()
+        if capitalize:
+            name = self.name.capitalize()
+        else:
+            name = self.name
+        return f"[{style}]{name}[/{style}]"
+
     # <editor-fold desc="Display">
     @override
     def list_item(self, expanded=False):
