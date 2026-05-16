@@ -5,6 +5,7 @@ from rich.table import Table
 from rich.text import Text
 
 from bar_pkg.bar import Bar
+from data import ingredients
 from data.ingredients import list_ingredients, Ingredient, Drink
 from display import live_display, rich_console
 from display.rich_console import console
@@ -75,12 +76,19 @@ def startup_screen():
 
 def dashboard(bar):
     """Display and handle the dashboard screen of the given bar, showing the menu and stats."""
+    def render_quick_inventory():
+        strng = ""
+        for ingredient in list_ingredients(bar.stock.inventory):
+            strng = strng + ingredient.format_name() + "  " + str(bar.stock.inventory.get(ingredient)) + "oz\n"
+        return strng
+
     # <editor-fold desc="Layout"
     bar_name_panel = Panel(renderable=f"Welcome to [underline]{bar.bar_stats.bar_name}!")
     balance_panel = Panel(renderable=f"Balance: [money]${str(bar.bar_stats.balance)}[/money]  "
                                      f"Reputation: Lvl {bar.bar_stats.rep_level}")
     menu_panel = Panel(title="~*~ Menu ~*~", renderable="render failed",
                        border_style=console.get_style("bar_menu"))
+    stock_panel = Panel(title="~*~ Quick Inventory ~*~", renderable=render_quick_inventory())
 
     dash_layout = Layout(name="dash_layout")
     dash_layout.split_column(Layout(name="dash_header", size=3), Layout(name="dash"))
@@ -88,17 +96,21 @@ def dashboard(bar):
                                          Layout(name="balance", renderable=balance_panel))
 
     menu_tables = bar.menu.table_menu(expanded=False)[0]
+    # If the length of the menu is more than one page
     if len(menu_tables) > 1:
+        # Add a footer panel for the live prompt
         dash_layout["dash"].split_column(Layout(name="dash_body"),
                                          Layout(name="footer", size=1, renderable=live_display.live_prompt))
-        dash_layout["dash_body"].split_row(Layout(name="menu_layout", renderable=menu_panel), Layout())
+        dash_layout["dash_body"].split_row(Layout(name="menu_layout", renderable=menu_panel),
+                                           Layout(name="stock_layout", renderable=stock_panel))
 
+        # Animate the pages
         live_display.live_cycle_tables(tables=menu_tables, panel=menu_panel, layout=dash_layout, sec=5)
 
-    else:
+    else: # No footer, simple renderable
         menu_panel.renderable = menu_tables[0]
         dash_layout["dash"].split_row(Layout(name="menu_layout", renderable=menu_panel),
-                                      Layout())
+                                      Layout(name="stock_layout", renderable=stock_panel))
         console.print(dash_layout)
         logger.log("Dashboard drawn.")
     # </editor-fold>
