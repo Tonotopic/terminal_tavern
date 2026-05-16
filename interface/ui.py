@@ -79,7 +79,8 @@ def dashboard(bar):
     def render_quick_inventory():
         strng = ""
         for ingredient in list_ingredients(bar.stock.inventory):
-            strng = strng + ingredient.format_name() + "  " + str(bar.stock.inventory.get(ingredient)) + "oz\n"
+            if not ingredient.name == "club soda":
+                strng = strng + ingredient.format_name() + "  " + str(bar.stock.inventory.get(ingredient)) + "oz\n"
         return strng
 
     # <editor-fold desc="Layout"
