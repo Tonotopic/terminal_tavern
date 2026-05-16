@@ -77,11 +77,12 @@ def startup_screen():
 def dashboard(bar):
     """Display and handle the dashboard screen of the given bar, showing the menu and stats."""
     def render_quick_inventory():
-        strng = ""
+        table = Table(box=None)
+        table.add_column()
         for ingredient in list_ingredients(bar.stock.inventory):
             if not ingredient.name == "club soda":
-                strng = strng + ingredient.format_name() + "  " + str(bar.stock.inventory.get(ingredient)) + "oz\n"
-        return strng
+                table.add_row(ingredient.format_name(), str(bar.stock.inventory.get(ingredient)) + "oz")
+        return table
 
     # <editor-fold desc="Layout"
     bar_name_panel = Panel(renderable=f"Welcome to [underline]{bar.bar_stats.bar_name}!")
@@ -89,7 +90,8 @@ def dashboard(bar):
                                      f"Reputation: Lvl {bar.bar_stats.rep_level}")
     menu_panel = Panel(title="~*~ Menu ~*~", renderable="render failed",
                        border_style=console.get_style("bar_menu"))
-    stock_panel = Panel(title="~*~ Quick Inventory ~*~", renderable=render_quick_inventory())
+    stock_panel = Panel(title="~*~ Inventory ~*~", renderable=render_quick_inventory(),
+                        border_style=console.get_style("soda"))
 
     dash_layout = Layout(name="dash_layout")
     dash_layout.split_column(Layout(name="dash_header", size=3), Layout(name="dash"))
