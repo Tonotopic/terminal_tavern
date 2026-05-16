@@ -14,7 +14,7 @@ from utility import logger
 class BarStock:
     def __init__(self, bar):
         self.bar = bar
-        self.inventory = {get_ingredient("soda water"): 24}  # Dictionary: {ingredient_object: fluid_ounces}
+        self.inventory = {get_ingredient("club soda"): 24}  # Dictionary: {ingredient_object: fluid_ounces}
 
     def buy(self, ingredient: Ingredient = None, arg=""):
         """
@@ -249,7 +249,7 @@ class BarStock:
 
             else:  # Specific ingredient required
                 # Club soda is infinite
-                if req_ingredient.name == "soda water":
+                if req_ingredient.name == "club soda":
                     continue
                 req_quantity = req_ingredient.get_portions()[req_quantity]
                 # Check that the ingredient is in inventory with enough volume
@@ -323,7 +323,7 @@ class BarStock:
             for ingredient in provided_ings:
                 vol = provided_ings[ingredient]
                 msg = f"   [dimmed]Pouring {vol} of {ingredient.format_name()}[/dimmed]"
-                if ingredient.name != "soda water":
+                if ingredient.name != "club soda":
                     self.inventory[ingredient] -= vol
                     msg = msg + f"[dimmed]- stock now at {self.inventory[ingredient]}[/dimmed]"
                 logger.log(msg)

@@ -300,7 +300,7 @@ class Ingredient:
                 for i in self.volumes:
                     total += price_over_vol(i)
                 return total / len(self.volumes)
-        elif self.name == "soda water":
+        elif self.name == "club soda":
             return 0
         else:
             msg = f"[error]self.volumes not present for {self.name}"
@@ -1131,7 +1131,7 @@ def load_ingredients_from_db():
         volumes = {}
 
         if len(volume_data) < 1:
-            if product_name.lower() != "soda water":
+            if product_name.lower() != "club soda":
                 raise Exception(f"No volume data for {product_name}")
         for vol in volume_data:
             volumes[int(vol[0])] = vol[1]
