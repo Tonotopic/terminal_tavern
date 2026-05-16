@@ -123,7 +123,7 @@ class MenuItem:
         :return: The formatted string
         """
         # Layout offset + markdown offset
-        total_spacing = console.size[0] - 29 if expanded else int(console.size[0] // 2) - 19
+        total_spacing = console.size[0] - 31 if expanded else int(console.size[0] // 2) - 22
         name = self.name
 
         if isinstance(self, Beer):

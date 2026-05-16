@@ -28,7 +28,7 @@ class Recipe(MenuItem):
     def list_item(self, expanded=False):
         """Displays cocktail name and price, including ingredients if viewing the full-screen menu."""
         name = self.name
-        total_spacing = console.size[0] - 29 if expanded else int(console.size[0] // 2) - 19
+        total_spacing = console.size[0] - 31 if expanded else int(console.size[0] // 2) - 22
         if expanded:
             cocktail_spacing = total_spacing // 4
             ingredient_spacing = 3 * cocktail_spacing

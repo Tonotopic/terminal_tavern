@@ -206,80 +206,95 @@ class BarStock:
                 lst.append(item)
         return lst
 
-    def check_ingredients(self, recipe):
-        """Checks if there are enough of all ingredients in stock to make the recipe."""
+    def number_pourable(self, menu_item):
+        """Checks ingredients in stock; returns how many servings can be poured (0 if any are missing)."""
+
         def print(msg):
             if self.bar.get_screen() == "PLAY":
                 self.bar.occupancy.print_msg(msg=msg)
             else:
                 logger.logprint(msg)
 
-        logger.log(f"Checking ingredients for {recipe.name}...")
-        ing_missing = False
-        for req_ingredient, req_quantity in recipe.r_ingredients.items():
-            # If requirement is a type (accepts any ingredient of the type)
-            if isinstance(req_ingredient, type):
-                # Find the amount from the recipe among the ingredient's possible quantities
-                req_quantity = req_ingredient().get_portions()[req_quantity]
-                found_match = False
-                has_enough = False
-                # Find an ingredient in stock of the right type
-                for inv_ingredient in self.inventory:
-                    if isinstance(inv_ingredient, req_ingredient):
-                        found_match = True
-                        if self.inventory[inv_ingredient] >= req_quantity:
-                            has_enough = True
-                            logger.log(
-                                f"   {inv_ingredient.name} in quantity {self.inventory[inv_ingredient]} satisfies "
-                                f"{req_ingredient().format_type()} requirement")
-                            break
-                        else:
-                            logger.log(f"   {inv_ingredient.name} in quantity {self.inventory[inv_ingredient]} "
-                                       f"not enough for {req_ingredient().format_type()} requirement")
-                # If no ingredients found with enough volume to pour, there is an ingredient missing for the recipe
-                if not has_enough:
-                    if not ing_missing:
-                        ing_missing = True
-                        print(f"[error]Ingredients missing for {recipe.name}:[/error]")
-                    if found_match:
-                        print(f"[error] Not enough {req_ingredient().format_type()}![/error]")
-                    else:
-                        print(f"[error] No {req_ingredient().format_type()}!")
-                    # Continue looping so all missing ingredients are printed
-
-            else:  # Specific ingredient required
-                # Club soda is infinite
-                if req_ingredient.name == "club soda":
-                    continue
-                req_quantity = req_ingredient.get_portions()[req_quantity]
-                # Check that the ingredient is in inventory with enough volume
-                if req_ingredient in self.inventory:
-                    if self.inventory[req_ingredient] >= req_quantity:
-                        logger.log(f"   {req_ingredient.name} in quantity {self.inventory[req_ingredient]} "
-                                   f"satisfies requirement")
+        if not isinstance(menu_item, Recipe):
+            number_pourable = self.inventory[menu_item] // menu_item.pour_vol()
+            logger.log(f"Can pour {number_pourable} {menu_item.name}")
+            return number_pourable
+        else:
+            logger.log(f"Checking ingredients for {menu_item.name}...")
+            ing_missing = False
+            max_servings = float('inf')  # Track the maximum servings across all ingredients
+            for req_ingredient, req_quantity in menu_item.r_ingredients.items():
+                # If requirement is a type (accepts any ingredient of the type)
+                if isinstance(req_ingredient, type):
+                    # Find the amount from the recipe among the ingredient's possible quantities
+                    req_quantity = req_ingredient().get_portions()[req_quantity]
+                    found_match = False
+                    highest_vol_match = 0
+                    # Find an ingredient in stock of the right type
+                    for inv_ingredient in self.inventory:
+                        if isinstance(inv_ingredient, req_ingredient):
+                            found_match = True
+                            available = self.inventory[inv_ingredient]
+                            servings = available // req_quantity
+                            if servings > highest_vol_match:  # Use the best match of this type
+                                highest_vol_match = servings
+                                logger.log(
+                                    f"   {inv_ingredient.name} in quantity {available} satisfies "
+                                    f"{req_ingredient().format_type()} requirement ({servings} servings)")
+                            else:
+                                logger.log(f"   {inv_ingredient.name} in quantity {available} "
+                                           f"not enough for {req_ingredient().format_type()} requirement")
+                    # If no ingredients found with enough volume to pour, there is an ingredient missing for the recipe
+                    if found_match and highest_vol_match > 0:
+                        max_servings = min(max_servings, highest_vol_match)
                     else:
                         if not ing_missing:
                             ing_missing = True
-                            print(f"[error]Ingredients missing for {recipe.name}:")
-                        logger.log(
-                            f"{req_ingredient.name} in quantity {self.inventory[req_ingredient]} "
-                            f"not enough to satisfy requirement of {req_quantity}")
-                        print(f"[error] Not enough {req_ingredient.name}![/error]")
-                else:
-                    if not ing_missing:
-                        ing_missing = True
-                        print(f"[error]Ingredients missing for {recipe.name}:[/error]")
-                    print(f"[error] No {req_ingredient.name}![/error]")
-                # Add quantity check if needed
-        if ing_missing:
-            return False
-        else:
-            return True  # All ingredients present
+                            print(f"[error]Ingredients missing for {menu_item.name}:[/error]")
+                        if found_match:
+                            print(f"[error] Not enough {req_ingredient().format_type()}![/error]")
+                        else:
+                            print(f"[error] No {req_ingredient().format_type()}!")
+                        # Continue looping so all missing ingredients are printed
+
+                else:  # Specific ingredient required
+                    # Club soda is infinite
+                    if req_ingredient.name == "club soda":
+                        continue
+                    req_quantity = req_ingredient.get_portions()[req_quantity]
+                    # Check that the ingredient is in inventory with enough volume
+                    if req_ingredient in self.inventory:
+                        available = self.inventory[req_ingredient]
+                        servings = available // req_quantity
+                        if servings > 0:
+                            logger.log(f"   {req_ingredient.name} in quantity {available} "
+                                       f"satisfies requirement ({servings} servings)")
+                            max_servings = min(max_servings, servings)
+                        else:
+                            if not ing_missing:
+                                ing_missing = True
+                                print(f"[error]Ingredients missing for {menu_item.name}:")
+                            logger.log(
+                                f"{req_ingredient.name} in quantity {available} "
+                                f"not enough to satisfy requirement of {req_quantity}")
+                            print(f"[error] Not enough {req_ingredient.name}![/error]")
+                    else:
+                        if not ing_missing:
+                            ing_missing = True
+                            print(f"[error]Ingredients missing for {menu_item.name}:[/error]")
+                        print(f"[error] No {req_ingredient.name}![/error]")
+                    # Add quantity check if needed
+            if ing_missing:
+                return 0
+            else:
+                number_pourable = max_servings if max_servings != float('inf') else 0
+                logger.log(f"Can pour {number_pourable} {menu_item.name}")
+                return number_pourable
 
     def has_enough(self, menu_item: MenuItem):
         """Checks whether inventory is sufficient to pour a single MenuItem, whether single ingredient or recipe."""
         if isinstance(menu_item, Recipe):
-            if self.check_ingredients(menu_item):
+            if self.number_pourable(menu_item) > 0:
                 return True
         else:
             if self.inventory[menu_item] >= menu_item.pour_vol():

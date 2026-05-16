@@ -79,27 +79,28 @@ class BarMenu:
 
         width = console.size[0] if expanded else int(console.size[0] / 2)
         for table in tables:
-            table.add_column(width=width - 12)
+            table.add_column(width=width - 14)
 
         # Menu overview
         if display_type is None:
 
             table_section = table_1
-            buffer = 9 if expanded else 11
+            height_buffer = 9 if expanded else 11
             for menu_section, sect_name, sect_typ in self.list_menu_by_section():
-                if len(table_section.rows) > console.height - buffer - 2:
+                if len(table_section.rows) > console.height - height_buffer - 2:
                     table_section = Table(**table_settings)
                     tables.append(table_section)
                 if sect_typ in (recipe.Recipe, ingredients.Beer) or len(menu_section) > 0:
                     table_section.add_row(Text(sect_name, style=console.get_style(sect_name.lower())),
-                                          str(len(menu_section)), end_section=True)
+                                          end_section=True)
                     lst.append(sect_typ)
                     for menu_item in menu_section:
 
-                        if len(table_section.rows) > console.height - buffer:
+                        if len(table_section.rows) > console.height - height_buffer:
                             table_section = Table(**table_settings)
                             tables.append(table_section)
-                        table_section.add_row(menu_item.list_item(expanded=expanded))
+                        table_section.add_row(menu_item.list_item(expanded=expanded),
+                                              str(self.bar.stock.number_pourable(menu_item)))
                         table_section.add_row()
                         lst.append(menu_item)
                     table_section.add_row()
