@@ -578,10 +578,13 @@ def check_shop(args, bar, ingredient):
     """
     if len(args) > 0:
         all_ingredient_types = ingredients.all_ingredient_types()
-        cmd_lst = [typ().format_type(plural=True).lower() for typ in all_ingredient_types]
+        cmd_lst = ([typ().format_type(plural=True).lower() for typ in all_ingredient_types] +
+                   [typ().format_type(plural=False).lower() for typ in all_ingredient_types])
         shop_arg = find_command(args[0], cmd_lst)
         if shop_arg:
             shop_typ = command_to_item(shop_arg, all_ingredient_types, plural=True)
+            if not shop_typ:
+                shop_typ = command_to_item(shop_arg, all_ingredient_types, plural=False)
             bar.set_screen("SHOP")
             ui.shop_screen(bar, shop_typ)
         else:
