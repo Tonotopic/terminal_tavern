@@ -77,11 +77,15 @@ def startup_screen():
 def dashboard(bar):
     """Display and handle the dashboard screen of the given bar, showing the menu and stats."""
     def render_quick_inventory():
+        inventory_ings = sorted(list_ingredients(bar.stock.inventory),
+                                key=lambda ing: bar.stock.inventory.get(ing))
+
         table = Table(box=None)
         table.add_column()
-        for ingredient in list_ingredients(bar.stock.inventory):
+        for ingredient in inventory_ings:
             if not ingredient.name == "club soda":
-                table.add_row(ingredient.format_name(), str(bar.stock.inventory.get(ingredient)) + "oz")
+                table.add_row(ingredient.format_name(),
+                              f"{bar.stock.inventory.get(ingredient):{ingredient.format_oz()}}", "oz")
         return table
 
     # <editor-fold desc="Layout"

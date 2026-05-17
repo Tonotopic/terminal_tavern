@@ -225,6 +225,9 @@ class Ingredient:
 
         return type_name
 
+    def format_oz(self):
+        return ".0f"
+
     def notes_desc(self):
         """Generates the "notes" section of ingredient description, if notes are present."""
         if self.notes:
@@ -792,6 +795,10 @@ class Spirit(Alcohol):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
     @override
+    def format_oz(self):
+        return ".1f"
+
+    @override
     def get_portions(self):
         return {"Splash": 0.25, "Half oz": 1 / 2, "1oz": 1, "Shot": 2, "Double": 4}
 
@@ -913,6 +920,10 @@ class Liqueur(Alcohol):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
     @override
+    def format_oz(self):
+        return ".2f"
+
+    @override
     def get_portions(self):
         return {"Dash": round(1 / 48, 2), "Generous Dash": round(1 / 24, 2), "Splash": 0.25, "Half oz": 1 / 2, "1oz": 1,
                 "Shot": 2, "Double": 4, }
@@ -1006,6 +1017,10 @@ class Additive(Ingredient):
     def __init__(self, name=None, flavor=None, character=None, notes=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, volumes)
+
+    @override
+    def format_oz(self):
+        return ".2f"
 
     @override
     def get_portions(self):
