@@ -76,6 +76,8 @@ def startup_screen():
 
 def dashboard(bar):
     """Display and handle the dashboard screen of the given bar, showing the menu and stats."""
+    # TODO: Ensure inventory slots can be removed somehow so everything the bar has ever had isn't displayed
+    # Possibly only drinks that are on the menu
     def render_quick_inventory():
         inventory_ings = sorted(list_ingredients(bar.stock.inventory),
                                 key=lambda ing: bar.stock.inventory.get(ing))

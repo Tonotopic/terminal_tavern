@@ -220,6 +220,7 @@ class Bar:
     def end_day(self):
         for group in self.occupancy.current_customer_groups:
             group.leave()
+        self.occupancy.event_log = []
         self.occupancy.last_new_customer_time = None
         self.occupancy.last_return_customer_time = None
         self.set_screen("MAIN")
