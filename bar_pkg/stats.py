@@ -38,9 +38,9 @@ class BarStats:
         WINE_STYLE_TARGETS = [RedWine, WhiteWine, SparklingWine, Rose]
         BONUS_TARGETS = [Brandy]
         covered = set()
-        for beer_option in self.bar.menu.get_section("Wine"):
+        for wine_option in self.bar.menu.get_section("Wine"):
             for target in WINE_STYLE_TARGETS + BONUS_TARGETS:
-                if isinstance(beer_option, target):
+                if isinstance(wine_option, target):
                     covered.add(target)
         return min(1.0, len(covered) / len(WINE_STYLE_TARGETS))
 
