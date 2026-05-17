@@ -1,13 +1,29 @@
 from itertools import cycle
-from typing import Callable
+from typing import Callable, Optional
 
 from pynput import keyboard
+from rich.console import RenderableType
 from rich.live import Live
 
 from utility import logger
 from display.rich_console import console
 
 live_prompt = "Cycling multiple pages... Begin typing to stop."
+
+
+class _TrackedLive:
+    """Record the last renderable sent to Live while preserving Live's update API."""
+
+    def __init__(self, live: Live) -> None:
+        self.live = live
+        self.latest_renderable: Optional[RenderableType] = None
+
+    def update(self, renderable: RenderableType, *, refresh: bool = False) -> None:
+        self.latest_renderable = renderable
+        self.live.update(renderable, refresh=refresh)
+
+    def refresh(self) -> None:
+        self.live.refresh()
 
 
 def bump_console_height(down=False):
@@ -47,23 +63,34 @@ def draw_live(update_function: Callable, sec):
     # Effective height for layouts is normally lowered by 1 to make room for the prompt.
     # "Cycling multiple pages[...]" is part of layout, not a prompt, so layout needs to take the whole screen again
 
-    with Live(console=console, refresh_per_second=0.00001) as live:
-        logger.log("Drawing live display...")
+    tracked_live: Optional[_TrackedLive] = None
 
-        global draw_sentinel
-        draw_sentinel = False
+    try:
+        with Live(console=console, auto_refresh=False, screen=True) as live:
+            # Tracks the state of the live display mode to return to post-pause
+            tracked_live = _TrackedLive(live)
+            logger.log("Drawing live display...")
 
-        def stop_display():
             global draw_sentinel
-            draw_sentinel = True
-            logger.log("Stopping live display.")
+            draw_sentinel = False
 
-        while not draw_sentinel:
-            update_function(stop_display, live)
-            live.refresh()
-            listen(sec=sec)
+            def stop_display():
+                global draw_sentinel
+                draw_sentinel = True
+                logger.log("Stopping live display.")
 
-    bump_console_height(down=True)
+            while not draw_sentinel:
+                update_function(stop_display, tracked_live)
+                tracked_live.refresh()
+                listen(sec=sec)
+
+        if (
+            tracked_live is not None
+            and tracked_live.latest_renderable is not None
+        ):
+            console.print(tracked_live.latest_renderable)
+    finally:
+        bump_console_height(down=True)
 
 
 def live_cycle_tables(tables, panel, layout, sec):
