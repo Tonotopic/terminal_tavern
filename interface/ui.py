@@ -452,11 +452,13 @@ def play_screen(bar, start_game_minutes):
 
         # Set all current customers as commands
         customer_names = [cstmr.name.lower() for cstmr in bar.occupancy.current_customers()]
-        commands = customer_names
+        commands = customer_names + ["resume"]
 
-        primary_cmd, args = input_loop(prompt="Type a customer name for details", commands=commands)
+        primary_cmd, args = input_loop(prompt="Type a customer name for details, or 'resume'", commands=commands)
         if primary_cmd in customer_names:
             bar.occupancy.customer_displayed = bar.occupancy.get_customer(primary_cmd)
+        elif primary_cmd == "resume":
+            pass
 
         # Start the clock where it left off
         start_game_minutes = time_paused
