@@ -126,6 +126,7 @@ def dashboard(bar):
     elif primary_cmd == "menu":
         bar.set_screen("BAR_MENU")
     elif primary_cmd == "open":
+        utils.save_bar(bar)
         bar.set_screen("PLAY")
 
 
