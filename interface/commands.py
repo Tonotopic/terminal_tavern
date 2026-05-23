@@ -578,10 +578,11 @@ def check_shop(args, bar, ingredient):
     """
     if len(args) > 0:
         all_ingredient_types = ingredients.all_ingredient_types()
-        # TODO: Plural and singular forms of commands create multiple matches. Make "shop whisk" work again
-        cmd_lst = ([typ().format_type(plural=True).lower() for typ in all_ingredient_types] +
-                   [typ().format_type(plural=False).lower() for typ in all_ingredient_types])
-        shop_arg = find_command(args[0], cmd_lst)
+        # Attempt to match to singular, then to plural category names
+        shop_arg = find_command(args[0], [typ().format_type(plural=False).lower() for typ in all_ingredient_types])
+        if not shop_arg:
+            shop_arg = find_command(args[0], [typ().format_type(plural=True).lower() for typ in all_ingredient_types])
+
         if shop_arg:
             shop_typ = command_to_item(shop_arg, all_ingredient_types, plural=True)
             if not shop_typ:
