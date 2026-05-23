@@ -119,7 +119,7 @@ ingredient_styles = {
 }
 taste_styles = {
     "aromatic": Style(color=ingredient_styles.get("herb").color),
-    "berry": Style(color="#911fab"),
+    "berry-flavored": Style(color="#911fab"),
     "bitter": Style(color="#d40241"),
     "citrusy": Style(color="#fffa7d"),
     "creamy": Style(color="#fcd29f"),

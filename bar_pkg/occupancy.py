@@ -59,7 +59,6 @@ class Occupancy:
         for line in log_lines:
             log_str = log_str + line + "\n"
 
-        # TODO: live display twitch
         panel = Panel(title="Event Log", renderable=log_str)
         return panel
 

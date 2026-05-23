@@ -15,7 +15,7 @@ for row in rows:
     tastes[taste][term] = weight
 close_connection(connection)
 
-for fruit_taste in ["berry", "melon-flavored", "tropical"]:  # Removed citrus
+for fruit_taste in ["berry-flavored", "melon-flavored", "tropical"]:  # Removed citrus
     tastes["fruity"].update(tastes[fruit_taste])
 tastes["tart"].update(tastes["citrusy"])
 tastes["savory"].update(tastes["vegetal"])
