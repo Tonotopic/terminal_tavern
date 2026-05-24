@@ -127,7 +127,7 @@ class Customer:
     def format_name(self):
         return f"[cstmr]{self.name}[/cstmr]"
 
-    def score(self, game_time, drink: ingredients.MenuItem, drinking=False):
+    def score_flavors(self, game_time, drink: ingredients.MenuItem, drinking=False):
         # TODO: Score with the ingredients they chose
         logger.log(f"{self.name} scoring {drink.name}:")
         points = Decimal(0)
@@ -230,7 +230,7 @@ class Customer:
         def favorite_of_list(list):
             scores = {}
             for menu_item in list:
-                scores[menu_item] = self.score(game_time, menu_item)
+                scores[menu_item] = self.score_flavors(game_time, menu_item)
             return utils.roll_probabilities(scores)
 
         def no_drinks():
@@ -320,7 +320,7 @@ class Customer:
                                         f"[{style}]{order.name}[/{style}]. "
                                         f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
             self.order_history.append(order)
-            self.score(game_time, order, drinking=True)
+            self.score_flavors(game_time, order, drinking=True)
         else: # Drink has run out
             # Try to order again with this drink excluded
             bar.occupancy.print_msg(game_time=game_time, msg=f"{self.format_name()} tried to order "

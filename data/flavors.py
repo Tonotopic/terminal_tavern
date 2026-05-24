@@ -1,7 +1,6 @@
 from data.db_connect import get_connection, close_connection
 
 # TODO: Taste profiles as percents
-# TODO: fix "it tastes berry" "I like how berry it is"
 
 connection = get_connection()
 cursor = connection.cursor()
