@@ -141,7 +141,7 @@ class Customer:
             logger.log("    50 points from preferred drink type")
 
         for taste in self.fav_tastes:
-            if taste in drink.taste_profile:
+            if drink.has_flavor_in_top_n(taste, 5):
                 taste_points = drink.taste_profile[taste] * 5
                 points += taste_points
                 logger.log(f"   {taste_points} points from favorite taste {taste}")

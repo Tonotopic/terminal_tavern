@@ -155,6 +155,14 @@ class MenuItem:
         else:
             logger.logprint(f"[error]Menu item {self.name} not triggering Recipe, Beer, or other Alcohol")
 
+    def top_flavors(self, n=3, **kwargs):
+        """Return the top N flavors as a dict, ordered by percentage."""
+        profile = self.generate_taste_profile(**kwargs)
+        return dict(list(profile.items())[:n])
+
+    def has_flavor_in_top_n(self, flavor, n=3, **kwargs):
+        """Return True if `flavor` appears in the top N taste profile."""
+        return flavor in self.top_flavors(n, **kwargs)
 
 # <editor-fold desc="Ingredients">
 class Ingredient:
@@ -366,7 +374,13 @@ class Ingredient:
                     taste_profile[taste] += points
 
         sorted_taste_profile = dict(sorted(taste_profile.items(), key=lambda x: x[1], reverse=True))
-        return sorted_taste_profile
+        total = sum(sorted_taste_profile.values())
+        if total == 0:
+            return sorted_taste_profile
+        return {
+            taste: round((points / total) * 100, 1)
+            for taste, points in sorted_taste_profile.items()
+        }
 
     def print_taste_profile(self):
         """Print the item's tastes and their values, in order and in color markup."""
