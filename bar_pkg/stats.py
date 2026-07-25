@@ -26,23 +26,33 @@ class BarStats:
         """Scores how well the beer selection covers the typical array of styles."""
         BEER_STYLE_TARGETS = [Lager, IPA, Stout, SourAle]
         BONUS_TARGETS = [WheatBeer, Shandy, DoubleIPA, FruitTart]
-        covered = set()
+        covered_base = set()
+        covered_bonus = set()
         for beer_option in self.bar.menu.get_section("Beer"):
-            for target in BEER_STYLE_TARGETS + BONUS_TARGETS:
+            for target in BEER_STYLE_TARGETS:
                 if isinstance(beer_option, target):
-                    covered.add(target)
-        return min(1.0, len(covered) / len(BEER_STYLE_TARGETS))
+                    covered_base.add(target)
+            for target in BONUS_TARGETS:
+                if isinstance(beer_option, target):
+                    covered_bonus.add(target)
+
+        base_score = len(covered_base) / len(BEER_STYLE_TARGETS)
+        bonus_score = len(covered_bonus) / len(BONUS_TARGETS)
+        return min(1.0, base_score + bonus_score * 0.2)  # bonus adds a small top-up, capped
 
     def wine_diversity(self):
         """Scores how many of the basic wine styles are covered on the menu."""
         WINE_STYLE_TARGETS = [RedWine, WhiteWine, SparklingWine, Rose]
         BONUS_TARGETS = [Brandy]
-        covered = set()
+        covered_base = set()
+        covered_bonus = set()
         for wine_option in self.bar.menu.get_section("Wine"):
-            for target in WINE_STYLE_TARGETS + BONUS_TARGETS:
+            for target in WINE_STYLE_TARGETS:
                 if isinstance(wine_option, target):
-                    covered.add(target)
-        return min(1.0, len(covered) / len(WINE_STYLE_TARGETS))
+                    covered_base.add(target)
+            for target in BONUS_TARGETS:
+                if isinstance(wine_option, target):
+                    covered_bonus.add(target)
 
     def drink_variety(self):
         """Scores the bar on various measures of diversity in drink options."""
@@ -77,7 +87,7 @@ class BarStats:
                 num_drinks = len(self.bar.menu.get_section(drink_type))
                 if num_drinks > 0:
                     types_being_evaluated += 1
-                    total_sqrts += sqrt(num_drinks / soft_max)
+                    total_sqrts += min(1.0, sqrt(num_drinks / soft_max))
 
             return total_sqrts / types_being_evaluated if types_being_evaluated > 0 else 0
 
@@ -98,12 +108,12 @@ class BarStats:
             return total_of_scores / types_being_evaluated if types_being_evaluated > 0 else 0
 
         type_coverage = drink_type_coverage()
-        drinks_per_type = drinks_per_type()
-        diversity_within_type = diversity_within_type()
+        per_type = drinks_per_type()
+        within_type = diversity_within_type()
 
         return min(1.0,
             type_coverage * 0.35 +
-            drinks_per_type * 0.35 +
-            diversity_within_type * 0.30
+            per_type * 0.35 +
+            within_type * 0.30
         )
 

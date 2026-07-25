@@ -35,7 +35,6 @@ prob_points = {
     "people order mead": -50,
 }
 
-
 class Customer:
     def __init__(self, bar):
         self.bar = bar
@@ -56,7 +55,7 @@ class Customer:
         self.comments_made = set()
         self.order_history = []
 
-    def generate_customer(self):
+    def generate_customer_data(self):
         tag_field = None
 
         def select_name():
@@ -146,12 +145,12 @@ class Customer:
                 points += taste_points
                 logger.log(f"   {taste_points} points from favorite taste {taste}")
                 if drinking and taste_points > 25 and not self.is_revealed(taste):
-                    self.say(game_time, random.choice([f"I'm a big fan of the {taste} flavor in this {drink.name}.",
+                    self.say(game_time, random.choice([f"I'm a big fan of the {taste} flavor in the {drink.name}.",
                                                        f"I love when drinks taste {taste}.",
                                                        f"It's {taste}... I like it.", f"Very {taste}. I'm interested.",
                                                        f"This {drink.name} tastes nicely {taste}.",
                                                        f"The {taste} flavor is a nice touch.",
-                                                       f"I love how {taste} this {drink.name} is.",
+                                                       f"I love how {taste} the {drink.name} is.",
                                                        f"{taste.capitalize()} drinks are great.",
                                                        f"I like how it tastes {taste}.",
                                                        f"That's a good {taste} flavor.",
@@ -423,7 +422,7 @@ class Customer:
 
 def create_customer(bar):
     new_customer = Customer(bar)
-    new_customer.generate_customer()
+    new_customer.generate_customer_data()
     return new_customer
 
 
