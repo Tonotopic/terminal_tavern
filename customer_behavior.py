@@ -1,11 +1,21 @@
 from math import exp
 
+from data.ingredients import Beer
+from recipe import Recipe
+
+
 def _sigmoid(x):
     return 1 / (1 + exp(-x))
 
 class CustomerBehavior:
-    def __init__(self, customer):
+    def __init__(self, bar, customer):
+        self.bar = bar
         self.customer = customer
+
+    def favorite_type_variety(self):
+        return (self.bar.bar_stats.cocktail_diversity if self.customer.drink_pref == Recipe else
+                self.bar.bar_stats.beer_diversity if self.customer.drink_pref == Beer else
+                self.bar.bar_stats.wine_diversity)
 
     def chance_to_come_in(self):
         BASE = -0.5  # baseline log-odds at all-mediocre inputs
@@ -18,7 +28,7 @@ class CustomerBehavior:
         }
 
         scores = {
-            "favorite_type_variety": self.favorite_type_variety_score(),
+            "favorite_type_variety": self.favorite_type_variety(),
             "low_prices": self.low_prices_score(),
             "events": self.events_score(),
             "bar_activities": self.bar_activities_score(),
@@ -34,12 +44,12 @@ class CustomerBehavior:
             "favorite_type_variety": 1.0,
             "drink_variety": 1.0,
             "new_options": 1.2,
-            "events": 1.5,  # live activity in the moment matters a lot for "stay another 10 min"
+            "events": 1.5,
             "bar_activities": 1.5,
         }
 
         scores = {
-            "favorite_type_variety": self.favorite_type_variety_score(),
+            "favorite_type_variety": self.favorite_type_variety(),
             "drink_variety": self.drink_variety(),
             "new_options": self.new_options_score(),
             "events": self.events_score(),
@@ -62,7 +72,7 @@ class CustomerBehavior:
         }
 
         scores = {
-            "favorite_type_variety": self.favorite_type_variety_score(),
+            "favorite_type_variety": self.favorite_type_variety(),
             "drink_variety": self.drink_variety(),
             "drinks_rating": self.drinks_rating_score(),
             "new_options": self.new_options_score(),
