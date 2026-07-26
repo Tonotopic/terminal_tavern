@@ -1,8 +1,10 @@
 from math import sqrt
 
 from data.ingredients import Lager, IPA, Stout, SourAle, WheatBeer, Shandy, DoubleIPA, FruitTart, SparklingWine, Rose, \
-    RedWine, WhiteWine, Brandy
+    RedWine, WhiteWine, Brandy, Beer, Wine
 from display import rich_console
+from recipe import Recipe
+
 
 class BarStats:
     def __init__(self, bar, bar_name, balance):
@@ -120,4 +122,36 @@ class BarStats:
             per_type * 0.35 +
             within_type * 0.30
         )
+
+    def variety_of_type(self, drink_pref):
+        """Retrieves the variety score of the given drink type."""
+        diversity_by_type = {
+            Recipe: self.cocktail_diversity,
+            Beer: self.beer_diversity,
+            Wine: self.wine_diversity,
+        }
+        scorer = diversity_by_type.get(drink_pref)
+        return scorer() if scorer else 0.5
+
+    def price_score(self):
+        """Scores how favorably priced the bar's drinks are - based on markup over cost as a ratio, not raw dollar
+        markup, so a fair markup on a cheap well drink and on an expensive premium spirit score are the same."""
+        #TODO: Calibrate price scoring
+        typical_markup_ratio = 3.5
+        sensitivity = 0.15
+
+        markup_ratios = []
+        for section in self.bar.menu.list_menu_by_section():
+            for item in section[0]:
+                if item.cost > 0:
+                    net_markup = item.markup - item.markdown  # dollar amount above/below cost
+                    price = item.cost + net_markup
+                    markup_ratios.append(price / item.cost)
+
+        if not markup_ratios:
+            return 0.5
+
+        avg_ratio = sum(markup_ratios) / len(markup_ratios)
+        score = 0.5 - (avg_ratio - typical_markup_ratio) * sensitivity
+        return max(0.0, min(1.0, score))
 

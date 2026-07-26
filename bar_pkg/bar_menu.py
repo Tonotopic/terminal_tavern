@@ -57,6 +57,7 @@ class BarMenu:
             for section, sect_name, sect_type in self.list_menu_by_section():
                 if isinstance(item, sect_type):
                     return section
+        return None
 
     # </editor-fold>
 

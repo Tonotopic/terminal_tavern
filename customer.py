@@ -6,13 +6,13 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-import recipe
 from data import flavors, ingredients
-from data.ingredients import list_ingredients, get_ingredient
 from data.db_connect import get_connection, close_connection
+from data.ingredients import list_ingredients, get_ingredient
 from display.rich_console import console
-from utility import utils
+from recipe import Recipe
 from utility import logger
+from utility import utils
 
 connection = get_connection()
 cursor = connection.cursor()
@@ -81,7 +81,7 @@ class Customer:
                         self.tags.add(tag)
 
         def generate_drink_pref():
-            probabilities = {ingredients.Beer: 100, recipe.Recipe: 100, ingredients.Wine: 80}
+            probabilities = {ingredients.Beer: 100, Recipe: 100, ingredients.Wine: 80}
             if self.gender == "masc":
                 probabilities[ingredients.Beer] += prob_points["men order beer"]
             elif self.gender == "fem":
@@ -160,7 +160,7 @@ class Customer:
                                                        f"I like a good {taste} drink."]))
                     self.reveal_fav(taste)
 
-        if isinstance(drink, recipe.Recipe):
+        if isinstance(drink, Recipe):
             for ingredient in drink.r_ingredients:
                 if isinstance(ingredient, self.fav_spirit):
                     logger.log("    50 points from favorite spirit")
