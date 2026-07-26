@@ -30,15 +30,15 @@ class CustomerBehavior:
         scores = {
             "favorite_type_variety": self.favorite_type_variety(),
             "low_prices": self.low_prices_score(),
-            "events": self.events_score(),
-            "bar_activities": self.bar_activities_score(),
+            #"events":
+            #"bar_activities":
         }
 
         logit = BASE + sum(WEIGHTS[k] * (scores[k] - 0.5) * 2 for k in WEIGHTS)
         return _sigmoid(logit)
 
     def chance_to_stay(self):
-        BASE = 0.0  # once someone's in the door, default lean is mildly toward staying
+        BASE = 0.0  # once in the door, default leans slightly toward staying
 
         WEIGHTS = {
             "favorite_type_variety": 1.0,
@@ -52,8 +52,8 @@ class CustomerBehavior:
             "favorite_type_variety": self.favorite_type_variety(),
             "drink_variety": self.drink_variety(),
             "new_options": self.new_options_score(),
-            "events": self.events_score(),
-            "bar_activities": self.bar_activities_score(),
+            #"events":
+            #"bar_activities":
         }
 
         logit = BASE + sum(WEIGHTS[k] * (scores[k] - 0.5) * 2 for k in WEIGHTS)
@@ -68,7 +68,7 @@ class CustomerBehavior:
             "drinks_rating": 2.0,
             "new_options": 1.0,
             "quality_per_cost": 1.5,
-            "service": 2.5,  # heaviest weight = biggest swing either way
+            "service": 2.5,
         }
 
         scores = {
@@ -77,7 +77,7 @@ class CustomerBehavior:
             "drinks_rating": self.drinks_rating_score(),
             "new_options": self.new_options_score(),
             "quality_per_cost": self.quality_per_cost_score(),
-            "service": self.service_score(),
+            #"service":
         }
 
         # center each score at 0 (score of 0.5 contributes nothing)
