@@ -144,9 +144,10 @@ class BarStats:
         for section in self.bar.menu.list_menu_by_section():
             for item in section[0]:
                 if item.cost > 0:
-                    net_markup = item.markup - item.markdown  # dollar amount above/below cost
-                    price = item.cost + net_markup
-                    markup_ratios.append(price / item.cost)
+                    cost_value, _ = item.cost_value()
+                    if cost_value:  # guards both None and 0
+                        price = item.base_price()
+                        markup_ratios.append(price / cost_value)
 
         if not markup_ratios:
             return 0.5
