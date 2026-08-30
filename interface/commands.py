@@ -564,7 +564,7 @@ def check_remove(args, bar, ingredient):
     """
     if ingredient is None and len(args) == 0:
         console.print("[error]Invalid args. Use: 'remove margarita', 'remove guinness', etc.")
-    elif bar.menu.remove(args[0]):
+    elif bar.menu.remove_menu_item(args[0]):
         return "remove", args
 
 

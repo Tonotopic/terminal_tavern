@@ -277,7 +277,7 @@ class Customer:
 
         if ordering_pref_drink:
             # Exclude any we've already tried to order but were out of
-            available_menu = bar.menu.get_section(self.drink_pref)
+            available_menu = bar.menu.get_section(self.drink_pref).copy()
             for excluded_item in exclude:
                 if excluded_item in  available_menu:
                     available_menu.remove(excluded_item)
@@ -295,7 +295,7 @@ class Customer:
                 no_drinks()
                 return
             # Choose a drink from the type of drink they want
-            section = bar.menu.get_section(order_typ)
+            section = bar.menu.get_section(order_typ).copy()
             for excluded_item in exclude:
                 if excluded_item in section:
                     section.remove(excluded_item)

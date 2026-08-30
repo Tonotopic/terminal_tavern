@@ -14,8 +14,6 @@ from interface.commands import items_to_commands, find_command, command_to_item,
 from recipe import Recipe
 from utility import logger
 
-# TODO: Drinks that run out are removing themselves from the menu
-
 class BarMenu:
     def __init__(self, bar):
         self.bar = bar
@@ -285,7 +283,7 @@ class BarMenu:
         """Adds an item to the menu under the proper section."""
         self.get_section(item).append(item)
 
-    def remove(self, remove_arg):
+    def remove_menu_item(self, remove_arg):
         """
         Attempts to remove an item from the menu matching the given argument.
 

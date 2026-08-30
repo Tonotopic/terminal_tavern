@@ -5,6 +5,7 @@ from data.ingredients import Lager, IPA, Stout, SourAle, WheatBeer, Shandy, Doub
 from display import rich_console
 from recipe import Recipe
 
+# TODO: Stock amts can be negative
 
 class BarStats:
     def __init__(self, bar, bar_name, balance):
