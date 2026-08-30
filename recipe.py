@@ -4,9 +4,8 @@ from typing import override
 from rich.table import Table
 from rich.text import Text
 
-from data import ingredients, flavors
+from data import ingredients
 from data.ingredients import Ingredient, MenuItem
-from display import rich_console
 from display.rich_console import console, standardized_spacing
 from utility import logger
 

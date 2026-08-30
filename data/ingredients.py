@@ -1,4 +1,5 @@
 import re
+import statistics
 from decimal import Decimal
 from typing import override, Literal
 
@@ -44,6 +45,7 @@ class MenuItem:
             return cost_value, variable
         else:
             console.print(f"[error]Ingredient {self.name} has no product volumes")
+            return None, False
 
     def profit_base(self):
         """
@@ -64,7 +66,7 @@ class MenuItem:
         return profit_base, variable
 
     def base_price(self):
-        """Format and round to the nearest quarter the profit base price of a drink."""
+        """Format and round to the nearest quarter the profit base price of a drink (the price before markup)."""
         return round(quarter_round(self.profit_base()[0]) + self.markup, 2)
 
     def mark_up(self, value, percent: bool):
@@ -738,26 +740,85 @@ class Rose(Wine, MenuItem):
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
-
-class Chardonnay(WhiteWine, MenuItem):
+class DryWhite(WhiteWine, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
-class PinotNoir(RedWine, MenuItem):
+class Chardonnay(DryWhite, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
-class Merlot(RedWine, MenuItem):
+class SauvignonBlanc(DryWhite, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class PinotGrigio(DryWhite, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class SweetWhite(WhiteWine, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class Moscato(SweetWhite, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class SweetRed(RedWine, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class DryRed(RedWine, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class CabernetSauvignon(DryRed, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class PinotNoir(DryRed, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class Merlot(DryRed, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class Malbec(DryRed, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
 
 
 class Riesling(WhiteWine, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class PinkMoscato(Rose, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
@@ -1224,4 +1285,30 @@ def separate_flavored(ingredients):
     unflavored = [spirit for spirit in ingredients if not spirit.flavor]
     return flavored, unflavored
 
+
+def mean_median_cost_value(category):
+    """Returns the mean and median cost values in the given category."""
+    cost_values = []
+    for ingredient in all_ingredients:
+        if not isinstance(ingredient, MenuItem):
+            continue
+
+        cost_value, _ = ingredient.cost_value()
+        if not cost_value:
+            continue
+
+        if isinstance(ingredient, category):
+            cost_values.append(cost_value)
+
+    return statistics.mean(cost_values), statistics.median(cost_values)
+
 # </editor-fold>
+
+# TODO: Calculate average cocktail cost
+# TODO: Align wine median and mean
+"""TYPICAL_COST_BY_TYPE = {
+            "Cocktails": 1.5 * 0.75 + 0.20, # ≈ $1.33 -- base spirit (375mL-tier) + small mixer/bitters allowance
+            "Beer":      mean_median_cost_value(Beer)[0],
+            "Wine":      mean_median_cost_value(Wine)[0],
+            "Cider":     mean_median_cost_value(Cider)[0],
+            "Mead":      mean_median_cost_value(Mead)[0],"""

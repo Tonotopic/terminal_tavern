@@ -1,7 +1,7 @@
-from utility import utils
-from data.ingredients import load_ingredients_from_db, all_ingredients, MenuItem
-from interface import ui
+from data.ingredients import load_ingredients_from_db, Beer, Wine, Cider, Mead, mean_median_cost_value
 from display.rich_console import console
+from interface import ui
+from utility import utils
 
 if utils.debugging():
     width, height = console.size
@@ -9,10 +9,9 @@ if utils.debugging():
 
 load_ingredients_from_db()
 
-for ingredient in all_ingredients:
+"""for ingredient in all_ingredients:
     console.print(f"{ingredient.format_name()} ({ingredient.format_type()})")
-    console.print(ingredient.print_taste_profile())
-
+    console.print(ingredient.print_taste_profile())"""
 
 '''for ingredient in all_ingredients:
     if isinstance(ingredient, MenuItem):
@@ -22,6 +21,12 @@ for ingredient in all_ingredients:
             console.print(ingredient.name)
         except AttributeError as e:
             console.print(ingredient.name)'''
+
+for category in [Beer, Wine, Cider, Mead]:
+    mean, median = mean_median_cost_value(category)
+    console.print(
+        f"{category.__name__} mean: ${mean:.2f}, median: ${median:.2f}"
+    )
 
 ui.startup_screen()
 current_bar = utils.current_bar
