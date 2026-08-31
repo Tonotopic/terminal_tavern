@@ -1,3 +1,5 @@
+from math import exp, log
+
 from display.rich_console import console, standardized_spacing
 from utility import logger
 from utility.utils import quarter_round
@@ -142,3 +144,54 @@ class MenuItem:
     def has_flavor_in_top_n(self, flavor, n=3, **kwargs):
         """Return True if `flavor` appears in the top N taste profile."""
         return flavor in self.top_flavors(n, **kwargs)
+
+    _typical_cost_by_type = None  # not computed yet
+
+    @classmethod
+    def typical_cost_by_type(cls):
+        """Ensures the list of average drink costs is only generated once, and does not cause a circular import."""
+        from data.ingredients import Beer, Cider, Wine, Mead, mean_median_cost_value
+        if cls._typical_cost_by_type is None:
+            cls._typical_cost_by_type = {
+                Beer: mean_median_cost_value(Beer)[0],
+                Cider: mean_median_cost_value(Cider)[0],
+                Wine: mean_median_cost_value(Wine)[0],
+                Mead: mean_median_cost_value(Mead)[0],
+            }
+        return cls._typical_cost_by_type
+
+    def quality_score(self, sensitivity=1.11):
+        """
+        Scores drinks from high-end to low-end quantity based on wholesale price.
+        :param sensitivity: Adjustable sensitivity in order to represent realistic quality spread
+        :return: A score between 0 and 1.
+        """
+        def sigmoid(x):
+            return 1 / (1 + exp(-x))
+
+        from recipe import Recipe
+        from data.ingredients import Beer, Cider, Wine, Mead
+
+        typ = None
+        if isinstance(self, Recipe):
+            typ = Recipe
+        elif isinstance(self, Beer):
+            typ = Beer
+        elif isinstance(self, Cider):
+            typ = Cider
+        elif isinstance(self, Wine):
+            typ = Wine
+        elif isinstance(self, Mead):
+            typ = Mead
+
+        typical_cost = self.typical_cost_by_type().get(typ)
+        if not typical_cost:
+            return 0.5
+
+        cost_value = self.cost_value()[0]
+        if not cost_value:
+            return 0.5
+
+        ratio = cost_value / typical_cost
+        logit = log(ratio) * sensitivity
+        return sigmoid(logit)

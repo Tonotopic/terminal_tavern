@@ -1,4 +1,5 @@
-from data.ingredients import load_ingredients_from_db, Beer, Wine, Cider, Mead, mean_median_cost_value
+from data.ingredients import load_ingredients_from_db, Beer, Wine, Cider, Mead, mean_median_cost_value, all_ingredients
+from data.menu_items import MenuItem
 from display.rich_console import console
 from interface import ui
 from utility import utils
@@ -27,6 +28,11 @@ for category in [Beer, Wine, Cider, Mead]:
     console.print(
         f"{category.__name__} mean: ${mean:.2f}, median: ${median:.2f}"
     )
+
+for ingredient in all_ingredients:
+    if not isinstance(ingredient, MenuItem):
+        continue
+    console.print(f"{ingredient.quality_score() * 100:.2f}: {ingredient.format_name()}")
 
 ui.startup_screen()
 current_bar = utils.current_bar
