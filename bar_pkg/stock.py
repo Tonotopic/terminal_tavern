@@ -4,7 +4,8 @@ from rich.table import Table
 from rich.text import Text
 
 from data.ingredients import all_ingredients, list_ingredients, Ingredient, Beer, Spirit, Liqueur, separate_flavored, \
-    get_ingredient, MenuItem
+    get_ingredient
+from data.menu_items import MenuItem
 from display.rich_console import console, standardized_spacing
 from interface import commands
 from recipe import Recipe

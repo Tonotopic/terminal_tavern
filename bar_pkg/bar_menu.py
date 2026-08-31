@@ -8,7 +8,8 @@ from rich.text import Text
 
 import recipe
 from data import ingredients
-from data.ingredients import Beer, Cider, Wine, Mead, MenuItem, list_ingredients, Ingredient
+from data.ingredients import Beer, Cider, Wine, Mead, list_ingredients, Ingredient
+from data.menu_items import MenuItem
 from display.rich_console import console
 from interface.commands import items_to_commands, find_command, command_to_item, input_loop
 from recipe import Recipe

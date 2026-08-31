@@ -6,7 +6,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from data import flavors, ingredients
+from data import flavors, ingredients, menu_items
 from data.db_connect import get_connection, close_connection
 from data.ingredients import list_ingredients, get_ingredient
 from display.rich_console import console
@@ -126,7 +126,7 @@ class Customer:
     def format_name(self):
         return f"[cstmr]{self.name}[/cstmr]"
 
-    def score_flavors(self, game_time, drink: ingredients.MenuItem, drinking=False):
+    def score_flavors(self, game_time, drink: menu_items.MenuItem, drinking=False):
         # TODO: Score with the ingredients they chose
         logger.log(f"{self.name} scoring {drink.name}:")
         points = Decimal(0)

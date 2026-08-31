@@ -8,7 +8,7 @@ from unidecode import unidecode
 
 import recipe
 from bar_pkg import bar_menu, stock, occupancy, stats
-from data import ingredients
+from data import ingredients, menu_items
 from display.rich_console import console
 from interface import commands
 from recipe import Recipe
@@ -205,7 +205,7 @@ class Bar:
                 self.screen = screen
                 break
 
-    def make_sale(self, menu_item: ingredients.MenuItem):
+    def make_sale(self, menu_item: menu_items.MenuItem):
         if self.stock.has_enough(menu_item):
             self.stock.pour(menu_item)
             self.bar_stats.balance += menu_item.current_price()
