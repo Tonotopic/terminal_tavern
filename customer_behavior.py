@@ -68,7 +68,7 @@ class CustomerBehavior:
             "drink_variety": self.bar.bar_stats.drink_variety(),
             #"drinks_rating":
             #"new_options":
-            #"quality":
+            "quality": self.customer.score_menu_quality()
             #"service":
         }
 

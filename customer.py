@@ -54,6 +54,7 @@ class Customer:
                               "Favorite ingredients": set(), "Favorite keywords": set()}
         self.comments_made = set()
         self.order_history = []
+        self.today_order_history = []
 
     def generate_customer_data(self):
         tag_field = None
@@ -125,6 +126,50 @@ class Customer:
 
     def format_name(self):
         return f"[cstmr]{self.name}[/cstmr]"
+
+    def customer_panel(self):
+
+        unknown_text = Text("Unknown", style=console.get_style("dimmed"))
+
+        def table_fav(attribute, fav_name):
+            text = Text("")
+            if isinstance(attribute, Iterable):
+                for term in attribute:
+                    if self.is_revealed(term):
+                        if attribute == self.fav_tastes:
+                            text += Text(term + ", ", style=console.get_style(term))
+                        elif attribute == self.fav_ingreds:
+                            text += Text(term.name + ", ", style=console.get_style(term.get_style()))
+                        else:
+                            text += Text(term.name + ", ")
+                    else:
+                        text += unknown_text + ", "
+                text = text[:-2]
+
+            else:
+                if self.revealed_favs[fav_name] is None:
+                    text = unknown_text
+                else:
+                    style = attribute().format_type()
+                    text = Text(attribute, style=console.get_style(style))
+
+            table.add_row(f"{fav_name}:", text)
+            table.add_row()
+
+        table = Table(show_header=False, box=None)
+        table.add_row(self.format_name(), f"{self.times_visited} visits")
+        table.add_row()
+
+        table_fav(attribute=self.drink_pref, fav_name="Preferred drink type")
+        table_fav(attribute=self.fav_spirit, fav_name="Favorite spirit")
+        table_fav(attribute=self.fav_tastes, fav_name="Favorite tastes")
+        table_fav(attribute=self.fav_ingreds, fav_name="Favorite ingredients")
+        table_fav(attribute=self.fav_keywords, fav_name="Favorite keywords")
+
+        table.add_row("Order history:", str([order.name for order in self.order_history[:5]]))
+
+        panel = Panel(renderable=table)
+        return panel
 
     def score_flavors(self, game_time, drink: menu_items.MenuItem, drinking=False):
         # TODO: Score with the ingredients they chose
@@ -319,6 +364,7 @@ class Customer:
                                         f"[{style}]{order.name}[/{style}]. "
                                         f"[money](+${"{:.2f}".format(order.current_price())})[/money]")
             self.order_history.append(order)
+            self.today_order_history.append(order)
             self.score_flavors(game_time, order, drinking=True)
         else: # Drink has run out
             # Try to order again with this drink excluded
@@ -375,50 +421,10 @@ class Customer:
         elif pref in self.fav_keywords:
             self.revealed_favs["Favorite keywords"].add(pref)
 
-    def customer_panel(self):
-
-        unknown_text = Text("Unknown", style=console.get_style("dimmed"))
-
-        def table_fav(attribute, fav_name):
-            text = Text("")
-            if isinstance(attribute, Iterable):
-                for term in attribute:
-                    if self.is_revealed(term):
-                        if attribute == self.fav_tastes:
-                            text += Text(term + ", ", style=console.get_style(term))
-                        elif attribute == self.fav_ingreds:
-                            text += Text(term.name + ", ", style=console.get_style(term.get_style()))
-                        else:
-                            text += Text(term.name + ", ")
-                    else:
-                        text += unknown_text + ", "
-                text = text[:-2]
-
-            else:
-                if self.revealed_favs[fav_name] is None:
-                    text = unknown_text
-                else:
-                    style = attribute().format_type()
-                    text = Text(attribute, style=console.get_style(style))
-
-            table.add_row(f"{fav_name}:", text)
-            table.add_row()
-
-        table = Table(show_header=False, box=None)
-        table.add_row(self.format_name(), f"{self.times_visited} visits")
-        table.add_row()
-
-        table_fav(attribute=self.drink_pref, fav_name="Preferred drink type")
-        table_fav(attribute=self.fav_spirit, fav_name="Favorite spirit")
-        table_fav(attribute=self.fav_tastes, fav_name="Favorite tastes")
-        table_fav(attribute=self.fav_ingreds, fav_name="Favorite ingredients")
-        table_fav(attribute=self.fav_keywords, fav_name="Favorite keywords")
-
-        table.add_row("Order history:", str([order.name for order in self.order_history[:5]]))
-
-        panel = Panel(renderable=table)
-        return panel
-
+    def score_menu_quality(self):
+        """Score the menu's quality based on the highest-quality drink ordered today."""
+        unique_items = set(self.today_order_history)
+        return max(item.quality_score() for item in unique_items)
 
 def create_customer(bar):
     new_customer = Customer(bar)
@@ -441,8 +447,10 @@ class CustomerGroup:
         log_msg = ""
         if len(self.customers) > 1:
             for i, cstmr in enumerate(self.customers):
-                # Each customer has visited 1 more time
+
+                cstmr.today_order_history = []
                 cstmr.times_visited += 1
+
                 # Log string formatting
                 if i == len(self.customers) - 1:
                     log_msg = log_msg + "and "
@@ -454,6 +462,7 @@ class CustomerGroup:
             if len(self.customers) > 2:
                 log_msg = log_msg[:-2] + " "
             log_msg = log_msg + "are leaving the bar."
+
         else:
             for cstmr in self.customers:
                 cstmr.times_visited += 1
