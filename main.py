@@ -10,29 +10,32 @@ if utils.debugging():
 
 load_ingredients_from_db()
 
-"""for ingredient in all_ingredients:
-    console.print(f"{ingredient.format_name()} ({ingredient.format_type()})")
-    console.print(ingredient.print_taste_profile())"""
+def print_taste_profiles():
+    for ingredient in all_ingredients:
+        console.print(f"{ingredient.format_name()} ({ingredient.format_type()})")
+        console.print(ingredient.print_taste_profile())
 
-'''for ingredient in all_ingredients:
-    if isinstance(ingredient, MenuItem):
-        try:
-            console.print(ingredient.name, ingredient.list_price())
-        except IndexError as e:
-            console.print(ingredient.name)
-        except AttributeError as e:
-            console.print(ingredient.name)'''
+def print_menu_prices():
+    for ingredient in all_ingredients:
+        if isinstance(ingredient, MenuItem):
+            try:
+                console.print(ingredient.name, ingredient.list_price())
+            except IndexError as e:
+                console.print(ingredient.name)
+            except AttributeError as e:
+                console.print(ingredient.name)
 
-for category in [Beer, Wine, Cider, Mead]:
-    mean, median = mean_median_cost_value(category)
-    console.print(
-        f"{category.__name__} mean: ${mean:.2f}, median: ${median:.2f}"
-    )
+def print_quality_scores():
+    for category in [Beer, Wine, Cider, Mead]:
+        mean, median = mean_median_cost_value(category)
+        console.print(
+            f"{category.__name__} mean: ${mean:.2f}, median: ${median:.2f}"
+        )
 
-for ingredient in all_ingredients:
-    if not isinstance(ingredient, MenuItem):
-        continue
-    console.print(f"{ingredient.quality_score() * 100:.2f}: {ingredient.format_name()}")
+    for ingredient in all_ingredients:
+        if not isinstance(ingredient, MenuItem):
+            continue
+        console.print(f"{ingredient.quality_score() * 100:.2f}: {ingredient.format_name()}")
 
 ui.startup_screen()
 current_bar = utils.current_bar

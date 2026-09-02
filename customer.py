@@ -213,7 +213,8 @@ class Customer:
                     if drinking and not self.is_revealed(spirit):
                         spirit = self.fav_spirit().format_type()
                         self.say(game_time,
-                                 random.choice([f"{spirit} is calling my name!", f"{spirit} cocktails are the best!",
+                                 random.choice([f"{spirit} is calling my name!",
+                                                f"{spirit} cocktails are the best!",
                                                 f"Uh oh... {spirit} is my weakness.",
                                                 f"I'll always say yes to {spirit}.",
                                                 f"Oh, {spirit}... What would I do without you?",
