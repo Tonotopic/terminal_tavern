@@ -5,8 +5,7 @@ from rich.table import Table
 from rich.text import Text
 
 from bar_pkg.bar import Bar
-from data import ingredients
-from data.ingredients import list_ingredients, Ingredient, Drink
+from data.ingredients import list_ingredients, Ingredient, Drink, Beer, Soda, Wine, Mead, Spirit, Herb, Spice
 from display import live_display, rich_console
 from display.rich_console import console
 from interface import commands
@@ -125,12 +124,30 @@ def dashboard(bar):
     # </editor-fold>
 
     prompt = "'Shop' or view the 'menu'"
-    inpt = input_loop(prompt, ["shop", "menu", "open"], bar=bar)
+    inpt = input_loop(prompt, ["shop", "menu", "restock", "open"], bar=bar)
     primary_cmd, args = inpt
     if primary_cmd == "shop":
         bar.set_screen("SHOP")
     elif primary_cmd == "menu":
         bar.set_screen("BAR_MENU")
+    elif primary_cmd == "restock":
+        for inv_item in bar.stock.inventory:
+            if inv_item.name == "club soda":
+                continue
+            if isinstance(inv_item, Beer) or isinstance(inv_item, Soda):
+                restock_threshold = 12 * 20  # 20 beers or sodas
+            elif isinstance(inv_item, Wine) or isinstance(inv_item, Mead):
+                restock_threshold = 48  # 2 bottles of wine or mead
+            elif isinstance(inv_item, Spirit):
+                restock_threshold = 48  # 2 bottles of liquor
+            elif isinstance(inv_item, Herb) or isinstance(inv_item, Spice):
+                restock_threshold = 8  # 8oz herbs or spices
+            else:
+                restock_threshold = 12  # 12 oz liqueur, fruit, etc
+
+            if bar.stock.inventory[inv_item] <= restock_threshold:
+                shop_screen(bar=bar, current_selection=inv_item, msg=f"Restock {inv_item.format_name()}?",
+                            restocking=True)
     elif primary_cmd == "open":
         utils.save_bar(bar)
         bar.set_screen("PLAY")
@@ -203,7 +220,7 @@ def menu_screen(bar):
         # </editor-fold>
 
 
-def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=None):
+def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=None, restocking=False):
     """Opens the shop screen and executes an input loop.
     Sub-categories and ingredient items falling under the current selection are displayed and set as commands.
     The user can view and buy products in their available quantities.
@@ -212,6 +229,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
           :param bar: Active bar object.
           :param current_selection: The current category or product being displayed.
           :param msg: One-time specific prompt, such as confirming a successful purchase.
+          :param restocking: Whether the screen is being called by the restock command.
         """
 
     def shop_layout():
@@ -306,7 +324,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
         # <editor-fold desc="Populating shop panels">
 
-        shop_commands = {"back", "shop"}
+        shop_commands = {"back", "shop"} if not restocking else {"no"}
         shop_list = []
 
         # Type selected, not currently selecting an ingredient
@@ -340,7 +358,7 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
         # Specific ingredient currently selected, show volumes
         elif isinstance(current_selection, Ingredient):
             shop_commands.add("buy")
-            prompt = "Buy \\[volume], or go back"
+            prompt = msg if msg else "Buy \\[volume], or go back"
             style = current_selection.get_style()
             header_text = current_selection.description()
 
@@ -383,8 +401,9 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
             msg = (f"Bought {args[0]}oz of {current_selection.format_name()}. "
                    f"Current stock: {bar.stock.inventory[current_selection]}oz")
             logger.log(msg)
-            shop_screen(bar=bar, current_selection=type(current_selection),
-                        msg=msg)  # Go back from the ingredient screen
+            if not restocking:
+                shop_screen(bar=bar, current_selection=type(current_selection),
+                            msg=msg)  # Go back from the ingredient screen
             return
 
         elif primary_cmd == "back":
@@ -410,6 +429,8 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 
         elif primary_cmd == "flavored":
             showing_flavored = True
+        elif restocking and primary_cmd == "no":
+            return
         elif command_to_item(cmd=primary_cmd, lst=shop_list, plural=True):
             current_selection = command_to_item(primary_cmd, shop_list, plural=True)
         else:

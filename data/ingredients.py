@@ -1167,9 +1167,3 @@ def mean_median_cost_value(category):
 
 # TODO: Calculate average cocktail cost
 # TODO: Align wine median and mean
-"""TYPICAL_COST_BY_TYPE = {
-            "Cocktails": 1.5 * 0.75 + 0.20, # ≈ $1.33 -- base spirit (375mL-tier) + small mixer/bitters allowance
-            "Beer":      mean_median_cost_value(Beer)[0],
-            "Wine":      mean_median_cost_value(Wine)[0],
-            "Cider":     mean_median_cost_value(Cider)[0],
-            "Mead":      mean_median_cost_value(Mead)[0],"""
