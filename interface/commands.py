@@ -330,8 +330,8 @@ def parse_input(prompt=None, commands=None, force_beginning: bool = False, inpt=
     # TODO: As commands with args are added, skip them here
     # If not a command with args, group spaced words together
     parts = inpt.split()
-    # Gather the currently available commands that take args
-    arg_commands = ["shop", "buy", "add", "remove", "load", "markup", "markdown"]  # help is added by find_command
+    # Gather the currently available commands that take args - help is added by find_command
+    arg_commands = ["shop", "buy", "add", "remove", "load", "markup", "markdown", "unstock"]
     current_arg_cmds = []
     for arg_cmd in arg_commands:
         if arg_cmd in commands:
@@ -595,5 +595,30 @@ def check_shop(args, bar, ingredient):
         bar.set_screen("SHOP")
         ui.shop_screen(bar)
     return "shop", args
+
+def check_unstock(args, bar, ingredient):
+    """
+    Attempts to remove an item from the bar's inventory, checking the result.
+
+    :param args: User input for item to remove.
+    :param bar: Current context bar.
+    :return:
+    """
+    if len(args) == 0:
+        console.print("[error]Invalid args. Use: 'unstock spearmint', 'unstock guinness', etc.")
+        return
+    item_cmd = find_command(args[0], items_to_commands(bar.stock.inventory))
+    if item_cmd:
+        logger.log("Unstocking " + item_cmd.name)
+        item_to_unstock = command_to_item(item_cmd, bar.stock.inventory)
+        if item_to_unstock in bar.menu.list_full_menu():
+            console.print("[error]Remove from menu first!")
+            logger.log("Remove from menu first!")
+            return
+        bar.stock.inventory.pop(item_to_unstock)
+        logger.log(f"Removed {item_to_unstock.name} from inventory.")
+        return "unstock", args
+    else:
+        console.print(f"[error]No item found for '{args[0]}'")
 
 # </editor-fold>

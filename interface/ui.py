@@ -75,7 +75,6 @@ def startup_screen():
 
 def dashboard(bar):
     """Display and handle the dashboard screen of the given bar, showing the menu and stats."""
-    # TODO: Ensure inventory slots can be removed somehow so everything the bar has ever had isn't displayed
     # Possibly only drinks that are on the menu
     def render_quick_inventory():
         inventory_ings = sorted(list_ingredients(bar.stock.inventory),
@@ -123,8 +122,8 @@ def dashboard(bar):
         logger.log("Dashboard drawn.")
     # </editor-fold>
 
-    prompt = "'Shop' or view the 'menu'"
-    inpt = input_loop(prompt, ["shop", "menu", "restock", "open"], bar=bar)
+    prompt = "'Shop', view the 'menu', 'restock', or 'open' for business"
+    inpt = input_loop(prompt, ["shop", "menu", "restock", "unstock", "open"], bar=bar)
     primary_cmd, args = inpt
     if primary_cmd == "shop":
         bar.set_screen("SHOP")
@@ -146,8 +145,11 @@ def dashboard(bar):
                 restock_threshold = 12  # 12 oz liqueur, fruit, etc
 
             if bar.stock.inventory[inv_item] <= restock_threshold:
-                shop_screen(bar=bar, current_selection=inv_item, msg=f"Restock {inv_item.format_name()}?",
+                shop_screen(bar=bar, current_selection=inv_item, msg=f"Restock {inv_item.format_name()}? (buy/no)",
                             restocking=True)
+    elif primary_cmd == "unstock":
+        # Unstocking already handled in input loop
+        dashboard(bar)
     elif primary_cmd == "open":
         utils.save_bar(bar)
         bar.set_screen("PLAY")
