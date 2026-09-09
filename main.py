@@ -1,3 +1,5 @@
+import statistics
+
 from data.ingredients import load_ingredients_from_db, Beer, Wine, Cider, Mead, mean_median_cost_value, all_ingredients
 from data.menu_items import MenuItem
 from display.rich_console import console
@@ -36,6 +38,27 @@ def print_quality_scores():
         if not isinstance(ingredient, MenuItem):
             continue
         console.print(f"{ingredient.quality_score() * 100:.2f}: {ingredient.format_name()}")
+
+def print_avg_suggested_price():
+    beer = []
+    wine = []
+    cider = []
+    mead = []
+    for ingredient in all_ingredients:
+        if isinstance(ingredient, MenuItem):
+            if isinstance(ingredient, Beer):
+                beer.append(ingredient.base_price())
+            if isinstance(ingredient, Wine):
+                wine.append(ingredient.base_price())
+            if isinstance(ingredient, Cider):
+                cider.append(ingredient.base_price())
+            if isinstance(ingredient, Mead):
+                mead.append(ingredient.base_price())
+
+    console.print(f"Beer: ${statistics.mean(beer):.2f}\n"
+                  f"Wine: ${statistics.mean(wine):.2f}\n"
+                  f"Cider: ${statistics.mean(cider):.2f}\n"
+                  f"Mead: ${statistics.mean(mead):.2f}")
 
 ui.startup_screen()
 current_bar = utils.current_bar
