@@ -21,7 +21,7 @@ class CustomerBehavior:
 
         scores = {
             "favorite_type_variety": self.bar.bar_stats.variety_of_type(self.customer.drink_pref),
-            "low_prices": self.bar.bar_stats.price_score()
+            "low_prices": self.bar.bar_stats.prices_score(self.customer.drink_pref)
             #"events":
             #"bar_activities":
         }

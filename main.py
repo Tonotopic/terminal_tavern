@@ -60,6 +60,12 @@ def print_avg_suggested_price():
                   f"Cider: ${statistics.mean(cider):.2f}\n"
                   f"Mead: ${statistics.mean(mead):.2f}")
 
+def print_prices_score(bar):
+    console.print(f"Beer: {bar.bar_stats.prices_score(Beer):.2f}\n"
+                  f"Wine: {bar.bar_stats.prices_score(Wine):.2f}\n"
+                  f"Cider: {bar.bar_stats.prices_score(Cider):.2f}\n"
+                  f"Mead: {bar.bar_stats.prices_score(Mead):.2f}\n")
+
 ui.startup_screen()
 current_bar = utils.current_bar
 

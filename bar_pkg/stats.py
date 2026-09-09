@@ -1,9 +1,12 @@
-from math import sqrt
+from math import sqrt, log
+from statistics import median
 
+from customer_behavior import _sigmoid
 from data.ingredients import Lager, IPA, Stout, SourAle, WheatBeer, Shandy, DoubleIPA, FruitTart, SparklingWine, Rose, \
-    RedWine, WhiteWine, Brandy, Beer, Wine
+    RedWine, WhiteWine, Brandy, Beer, Wine, avg_base_menu_price
 from display import rich_console
 from recipe import Recipe
+
 
 # TODO: Stock amts can be negative
 
@@ -134,26 +137,23 @@ class BarStats:
         scorer = diversity_by_type.get(drink_pref)
         return scorer() if scorer else 0.5
 
-    def price_score(self):
-        """Scores how favorably priced the bar's drinks are - based on markup over cost as a ratio, not raw dollar
-        markup, so a fair markup on a cheap well drink and on an expensive premium spirit score are the same."""
-        #TODO: Calibrate price scoring
-        typical_markup_ratio = 3.5
-        sensitivity = 0.15
-
-        markup_ratios = []
-        for section in self.bar.menu.list_menu_by_section():
-            for item in section[0]:
-                if item.cost > 0:
-                    cost_value, _ = item.cost_value()
-                    if cost_value:  # guards both None and 0
-                        price = item.base_price()
-                        markup_ratios.append(price / cost_value)
-
-        if not markup_ratios:
+    def prices_score(self, drink_pref, sensitivity=4.0):
+        menu_section = self.bar.menu.get_section(drink_pref)
+        prices = [menu_item.current_price() for menu_item in menu_section]
+        if not prices:
             return 0.5
 
-        avg_ratio = sum(markup_ratios) / len(markup_ratios)
-        score = 0.5 - (avg_ratio - typical_markup_ratio) * sensitivity
-        return max(0.0, min(1.0, score))
+        median_listed_drink_price = median(prices)
+
+        avg_price_for_type = avg_base_menu_price(drink_pref)
+        if not avg_price_for_type:
+            return 0.5
+
+        ratio = median_listed_drink_price / avg_price_for_type
+        logit = -log(ratio) * sensitivity
+        return _sigmoid(logit)
+
+
+
+
 

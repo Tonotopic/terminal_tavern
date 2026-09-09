@@ -80,7 +80,7 @@ styles = {
     "bar_menu": Style(color="#9c0834"),
     "prompt": Style(color="#429e45"),
     "cmd": Style(color="#429e45"),
-    "cstmr": Style(color="#4e53d9"),
+    "cstmr": Style(color="#7a7dde"),
     "warn": Style(color="#fcba03"),
     "attn": Style(color="#fae41e", underline=True),
     "highlight": Style(color="#a3bfff"),

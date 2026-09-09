@@ -1163,6 +1163,20 @@ def mean_median_cost_value(category):
 
     return statistics.mean(cost_values), statistics.median(cost_values)
 
+def avg_base_menu_price(category):
+    """
+    Returns the average of suggested menu prices for all drinks in the given category.
+
+    :param category: The category of menu item (beer, cocktail, etc) to average prices for.
+    :return: The average suggested menu price in dollars and cents.
+    """
+    prices = []
+    for ingredient in all_ingredients:
+        if isinstance(ingredient, category):
+            prices.append(ingredient.base_price())
+
+    return statistics.mean(prices)
+
 # </editor-fold>
 
 # TODO: Calculate average cocktail cost

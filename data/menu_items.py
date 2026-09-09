@@ -4,6 +4,7 @@ from display.rich_console import console, standardized_spacing
 from utility import logger
 from utility.utils import quarter_round
 
+# TODO: Markup and markdown disappear after exiting the game - do not disappear after passing a day in-game
 
 class MenuItem:
     def __init__(self):
