@@ -45,7 +45,7 @@ class MenuItem:
 
     def base_price(self):
         """Format and round to the nearest quarter the profit base price of a drink (the price before markup)."""
-        return round(quarter_round(self.profit_base()[0]) + self.markup, 2)
+        return round(quarter_round(self.profit_base()[0]), 2)
 
     def mark_up(self, value, percent: bool):
         """
