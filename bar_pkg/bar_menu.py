@@ -93,12 +93,11 @@ class BarMenu:
                 if len(table_section.rows) > console.height - height_buffer - 2:
                     table_section = Table(**table_settings)
                     tables.append(table_section)
+                lst.append(sect_typ)
                 if sect_typ in (recipe.Recipe, ingredients.Beer) or len(menu_section) > 0:
                     table_section.add_row(Text(sect_name, style=console.get_style(sect_name.lower())),
                                           end_section=True)
-                    lst.append(sect_typ)
                     for menu_item in menu_section:
-
                         if len(table_section.rows) > console.height - height_buffer:
                             table_section = Table(**table_settings)
                             tables.append(table_section)
