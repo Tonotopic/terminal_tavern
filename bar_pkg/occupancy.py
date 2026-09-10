@@ -4,8 +4,19 @@ from rich.panel import Panel
 
 import customer
 import utility.clock
+from data.db_connect import get_connection, close_connection
 from display.rich_console import console
 from utility import logger, utils
+
+connection = get_connection()
+cursor = connection.cursor()
+cursor.execute("SELECT * FROM customer_names")
+rows = cursor.fetchall()
+customer_names = {}
+for row in rows:
+    name, gender, tag_field = row
+    customer_names[name] = {"gender": gender, "tag_field": tag_field}
+close_connection(connection)
 
 class Occupancy:
     def __init__(self, bar):
@@ -16,6 +27,7 @@ class Occupancy:
         self.event_log = []
         self.customer_displayed = None
 
+        self.available_customer_names = customer_names
         self.group_id_counter = 1
         self.last_new_customer_time = None
         self.last_return_customer_time = None

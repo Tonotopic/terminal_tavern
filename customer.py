@@ -7,22 +7,11 @@ from rich.table import Table
 from rich.text import Text
 
 from data import flavors, ingredients, menu_items
-from data.db_connect import get_connection, close_connection
 from data.ingredients import list_ingredients, get_ingredient
 from display.rich_console import console
 from recipe import Recipe
 from utility import logger
 from utility import utils
-
-connection = get_connection()
-cursor = connection.cursor()
-cursor.execute("SELECT * FROM customer_names")
-rows = cursor.fetchall()
-customer_names = {}
-for row in rows:
-    name, gender, tag_field = row
-    customer_names[name] = {"gender": gender, "tag_field": tag_field}
-close_connection(connection)
 
 ratio_chances = {
     "order preferred drink type": {True: 0.75, False: 0.25}
@@ -61,9 +50,9 @@ class Customer:
 
         def select_name():
             # TODO: Ensure names arent used twice
-            name = utils.roll_probabilities(customer_names.keys())
-            dict = customer_names[name]
-            customer_names.pop(name)
+            name = utils.roll_probabilities(self.bar.occupancy.available_customer_names.keys())
+            dict = self.bar.occupancy.available_customer_names[name]
+            self.bar.occupancy.available_customer_names.pop(name)
             nonlocal tag_field
             gender = dict["gender"]
             tag_field = dict["tag_field"]

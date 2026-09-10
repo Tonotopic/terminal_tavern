@@ -15,8 +15,6 @@ from interface.commands import items_to_commands, find_command, command_to_item,
 from recipe import Recipe
 from utility import logger
 
-# TODO: Can't access empty sections of menu except for Beer and Cocktails
-
 class BarMenu:
     def __init__(self, bar):
         self.bar = bar
