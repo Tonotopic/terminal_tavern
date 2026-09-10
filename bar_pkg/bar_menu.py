@@ -186,6 +186,9 @@ class BarMenu:
                 elif isinstance(menu_item, Ingredient):
                     for db_ing in ingredients.all_ingredients:
                         if menu_item.name == db_ing.name:
+                            db_ing.markup = menu_item.markup
+                            db_ing.markdown = menu_item.markdown
+                            db_ing.formatted_markdown = menu_item.formatted_markdown
                             new_section.append(db_ing)
                             break
             if isinstance(menu_item, Recipe):
