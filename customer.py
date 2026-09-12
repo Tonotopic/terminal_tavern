@@ -49,7 +49,6 @@ class Customer:
         tag_field = None
 
         def select_name():
-            # TODO: Ensure names arent used twice
             name = utils.roll_probabilities(self.bar.occupancy.available_customer_names.keys())
             dict = self.bar.occupancy.available_customer_names[name]
             self.bar.occupancy.available_customer_names.pop(name)
@@ -362,6 +361,9 @@ class Customer:
                                                              f"{utils.format_a(order.name)} "
                                                              f"[{style}]{order.name}[/{style}], but you've run out!")
             exclude.add(order)
+            if len(exclude) >= len(bar.menu.list_full_menu()):
+                no_drinks()
+                return
             self.order(bar, game_time, exclude)
 
     def say(self, game_time, msg):
