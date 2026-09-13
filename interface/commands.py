@@ -463,6 +463,9 @@ def check_add(args, bar, ingredient):
         typ = command_to_item(find_command(args[0], ["cocktails", "beers", "ciders", "wines", "meads"]),
                               [Recipe, ingredients.Beer, ingredients.Cider, ingredients.Wine, ingredients.Mead],
                               plural=True)
+        if not typ:
+            console.print(f"[error]'{args[0]}' does not match to a type of drink!")
+            return None
         # Display available drinks able to be put on the menu, and attempt to add the user's selection
         if bar.menu.select_to_add(typ): # If successfully added
             return "add", args
