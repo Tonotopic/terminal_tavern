@@ -23,6 +23,7 @@ class BarMenu:
         self.cider: list[Cider] = []
         self.wine: list[Wine] = []
         self.mead: list[Mead] = []
+        self.history = {}
 
     # <editor-fold desc="List">
     def list_full_menu(self):
@@ -285,7 +286,8 @@ class BarMenu:
     def add(self, item):
         """Adds an item to the menu under the proper section."""
         self.get_section(item).append(item)
-
+        if item.name not in self.history:
+            self.history[item.name] = {"freshness": 1.0}
     def remove_menu_item(self, remove_arg):
         """
         Attempts to remove an item from the menu matching the given argument.
@@ -394,3 +396,14 @@ class BarMenu:
             return False
         else:
             return True
+
+    def tick_freshness(self):
+        """Performs the decay and recovery of a menu item's 'freshness' or how long it has been on and off the menu."""
+        decay_per_week_on_menu = 1 / 12
+        recovery_per_week_off_menu = 1 / 12
+        currently_listed_names = {item.name for item in self.list_full_menu()}
+        for name in self.history:
+            if name in currently_listed_names:
+                self.history[name]["freshness"] = max(0.0, self.history[name]["freshness"] - decay_per_week_on_menu)
+            else:
+                self.history[name]["freshness"] = min(1.0, self.history[name]["freshness"] + recovery_per_week_off_menu)

@@ -66,8 +66,14 @@ def print_prices_score(bar):
                   f"Cider: {bar.bar_stats.prices_score(Cider):.2f}\n"
                   f"Mead: {bar.bar_stats.prices_score(Mead):.2f}\n")
 
+def print_menu_freshness_scores(bar):
+    console.print(bar.bar_stats.menu_freshness_score())
+    for name in bar.menu.history:
+        console.print(f"{name}: {bar.menu.history[name]["freshness"]}")
+
 ui.startup_screen()
 current_bar = utils.current_bar
+print_menu_freshness_scores(current_bar)
 
 while True:
     if current_bar.get_screen() == "MAIN":

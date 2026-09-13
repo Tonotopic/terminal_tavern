@@ -24,6 +24,8 @@ prob_points = {
     "people order mead": -50,
 }
 
+# TODO: "Let's go somewhere with cocktail next"
+
 class Customer:
     def __init__(self, bar):
         self.bar = bar

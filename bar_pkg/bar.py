@@ -205,6 +205,9 @@ class Bar:
                 self.screen = screen
                 break
 
+    def start_day(self):
+        self.set_screen("PLAY")
+
     def make_sale(self, menu_item: menu_items.MenuItem):
         if self.stock.has_enough(menu_item):
             self.stock.pour(menu_item)
@@ -220,7 +223,12 @@ class Bar:
     def end_day(self):
         for group in self.occupancy.current_customer_groups:
             group.leave()
+
         self.occupancy.event_log = []
         self.occupancy.last_new_customer_time = None
         self.occupancy.last_return_customer_time = None
+
+        self.bar_stats.days_old += 1
+        self.menu.tick_freshness()
+
         self.set_screen("MAIN")

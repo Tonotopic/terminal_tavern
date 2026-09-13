@@ -14,9 +14,12 @@ class BarStats:
     def __init__(self, bar, bar_name, balance):
         self.bar = bar
         self.bar_name = bar_name
+        self.days_old = 0
+
         self.balance = balance
         self.reputation = 0
         self.rep_level = 0
+
         self.past_customers = {}
 
     def cocktail_diversity(self):
@@ -136,6 +139,23 @@ class BarStats:
         }
         scorer = diversity_by_type.get(drink_pref)
         return scorer() if scorer else 0.5
+
+    def menu_freshness_score(self):
+        """Scores how fresh the menu's options are, based on each item's running freshness meter (decays while listed,
+        recovers while off-menu)."""
+        # needs calibration
+        typical_freshness = 0.2
+        sensitivity = 3.0
+
+        all_items = [item.name for item in self.bar.menu.list_full_menu()]
+        if not all_items:
+            return 0.5
+
+        freshness_values = [self.bar.menu.history[name]["freshness"] for name in all_items]
+        avg_freshness = sum(freshness_values) / len(freshness_values)
+
+        logit = (avg_freshness - typical_freshness) * sensitivity
+        return _sigmoid(logit)
 
     def prices_score(self, drink_pref, sensitivity=4.0):
         menu_section = self.bar.menu.get_section(drink_pref)

@@ -26,6 +26,7 @@ special_plurals = {
     "Amaro": "Amari"
 }
 
+# TODO: Classify Oktoberfest
 
 # <editor-fold desc="Ingredients">
 class Ingredient:

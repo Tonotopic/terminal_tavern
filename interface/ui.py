@@ -12,6 +12,7 @@ from interface import commands
 from interface.commands import items_to_commands, command_to_item, input_loop
 from utility import utils, logger, clock
 
+# TODO: Top panel always says customers 0
 
 def startup_screen():
     """Display and handle the initial screen when the game is started, showing title card and save files."""
@@ -152,7 +153,7 @@ def dashboard(bar):
         dashboard(bar)
     elif primary_cmd == "open":
         utils.save_bar(bar)
-        bar.set_screen("PLAY")
+        bar.start_day()
 
 
 def menu_screen(bar):
