@@ -12,8 +12,6 @@ from interface import commands
 from interface.commands import items_to_commands, command_to_item, input_loop
 from utility import utils, logger, clock
 
-# TODO: Top panel always says customers 0
-
 def startup_screen():
     """Display and handle the initial screen when the game is started, showing title card and save files."""
     saves_table = Table(expand=True, box=box.SIMPLE, style=console.get_style("dimmed"), show_header=False)
@@ -445,8 +443,6 @@ def shop_screen(bar, current_selection: type or Ingredient = Ingredient, msg=Non
 def play_screen(bar, start_game_minutes):
     # Panels
     clock_panel = Panel(renderable="no clock")
-    occupancy_panel = Panel(renderable=f"Customers: {len(bar.occupancy.current_customers())}",
-                            border_style=console.get_style("cstmr"))
     balance_panel = Panel(renderable=f"Balance: [money]${"{:.2f}".format(bar.bar_stats.balance)}",
                           border_style=console.get_style("money"))
     log_panel = bar.occupancy.event_log_panel()
@@ -458,7 +454,6 @@ def play_screen(bar, start_game_minutes):
     play_layout.split_column(Layout(name="top_bar", size=3),
                              Layout(name="body", renderable=log_panel))
     play_layout["top_bar"].split_row(Layout(name="clock", renderable=clock_panel),
-                                     Layout(name="occupancy", renderable=occupancy_panel, size=17),
                                      Layout(name="balance", renderable=balance_panel, size=22))
 
     play_layout["body"].split_row(Layout(name="event_log", renderable=log_panel),
