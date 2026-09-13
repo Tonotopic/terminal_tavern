@@ -26,8 +26,6 @@ special_plurals = {
     "Amaro": "Amari"
 }
 
-# TODO: Classify Oktoberfest
-
 # <editor-fold desc="Ingredients">
 class Ingredient:
     def __init__(self, name=None, flavor=None, character=None, notes=None,
@@ -477,6 +475,12 @@ class Pilsner(PaleLager, MenuItem):
 
 
 class AmberLager(Lager, MenuItem):
+    def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, abv, volumes)
+
+
+class Oktoberfest(AmberLager, MenuItem):
     def __init__(self, name=None, flavor=None, character=None, notes=None, abv=None,
                  volumes=None):
         super().__init__(name, flavor, character, notes, abv, volumes)
