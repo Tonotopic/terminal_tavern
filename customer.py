@@ -303,7 +303,7 @@ class Customer:
             if f"not many {typs}" not in self.comments_made and random.randint(1, 3) == 1:
                 self.say(game_time, msg=random.choice([f"Wish I could have a {typ}.", f"I could really go for a {typ}.",
                                                        f"Aw, they don't have any {typs}.",
-                                                       f"Let's go somewhere with {typ} next.",
+                                                       f"Let's go somewhere with {typs} next.",
                                                        f"I'd be happier with a {typ} in my hand.",
                                                        f"What I could really use is a {typ}.",
                                                        f"I was thinking there'd be {typs}.", f"I'd love a {typ}.",
