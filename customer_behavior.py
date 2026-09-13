@@ -42,8 +42,8 @@ class CustomerBehavior:
 
         scores = {
             "favorite_type_variety": self.bar.bar_stats.variety_of_type(self.customer.drink_pref),
-            "drink_variety": self.bar.bar_stats.drink_variety(),
-            #"new_options":
+            "drink_variety": self.bar.bar_stats.daily_scores["drink_variety"],
+            "menu_freshness": self.bar.bar_stats.daily_scores["menu_freshness"],
             #"events":
             #"bar_activities":
         }
@@ -65,7 +65,7 @@ class CustomerBehavior:
 
         scores = {
             "favorite_type_variety": self.bar.bar_stats.variety_of_type(self.customer.drink_pref),
-            "drink_variety": self.bar.bar_stats.drink_variety(),
+            "drink_variety": self.bar.bar_stats.daily_scores["drink_variety"],
             #"drinks_rating":
             #"new_options":
             "quality": self.customer.score_menu_quality()

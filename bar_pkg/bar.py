@@ -8,6 +8,7 @@ from unidecode import unidecode
 
 import recipe
 from bar_pkg import bar_menu, stock, occupancy, stats
+from bar_pkg.stats import BarStats
 from data import ingredients, menu_items
 from display.rich_console import console
 from interface import commands
@@ -206,6 +207,7 @@ class Bar:
                 break
 
     def start_day(self):
+        self.bar_stats.refresh_daily_scores()
         self.set_screen("PLAY")
 
     def make_sale(self, menu_item: menu_items.MenuItem):

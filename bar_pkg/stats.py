@@ -22,6 +22,9 @@ class BarStats:
 
         self.past_customers = {}
 
+        self.daily_scores = {"drink_variety": 0.5,
+                             "menu_freshness_score": 0.5,}
+
     def cocktail_diversity(self):
         """Counts how many unique flavors are represented in the top 3 flavors of all cocktails, out of all possible
         flavors."""
@@ -62,6 +65,10 @@ class BarStats:
             for target in bonus_targets:
                 if isinstance(wine_option, target):
                     covered_bonus.add(target)
+
+        base_score = len(covered_base) / len(wine_style_targets)
+        bonus_score = len(covered_bonus) / len(bonus_targets)
+        return min(1.0, base_score + bonus_score * 0.2)
 
     def drink_variety(self):
         """Scores the bar on various measures of diversity in drink options."""
@@ -173,6 +180,9 @@ class BarStats:
         logit = -log(ratio) * sensitivity
         return _sigmoid(logit)
 
+    def refresh_daily_scores(self):
+        self.daily_scores["drink_variety"] = self.drink_variety()
+        self.daily_scores["menu_freshness_score"] = self.menu_freshness_score()
 
 
 
