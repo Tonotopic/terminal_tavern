@@ -232,6 +232,7 @@ class Customer:
         return points
 
     def order(self, bar, game_time, exclude=None):
+        # TODO: Default cocktails can be ordered when the ingredients are not present
 
         def order_type_probabilities():
             probs = {}
@@ -275,6 +276,7 @@ class Customer:
                 "No drinks? Are you serious?",
                 "There's really nothing left to drink?", ]))
             self.group.leave(bar, game_time)
+        from data.default_recipes import DEFAULT_RECIPES
 
         if not exclude:
             exclude = set()
@@ -282,8 +284,8 @@ class Customer:
 
         typ = self.drink_pref().format_type().lower()
         typs = self.drink_pref().format_type(plural=True).lower()
-        # If their favorite type of drink is on the menu
-        if len(bar.menu.get_section(self.drink_pref)) > 0:
+        # If their favorite type of drink is on the menu (default cocktails can always be ordered)
+        if len(bar.menu.get_section(self.drink_pref)) > 0 or self.drink_pref == Recipe:
             # If there's not many of that type of drink on the menu, and this customer hasn't already commented on this
             if len(bar.menu.get_section(self.drink_pref)) < 4 and f"no {typs}" not in self.comments_made:
                 self.say(game_time, msg=random.choice([f"There's not a lot of {typs}...",
@@ -312,6 +314,8 @@ class Customer:
         if ordering_pref_drink:
             # Exclude any we've already tried to order but were out of
             available_menu = bar.menu.get_section(self.drink_pref).copy()
+            if self.drink_pref == Recipe:
+                available_menu = available_menu + DEFAULT_RECIPES
             for excluded_item in exclude:
                 if excluded_item in  available_menu:
                     available_menu.remove(excluded_item)
@@ -329,12 +333,14 @@ class Customer:
                 no_drinks()
                 return
             # Choose a drink from the type of drink they want
-            section = bar.menu.get_section(order_typ).copy()
+            available_menu = bar.menu.get_section(order_typ).copy()
+            if order_typ == Recipe:
+                available_menu = available_menu + DEFAULT_RECIPES
             for excluded_item in exclude:
-                if excluded_item in section:
-                    section.remove(excluded_item)
-            if section: # If there's at least one of their chosen type of drink
-                order = favorite_of_list(section)
+                if excluded_item in available_menu:
+                    available_menu.remove(excluded_item)
+            if available_menu: # If there's at least one of their chosen type of drink
+                order = favorite_of_list(available_menu)
             else: # If there's none of their chosen type of drink, just find something to drink
                 full_menu = bar.menu.list_full_menu()
                 # If there's at least something to drink, order by score
