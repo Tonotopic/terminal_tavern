@@ -302,6 +302,18 @@ class BarStock:
                 return True
         return False
 
+    def menu_stocked(self):
+        missing_something = False
+        for menu_item in self.bar.menu.list_full_menu():
+            if not self.has_enough(menu_item):
+                missing_something = True
+                console.print(
+                    f"[error]Not enough {menu_item.name}! Restock or remove from the menu before proceeding.")
+        if missing_something:
+            return False
+        else:
+            return True
+
     def select_ingredients(self, recipe, randoms=False):
         """
         For recipes with ingredients that accept any of a type (i.e. Bourbon), allows the user to select which

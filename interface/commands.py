@@ -553,8 +553,9 @@ def check_new(args, bar, ingredient):
 
 def check_open(args, bar, ingredient):
     """Ensures everything is in order to open the bar."""
-    if bar.menu.check_stock():
-        return "open", args
+    if not bar.stock.menu_stocked():
+        return None
+    return "open", args
 
 
 def check_remove(args, bar, ingredient):

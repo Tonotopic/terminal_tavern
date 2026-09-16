@@ -384,19 +384,6 @@ class BarMenu:
 
     # </editor-fold>
 
-    def check_stock(self):
-        """Returns False if any menu items are out of stock, or True if all can currently be poured."""
-        missing_something = False
-        for menu_item in self.list_full_menu():
-            if not self.bar.stock.has_enough(menu_item):
-                missing_something = True
-                console.print(
-                    f"[error]Not enough {menu_item.name}! Restock or remove from the menu before proceeding.")
-        if missing_something:
-            return False
-        else:
-            return True
-
     def tick_freshness(self):
         """Performs the decay and recovery of a menu item's 'freshness' or how long it has been on and off the menu."""
         decay_per_week_on_menu = 1 / 12
