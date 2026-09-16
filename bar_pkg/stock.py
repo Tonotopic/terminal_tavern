@@ -303,6 +303,7 @@ class BarStock:
         return False
 
     def menu_stocked(self):
+        """Checks whether there is any ingredient on the menu that is out of stock."""
         missing_something = False
         for menu_item in self.bar.menu.list_full_menu():
             if not self.has_enough(menu_item):
@@ -313,6 +314,19 @@ class BarStock:
             return False
         else:
             return True
+
+    def off_menu_stocked(self):
+        """Checks whether there are any crucial ingredients missing for basic off-menu cocktails."""
+        from data.default_recipes import DEFAULT_RECIPES
+        for cocktail in DEFAULT_RECIPES:
+            if not self.has_enough(cocktail):
+                prompt = f"Stocking ingredients for {cocktail.name} is highly recommended! Continue without?"
+                response, _ = commands.input_loop(prompt, ["yes", "no"])
+                if response == "yes":
+                    continue
+                elif response == "no":
+                    return False
+        return True
 
     def select_ingredients(self, recipe, randoms=False):
         """
