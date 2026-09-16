@@ -274,7 +274,7 @@ class BarStock:
                         else:
                             if not ing_missing:
                                 ing_missing = True
-                                print(f"[error]Ingredients missing for {menu_item.name}:")
+                                print(f"[error]Ingredients missing for {menu_item.name}:[/error]")
                             logger.log(
                                 f"{req_ingredient.name} in quantity {available} "
                                 f"not enough to satisfy requirement of {req_quantity}")

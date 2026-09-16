@@ -131,7 +131,7 @@ def command_to_item(cmd, lst, plural=False):
             if entry == Recipe:
                 if cmd == "cocktails":
                     return Recipe
-            elif f"{unidecode(entry().format_type(plural).lower())}" == cmd:
+            elif f"{unidecode(entry().format_type(plural).lower())}" == cmd.lower():
                 return entry
         elif isinstance(entry, ingredients.Ingredient):
             if cmd == unidecode(entry.name.lower()):

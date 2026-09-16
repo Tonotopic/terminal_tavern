@@ -237,7 +237,8 @@ class Recipe(MenuItem):
         for ingredient in self.r_ingredients:
             if isinstance(ingredient, type):
                 continue
-
+            if ingredient is None:
+                logger.log(f"{self.name} ingredient with vol {self.r_ingredients[ingredient]} not registering")
             logger.log(f"Generating taste profile for {self.name}:")
 
             volume = round(Decimal(ingredient.get_portions()[self.r_ingredients[ingredient]]), 2)

@@ -866,7 +866,7 @@ class Liqueur(Alcohol):
 
     @override
     def get_portions(self):
-        return {"Dash": round(1 / 48, 2), "Generous Dash": round(1 / 24, 2), "Splash": 0.25, "Half oz": 1 / 2, "1oz": 1,
+        return {"Dash": round(1 / 48, 2), "Generous Dash": round(1 / 24, 2), "Splash": 0.25, "Half ounce": 1 / 2, "1oz": 1,
                 "Shot": 2, "Double": 4, }
 
 
@@ -940,6 +940,15 @@ class Soda(NonAlcohol):
                  volumes=None):
         super().__init__(name, flavor, character, notes, volumes)
 
+class Cola(Soda):
+    def __init__(self, name=None, flavor=None, character=None, notes=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, volumes)
+
+class GingerAle(Soda):
+    def __init__(self, name=None, flavor=None, character=None, notes=None,
+                 volumes=None):
+        super().__init__(name, flavor, character, notes, volumes)
 
 class EnergyDrink(NonAlcohol):
     def __init__(self, name=None, flavor=None, character=None, notes=None,
@@ -1011,8 +1020,8 @@ class Fruit(Additive):
         super().__init__(name, "", character, "", volumes)
 
     def get_portions(self):
-        unsliceable = {"maraschino cherry", "raspberry", "lychee", "blackberry", "cranberry"}
-        portions = {"Juice (Tsp)": round(1 / 6, 2), "Juice (Tbsp)": 1 / 2, "Juice (1oz)": 1, "Crushed": 1}
+        unsliceable = {"maraschino cherry", "raspberry", "lychee", "blackberry", "cranberry", "green olive"}
+        portions = {"Juice (Tsp)": round(1 / 6, 2), "Juice (Tbsp)": 1 / 2, "Juice (1oz)": 1, "Crushed": 1, "Juice (4oz)": 4}
         if self.name in unsliceable:
             portions["Whole"] = round(1 / 8, 2)
             portions["Crushed"] = round(1 / 8, 2)
