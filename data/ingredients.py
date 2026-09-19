@@ -301,6 +301,8 @@ class Alcohol(Drink):
 
     @override
     def description(self, markup=True):
+        if not self.abv_desc():
+            raise Exception(f"No ABV data for {self.name}")
         return super().description(markup) + self.abv_desc()
 
 

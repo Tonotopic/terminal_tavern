@@ -232,7 +232,6 @@ class Customer:
         return points
 
     def order(self, bar, game_time, exclude=None):
-        # TODO: Default cocktails can be ordered when the ingredients are not present
 
         def order_type_probabilities():
             probs = {}
