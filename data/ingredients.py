@@ -191,7 +191,8 @@ class Ingredient:
         if feedback and not vol_in_recipe:
             logger.log(f"Generating taste profile for {name}:")
 
-        if name.startswith("Rhinegeist"):
+        # Apply extra rules
+        if name.startswith("Rhinegeist"): # All Rhinegeist is brewed with grapefruit
             taste_profile["citrusy"] = Decimal(4.00)
             taste_profile["fruity"] = Decimal(1.00)
 
@@ -199,20 +200,21 @@ class Ingredient:
         for taste in flavors.tastes:
             points = Decimal()
             for word in flavors.tastes[taste]:
+                word_lower = word.lower()
                 desc_weight = Decimal()
                 points_added = 0
-                if word in name_to_type:
+                if word in name_to_type: # Ensures Dry Reds are automatically dry, IPAs are automatically hoppy
                     typ = name_to_type[word]
                     if isinstance(self, typ):
                         desc_weight += Decimal(3)
                 if self.flavor != "":
-                    if word in self.flavor:
+                    if word_lower in self.flavor:
                         desc_weight += Decimal(5)
                 if self.character:
-                    if word in self.character:
+                    if word_lower in self.character.lower():
                         desc_weight += Decimal(3)
                 if self.notes:
-                    if word in self.notes:
+                    if word_lower in self.notes.lower():
                         desc_weight += Decimal(0.75)
                 term_weight = Decimal(flavors.tastes[taste][word])
 
