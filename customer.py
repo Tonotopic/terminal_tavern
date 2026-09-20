@@ -16,12 +16,17 @@ from utility import utils
 ratio_chances = {
     "order preferred drink type": {True: 0.75, False: 0.25}
 }
-prob_points = {
-    "men order beer": 75,
-    "women order beer": -75,
-    "women order wine": 50,
-    "people order wine": -20,
-    "people order mead": -50,
+BASE_WEIGHTS = {
+    ingredients.Beer: 100,
+    ingredients.Wine: 80,
+    ingredients.Mead: 50,
+    ingredients.Cider: 70,
+    Recipe: 100,
+}
+GENDER_MODIFIERS = {
+    "masc": {ingredients.Beer: 2.0},
+    "fem":  {ingredients.Beer: 0.5, ingredients.Wine: 1.6},
+    "neu": {}
 }
 
 class Customer:
@@ -70,13 +75,10 @@ class Customer:
                         self.tags.add(tag)
 
         def generate_drink_pref():
-            probabilities = {ingredients.Beer: 100, Recipe: 100, ingredients.Wine: 80}
-            if self.gender == "masc":
-                probabilities[ingredients.Beer] += prob_points["men order beer"]
-            elif self.gender == "fem":
-                probabilities[ingredients.Wine] += prob_points["women order wine"]
-                probabilities[ingredients.Beer] += prob_points["women order beer"]
-            self.drink_pref = utils.roll_probabilities(probabilities)
+            weights = dict(BASE_WEIGHTS)
+            for drink, mod in GENDER_MODIFIERS.get(self.gender).items():
+                weights[drink] = max(0, weights[drink] + mod)
+            return utils.roll_probabilities(weights)
 
         def generate_fav_spirit():
             self.fav_spirit = utils.roll_probabilities(
@@ -106,7 +108,7 @@ class Customer:
         if tag_field is not None:
             apply_tags()
         if not self.drink_pref:
-            generate_drink_pref()
+            self.drink_pref = generate_drink_pref()
         generate_fav_spirit()
         generate_fav_tastes()
         generate_fav_ingreds()
@@ -233,33 +235,6 @@ class Customer:
 
     def order(self, bar, game_time, exclude=None):
 
-        def order_type_probabilities():
-            probs = {}
-            for section in bar.menu.list_menu_by_section():
-                if len(section[0]) == 0:
-                    continue
-                typ = section[2]
-
-                probs[typ] = 100
-                if typ == ingredients.Wine:
-                    probs[ingredients.Wine] += prob_points["people order wine"]
-                elif typ == ingredients.Mead:
-                    probs[ingredients.Mead] += prob_points["people order mead"]
-
-                for menu_item in section[0]:
-                    probs[typ] += 5
-
-            if self.gender == "masc":
-                if ingredients.Beer in probs:
-                    probs[ingredients.Beer] += prob_points["men order beer"]
-            elif self.gender == "fem":
-                try:
-                    probs[ingredients.Wine] += prob_points["women order wine"]
-                    probs[ingredients.Beer] += prob_points["women order beer"]
-                except KeyError:
-                    pass
-            return probs
-
         def favorite_of_list(list):
             scores = {}
             for menu_item in list:
@@ -326,8 +301,8 @@ class Customer:
                 order = utils.roll_probabilities(available_menu)
 
         if not ordering_pref_drink: # If not ordering favorite drink type
-            # Choose a type of drink from the menu based on preferences
-            order_typ = utils.roll_probabilities(utils.percentize(order_type_probabilities()))
+            # Choose a type of drink from the menu based on people's general likelihood to order each type
+            order_typ = utils.roll_probabilities(utils.percentize(BASE_WEIGHTS))
             if not order_typ:
                 no_drinks()
                 return
