@@ -140,15 +140,22 @@ class BarMenu:
         """
         if isinstance(item, Ingredient):
             description_panel = Panel(renderable=item.description(), border_style=item.get_style())
+
             stock_rem = self.bar.stock.inventory[item]
             pours_left = math.floor(stock_rem / item.pour_vol())
             stock_panel = Panel(
                 renderable=f"[panel]{stock_rem}[/panel]oz in stock ([panel]{pours_left}[/panel] full pours)",
                 border_style=console.get_style("panel"))
+
+            taste_panel = Panel(renderable=item.print_taste_profile())
+
             overview_layout = Layout(name="overview_layout")
             overview_layout.split_column(Layout(name="description", renderable=description_panel,
                                                 size=(4 if len(item.description(markup=False)) > console.width else 3)),
-                                         Layout(name="stock", renderable=stock_panel, size=3))
+                                         Layout(name="remainder_description"))
+            overview_layout["remainder_description"].split_column(Layout(name="stock", renderable=stock_panel, size=3),
+                                                      Layout(name="remainder_stock"))
+            overview_layout["remainder_stock"].split_column(Layout(name="taste_profile", renderable=taste_panel))
 
         elif isinstance(item, recipe.Recipe):
             ingredients_panel = Panel(renderable=item.breakdown_ingredients(), title=item.name,

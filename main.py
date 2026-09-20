@@ -1,6 +1,5 @@
 import statistics
 
-from data import ingredients
 from data.ingredients import load_ingredients_from_db, Beer, Wine, Cider, Mead, mean_median_cost_value, all_ingredients
 from data.menu_items import MenuItem
 from display.rich_console import console
