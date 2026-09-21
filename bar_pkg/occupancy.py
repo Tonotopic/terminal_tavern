@@ -80,20 +80,43 @@ class Occupancy:
 
         :param game_time: The current in-game time.
         """
-        def check_customer_entry():
-            """Triggers customers to enter based on how long it's been since the last customers entered."""
-
+        def check_new_customer_entry():
+            """Triggers customers to spawn and consider entering, using how long it's been since the last customers
+            entered."""
             # Stop entering customers at midnight
             if game_time > 24 * 60:
                 return
 
-            if not self.last_new_customer_time:
-                self.enter_new_customer_group(game_time)
-            elif game_time > self.last_new_customer_time + 20:
-                self.enter_new_customer_group(game_time)
-            else:
-                return
-            self.last_new_customer_time = game_time
+            # TODO: incorporate reputation into new customer spawn rate
+            new_customer_spawn_rate = 30 # Once every X minutes
+
+            # Unless the bar has just opened, wait [rate] minutes from the last new customer spawn
+            if not self.last_new_customer_time or game_time > self.last_new_customer_time + new_customer_spawn_rate:
+                self.last_new_customer_time = game_time
+                group = self.spawn_new_customer_group(game_time)
+                # Choose a random customer from the group, roll for whether they decide to come in
+                cstmr = random.choice(group.customers)
+                if random.random() < cstmr.behavior.chance_to_come_in():
+                    group.arrival = game_time
+                    self.current_customer_groups.add(group)
+
+                    # Verbal logic for entrance message
+                    log_msg = f"[attn]New customers enter![/attn] - "
+                    i = 0
+                    for cstmr in group.customers:
+                        if i == len(group.customers) - 1 and len(group.customers) > 1:
+                            log_msg = log_msg + "and "
+                        log_msg = log_msg + cstmr.format_name()
+                        if len(group.customers) > 2:
+                            log_msg = log_msg + ", "
+                        else:
+                            log_msg = log_msg + " "
+                        i += 1
+                    if len(group.customers) > 2:
+                        log_msg = log_msg[:-2]
+                    self.print_msg(log_msg, game_time)
+
+
 
         def check_customer_orders():
             """Triggers orders from customers based on when they ordered their last round."""
@@ -115,7 +138,7 @@ class Occupancy:
                 if game_time > group.arrival + 90:
                     group.leave(self.bar, game_time)
 
-        check_customer_entry()
+        check_new_customer_entry()
         check_customer_orders()
         check_customers_leaving()
 
@@ -148,44 +171,26 @@ class Occupancy:
         self.group_id_counter += 1
         return group_id
 
-    def enter_new_customer_group(self, game_time):
+    def spawn_new_customer_group(self, game_time):
         # Chances for different group sizes to spawn
-        group_sizes = {1: 4,
+        group_sizes = {1: 3,
                        2: 2.5,
                        3: 2,
-                       4: 0.5,
-                       5: 0.025,
-                       6: 0.025}
+                       4: 1,
+                       5: 0.5,
+                       6: 0.25}
         headcount = random.choices(list(group_sizes.keys()), weights=list(group_sizes.values()))[0]
-
-        new_customers = True
-        if len(self.bar.bar_stats.past_customers) >= 6 and random.randrange(3) > 2: # 1/3 will be returning customers
-            new_customers = False
-
-        log_msg = f"[attn]New customers enter![/attn] - " if new_customers \
-            else f"[attn]Repeat patrons enter![/attn] - "
-
         # TODO: Repeat patrons
         # Create new customers
-        customers = set()
+        customers = []
         group_id = self.new_group_id()
         for i in range(headcount):
             cstmr = customer.create_customer(bar=self.bar)
-            customers.add(cstmr)
-            if i == headcount - 1 and headcount > 1:
-                log_msg = log_msg + "and "
-            log_msg = log_msg + cstmr.format_name()
-            if headcount > 2:
-                log_msg = log_msg + ", "
-            else:
-                log_msg = log_msg + " "
-        if headcount > 2:
-            log_msg = log_msg[:-2]
+            customers.append(cstmr)
 
         group = customer.CustomerGroup(group_id=group_id, customers=customers)
         for member in customers:
             member.group = group
-        group.arrival = game_time
+        return group
 
-        self.current_customer_groups.add(group)
-        self.print_msg(log_msg, game_time)
+

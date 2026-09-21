@@ -15,8 +15,8 @@ class CustomerBehavior:
         WEIGHTS = {
             "favorite_type_variety": 1.0,
             "low_prices": 2.0,
-            "events": 1.8,
-            "bar_activities": 1.2,
+            #"events": 1.8,
+            #"bar_activities": 1.2,
         }
 
         scores = {
@@ -36,8 +36,8 @@ class CustomerBehavior:
             "favorite_type_variety": 1.0,
             "drink_variety": 1.0,
             "new_options": 1.2,
-            "events": 1.5,
-            "bar_activities": 1.5,
+            #"events": 1.5,
+            #"bar_activities": 1.5,
         }
 
         scores = {
@@ -57,10 +57,10 @@ class CustomerBehavior:
         WEIGHTS = {
             "favorite_type_variety": 1.2,
             "drink_variety": 1.0,
-            "drinks_rating": 2.0,
+            #"drinks_rating": 2.0,
             "new_options": 1.0,
             "quality": 1.5,
-            "service": 2.5,
+            #"service": 2.5,
         }
 
         scores = {

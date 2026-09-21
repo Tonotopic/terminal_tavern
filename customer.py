@@ -6,6 +6,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from customer_behavior import CustomerBehavior
 from data import flavors, ingredients, menu_items
 from data.ingredients import list_ingredients, get_ingredient
 from display.rich_console import console
@@ -32,6 +33,7 @@ GENDER_MODIFIERS = {
 class Customer:
     def __init__(self, bar):
         self.bar = bar
+        self.behavior = CustomerBehavior(bar, self)
         self.name = None
         self.gender = None
         self.tags = set()

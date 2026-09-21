@@ -1193,6 +1193,8 @@ def avg_base_menu_price(category):
         if isinstance(ingredient, category):
             prices.append(ingredient.base_price())
 
+    if not prices:
+        return None
     return statistics.mean(prices)
 
 # </editor-fold>
