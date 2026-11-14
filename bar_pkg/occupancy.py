@@ -84,8 +84,8 @@ class Occupancy:
             """Triggers customers to spawn and consider entering, using how long it's been since the last customers
             entered."""
             # Stop entering customers at midnight
-            #if game_time > 24 * 60:
-                #return
+            if game_time > 24 * 60:
+                return
 
             # TODO: incorporate reputation into new customer spawn rate
             new_customer_spawn_rate = 30 # Once every X minutes
