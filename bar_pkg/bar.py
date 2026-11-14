@@ -223,7 +223,7 @@ class Bar:
             return False
 
     def end_day(self, game_time):
-        for group in self.occupancy.current_customer_groups:
+        for group in list(self.occupancy.current_customer_groups):
             group.leave(self, game_time)
 
         self.occupancy.event_log = []
