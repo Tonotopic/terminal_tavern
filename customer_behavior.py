@@ -35,7 +35,7 @@ class CustomerBehavior:
         WEIGHTS = {
             "favorite_type_variety": 1.0,
             "drink_variety": 1.0,
-            "new_options": 1.2,
+            "menu_freshness": 1.2,
             #"events": 1.5,
             #"bar_activities": 1.5,
         }

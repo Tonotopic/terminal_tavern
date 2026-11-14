@@ -84,8 +84,8 @@ class Occupancy:
             """Triggers customers to spawn and consider entering, using how long it's been since the last customers
             entered."""
             # Stop entering customers at midnight
-            if game_time > 24 * 60:
-                return
+            #if game_time > 24 * 60:
+                #return
 
             # TODO: incorporate reputation into new customer spawn rate
             new_customer_spawn_rate = 30 # Once every X minutes
@@ -135,8 +135,19 @@ class Occupancy:
         def check_customers_leaving():
             """Triggers customers to leave based on how long they've been in the bar."""
             for group in self.current_customer_groups.copy():
-                if game_time > group.arrival + 90:
-                    group.leave(self.bar, game_time)
+                if game_time > group.arrival + 30: # Stay for at least half an hour
+                    if game_time > group.arrival + 240: # Don't stay over 4 hours
+                        logger.log(f"{[cstmr.name for cstmr in group.customers]} leaving after 4hrs")
+                        group.leave(self.bar, game_time)
+                    if (game_time - group.arrival) % 10 == 0: # Every 10 minutes, decide whether to leave
+                        votes_to_leave = 0
+                        for cstmr in group.customers:
+                            if random.random() > cstmr.behavior.chance_to_stay():
+                                votes_to_leave += 1
+                        if votes_to_leave / len(group.customers) > 0.5:
+                            logger.log(f"{[cstmr.name for cstmr in group.customers]} voting to leave after "
+                                       f"{game_time - group.arrival} minutes")
+                            group.leave(self.bar, game_time)
 
         check_new_customer_entry()
         check_customer_orders()

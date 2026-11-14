@@ -42,7 +42,7 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
 
             if clock_hours == 2:
                 stop_func()
-                bar.end_day()
+                bar.end_day(current_game_mins(start_game_mins))
                 global day_ended
                 day_ended = True
 

@@ -222,9 +222,9 @@ class Bar:
             self.occupancy.print_msg(f"[error]Not enough {menu_item.name}![/error]")
             return False
 
-    def end_day(self):
+    def end_day(self, game_time):
         for group in self.occupancy.current_customer_groups:
-            group.leave()
+            group.leave(self, game_time)
 
         self.occupancy.event_log = []
         self.occupancy.last_new_customer_time = None

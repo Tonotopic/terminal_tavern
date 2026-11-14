@@ -23,7 +23,7 @@ class BarStats:
         self.past_customers = {}
 
         self.daily_scores = {"drink_variety": 0.5,
-                             "menu_freshness_score": 0.5,}
+                             "menu_freshness": 0.5,}
 
     def cocktail_diversity(self):
         """Counts how many unique flavors are represented in the top 3 flavors of all cocktails, out of all possible
