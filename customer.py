@@ -165,22 +165,22 @@ class Customer:
 
     def score_flavors(self, game_time, drink: menu_items.MenuItem, drinking=False):
         # TODO: Score with the ingredients they chose
-        logger.log(f"{self.name} scoring {drink.name}:")
+        logger.log(f"[dimmed]{self.name} scoring {drink.format_name()}:")
         points = Decimal(0)
 
         cost_points = round(Decimal(drink.cost_value()[0] * 8), 2)
         points += cost_points
-        logger.log(f"   {cost_points} points from cost value")
+        logger.log(f"   [dimmed]{cost_points} points from cost value")
 
         if isinstance(drink, self.drink_pref):
             points += 50
-            logger.log("    50 points from preferred drink type")
+            logger.log("    [dimmed]50 points from preferred drink type")
 
         for taste in self.fav_tastes:
             if drink.has_flavor_in_top_n(taste, 5):
                 taste_points = drink.taste_profile[taste] * 5
                 points += taste_points
-                logger.log(f"   {taste_points} points from favorite taste {taste}")
+                logger.log(f"   [dimmed]{taste_points} points from favorite taste {taste}")
                 if drinking and taste_points > 25 and not self.is_revealed(taste):
                     self.say(game_time, random.choice([f"I'm a big fan of the {taste} flavor in the {drink.name}.",
                                                        f"I love when drinks taste {taste}.",
@@ -232,7 +232,7 @@ class Customer:
                                                     f"Aw, {ingredient.name}! I love {ingredient.name}.",
                                                     f"{ingredient.name.capitalize()} cocktail? My lucky day!"]))
 
-        logger.log(f"{points} points total")
+        logger.log(f"[dimmed]{points} points total")
         return points
 
     def order(self, bar, game_time, exclude=None):

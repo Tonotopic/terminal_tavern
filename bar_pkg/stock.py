@@ -221,7 +221,7 @@ class BarStock:
             logger.log(f"Can pour {number_pourable} {menu_item.name}")
             return number_pourable
         else:
-            logger.log(f"Checking ingredients for {menu_item.name}...")
+            logger.log(f"[dimmed]Checking ingredients for {menu_item.name}...")
             ing_missing = False
             max_servings = float('inf')  # Track the maximum servings across all ingredients
             for req_ingredient, req_quantity in menu_item.r_ingredients.items():
@@ -240,10 +240,10 @@ class BarStock:
                             if servings > highest_vol_match:  # Use the best match of this type
                                 highest_vol_match = servings
                                 logger.log(
-                                    f"   {inv_ingredient.name} in quantity {available} satisfies "
+                                    f"   [dimmed]{inv_ingredient.name} in quantity {available} satisfies "
                                     f"{req_ingredient().format_type()} requirement ({servings} servings)")
                             else:
-                                logger.log(f"   {inv_ingredient.name} in quantity {available} "
+                                logger.log(f"   [dimmed]{inv_ingredient.name} in quantity {available} "
                                            f"not enough for {req_ingredient().format_type()} requirement")
                     # If no ingredients found with enough volume to pour, there is an ingredient missing for the recipe
                     if found_match and highest_vol_match > 0:
@@ -268,7 +268,7 @@ class BarStock:
                         available = self.inventory[req_ingredient]
                         servings = available // req_quantity
                         if servings > 0:
-                            logger.log(f"   {req_ingredient.name} in quantity {available} "
+                            logger.log(f"   [dimmed]{req_ingredient.name} in quantity {available} "
                                        f"satisfies requirement ({servings} servings)")
                             max_servings = min(max_servings, servings)
                         else:
@@ -276,7 +276,7 @@ class BarStock:
                                 ing_missing = True
                                 print(f"[error]Ingredients missing for {menu_item.name}:[/error]")
                             logger.log(
-                                f"{req_ingredient.name} in quantity {available} "
+                                f"[error]{req_ingredient.name} in quantity {available} "
                                 f"not enough to satisfy requirement of {req_quantity}")
                             print(f"[error] Not enough {req_ingredient.name}![/error]")
                     else:

@@ -1,109 +1,93 @@
 import datetime
-import inspect
 import logging
 import os
 import sys
-import traceback
-import types
 from logging.handlers import RotatingFileHandler
 
-from display.rich_console import console
+from rich.console import Console
+from rich.highlighter import NullHighlighter
+from rich.logging import RichHandler
+from display.rich_console import console, theme
 
 
-# TODO: Rich logs
-
-def filename():
+def get_filename():
     """Generates a filename with a timestamp."""
     now = datetime.datetime.now().strftime("%m-%d--%H-%M-%S")
     return os.path.join(logs_dir, f"{now}.log")
 
 
-def log(msg):
-    """Prints to log only with timestamp."""
-    timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")[:12]
-    logger.info(f"{timestamp} - {msg}")
-
-
-def logprint(msg):
-    """Prints to the log and the console."""
-    console.print(msg)
-    log(msg)
-
-
 def delete_oldest_log(log_dir, max_files):
-    log_files = os.listdir(log_dir)
-    log_files = [os.path.join(log_dir, f) for f in log_files]
-    log_files.sort(key=lambda x: os.path.getmtime(x))
+    log_files = [os.path.join(log_dir, f) for f in os.listdir(log_dir)]
+    log_files.sort(key=os.path.getmtime)
     if len(log_files) > max_files:
         os.remove(log_files[0])
 
 
-def log_exception(exc_type, exc_value, exc_traceback):
-    """Logs and prints traceback and locals when an exception is encountered."""
-    console.print("[error]!!!!!!!!Exception encountered!!!!!!!!!!")
-    tb_str = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-    logprint(tb_str)
+# <editor-fold desc="Setup Directories and Rotation">
+logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+os.makedirs(logs_dir, exist_ok=True)
 
-    # Extract the frame where the exception occurred
-    tb = exc_traceback
-    while tb.tb_next:
-        tb = tb.tb_next
-    frame = tb.tb_frame
+log_path = get_filename()
+file_handler = RotatingFileHandler(
+    log_path, maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"
+)
 
-    # Get local variables from the frame
-    logprint("[error]Locals:")
+file_console = Console(
+    file=file_handler.stream,
+    theme=theme,
+    width=140,
+    force_terminal=True,
+    color_system="256",
+    highlight=False,  # disabling highlighting ensures the style of numbers is not overwritten to be uniform
+)
 
-    local_vars = frame.f_locals
-    for var_name, var_value in local_vars.items():
-        try:
-            if var_name.startswith("__") or isinstance(var_value, types.ModuleType):
-                continue
+rich_file_handler = RichHandler(
+    console=file_console,
+    markup=True,
+    highlighter=NullHighlighter(),
+    rich_tracebacks=True,
+    tracebacks_show_locals=True,
+)
 
-            def is_ingredient(obj):
-                for cls in inspect.getmro(type(obj)):
-                    if cls.__name__ == "Ingredient":
-                        return True
+rich_console_handler = RichHandler(
+    console=console,
+    markup=True,
+    highlighter=NullHighlighter(),
+    rich_tracebacks=True,
+    tracebacks_show_locals=True,
+)
+rich_console_handler.setLevel(logging.WARNING)
 
-            def ing_name(obj):
-                if hasattr(obj, "name"):
-                    return obj.name
-                else:
-                    return obj.format_type()
-
-            if isinstance(var_value, list) or isinstance(var_value, dict):
-                locals_line = f"  [l]{var_name}[/l]: "
-                for item in var_value:
-                    if is_ingredient(item):
-                        locals_line += f"{ing_name(item)}, "
-                    else:
-                        locals_line += str(var_value)
-            else:
-                if is_ingredient(var_value):
-                    var_value = ing_name(var_value)
-                locals_line = f"  [l]{var_name}[/l]: {var_value}"
-
-            logger.error(locals_line)
-            if len(locals_line) > 500:
-                locals_line = locals_line[:500] + "..."
-            console.print(locals_line)
-        except Exception as e:
-            console.print(e)
-            continue
-
-
-logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")  # Go up one directory, then into logs
-if not os.path.exists(logs_dir):
-    os.makedirs(logs_dir)
-
-filename = filename()
-
-logger = logging.getLogger()
+logger = logging.getLogger("app")
 logger.setLevel(logging.DEBUG)
+logger.addHandler(rich_file_handler)
+logger.addHandler(rich_console_handler)
+# </editor-fold>
 
-file_handler = RotatingFileHandler(filename, maxBytes=10 * 1024 * 1024, backupCount=5)
 
-logger.addHandler(file_handler)
+# <editor-fold desc="Public Helper Functions">
+def log(msg):
+    """Logs to file only (RichHandler adds the timestamp automatically)."""
+    logger.info(msg)
+
+
+def logprint(msg):
+    """Prints to the console AND logs to the file."""
+    console.print(msg)
+    logger.info(msg)
+
+
+def log_exception(exc_type, exc_value, exc_traceback):
+    """Logs and prints formatted Rich tracebacks with local variables."""
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    logger.critical(
+        "[error]!!!!!!!!Exception encountered!!!!!!!!!![/error]",
+        exc_info=(exc_type, exc_value, exc_traceback),
+    )
+# </editor-fold>
+
 
 sys.excepthook = log_exception
-
 delete_oldest_log(logs_dir, 5)

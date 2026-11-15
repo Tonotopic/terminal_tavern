@@ -41,7 +41,7 @@ class Occupancy:
         """
         if game_time:
             timestamp = utility.clock.print_time(game_time)
-            msg = f"{timestamp}: {msg}"
+            msg = f"[soda]{timestamp}:[/soda] {msg}"
 
         # Divide the message so it wraps when it reaches the panel's width
         line_width = int((console.width / 2) - 6) # Panel borders take up 6 characters' width

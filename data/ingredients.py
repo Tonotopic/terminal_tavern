@@ -189,7 +189,7 @@ class Ingredient:
             name = self.name
 
         if feedback and not vol_in_recipe:
-            logger.log(f"Generating taste profile for {name}:")
+            logger.log(f"Generating taste profile for {self.format_name()}:")
 
         # Apply extra rules
         if name.startswith("Rhinegeist"): # All Rhinegeist is brewed with grapefruit

@@ -156,7 +156,10 @@ taste_styles = {
 all_styles = styles | ingredient_styles | taste_styles
 
 theme = Theme(all_styles)
-console = Console(theme=theme)
+console = Console(
+    theme=theme,
+    highlight=False,  # Disables Console-level auto-highlighting
+)
 
 # Make room for the prompt line when anything renders using display size
 width, height = console.size
