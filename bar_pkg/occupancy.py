@@ -88,7 +88,8 @@ class Occupancy:
                 return
 
             # TODO: incorporate reputation into new customer spawn rate
-            new_customer_spawn_rate = 30 # Once every X minutes
+            new_customer_spawn_rate = 15 if self.bar.bar_stats.day_of_week() in ("Friday", "Saturday", "Sunday") \
+                else 30 # Once every X minutes
 
             # Unless the bar has just opened, wait [rate] minutes from the last new customer spawn
             if not self.last_new_customer_time or game_time > self.last_new_customer_time + new_customer_spawn_rate:
