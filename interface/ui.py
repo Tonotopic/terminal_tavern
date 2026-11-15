@@ -121,7 +121,7 @@ def dashboard(bar):
         logger.log("Dashboard drawn.")
     # </editor-fold>
 
-    prompt = "'Shop', view the 'menu', 'restock', or 'open' for business"
+    prompt = "'Shop', view the 'menu', 'restock', 'unstock', or 'open' for business"
     inpt = input_loop(prompt, ["shop", "menu", "restock", "unstock", "open"], bar=bar)
     primary_cmd, args = inpt
     if primary_cmd == "shop":
@@ -144,7 +144,8 @@ def dashboard(bar):
                 restock_threshold = 12  # 12 oz liqueur, fruit, etc
 
             if bar.stock.inventory[inv_item] <= restock_threshold:
-                shop_screen(bar=bar, current_selection=inv_item, msg=f"Restock {inv_item.format_name()}? (buy/no)",
+                shop_screen(bar=bar, current_selection=inv_item, msg=f"Restock {inv_item.format_name()}? "
+                                                                     f"('buy #' or 'no')",
                             restocking=True)
     elif primary_cmd == "unstock":
         # Unstocking already handled in input loop
