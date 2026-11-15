@@ -270,7 +270,7 @@ def find_command(inpt, commands=None, force_beginning=False, feedback=True):
     # </editor-fold>
 
     if feedback:
-        logger.log(f"'{inpt}' cmd matches: {matching_commands}")
+        logger.log(f"[cmd]'{inpt}' cmd matches: {matching_commands}")
 
     if len(matching_commands) == 1:
         # found 1 match
