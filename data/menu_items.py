@@ -137,7 +137,7 @@ class MenuItem:
 
     def top_flavors(self, n=3, **kwargs):
         """Return the top N flavors as a dict, ordered by percentage."""
-        profile = self.generate_taste_profile(**kwargs)
+        profile = self.taste_profile
         return dict(list(profile.items())[:n])
 
     def has_flavor_in_top_n(self, flavor, n=3, **kwargs):
