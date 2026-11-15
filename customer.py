@@ -80,7 +80,7 @@ class Customer:
             weights = dict(BASE_WEIGHTS)
             for drink, mod in GENDER_MODIFIERS.get(self.gender).items():
                 weights[drink] = max(0, weights[drink] + mod)
-            return utils.roll_probabilities(weights)
+            return utils.roll_probabilities(utils.percentize(weights))
 
         def generate_fav_spirit():
             self.fav_spirit = utils.roll_probabilities(
