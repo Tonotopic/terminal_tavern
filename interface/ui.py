@@ -88,7 +88,8 @@ def dashboard(bar):
         return table
 
     # <editor-fold desc="Layout"
-    bar_name_panel = Panel(renderable=f"Welcome to [underline]{bar.bar_stats.bar_name}!")
+    bar_name_panel = Panel(renderable=f"{bar.bar_stats.bar_name}  -  {bar.bar_stats.day_of_week()}, "
+                                      f"{bar.bar_stats.day_of_season} {bar.bar_stats.season.name.capitalize()}",)
     balance_panel = Panel(renderable=f"Balance: [money]${str(bar.bar_stats.balance)}[/money]  "
                                      f"Reputation: Lvl {bar.bar_stats.rep_level}")
     menu_panel = Panel(title="~*~ Menu ~*~", renderable="render failed",

@@ -1,3 +1,4 @@
+from enum import Enum
 from math import sqrt, log
 from statistics import median
 
@@ -10,11 +11,20 @@ from recipe import Recipe
 
 # TODO: Stock amts can be negative
 
+class Season(Enum):
+    SPRING = 1
+    SUMMER = 2
+    FALL = 3
+    WINTER = 4
+
 class BarStats:
     def __init__(self, bar, bar_name, balance):
         self.bar = bar
         self.bar_name = bar_name
-        self.days_old = 0
+
+        self.days_since_open = 0
+        self.season = Season.SPRING
+        self.day_of_season = 1
 
         self.balance = balance
         self.reputation = 0
@@ -24,6 +34,14 @@ class BarStats:
 
         self.daily_scores = {"drink_variety": 0.5,
                              "menu_freshness": 0.5,}
+
+    def day_of_week(self):
+        if self.days_since_open == 0:
+            return "Monday"
+
+        days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        remainder = self.days_since_open % 7
+        return days_of_week[remainder]
 
     def cocktail_diversity(self):
         """Counts how many unique flavors are represented in the top 3 flavors of all cocktails, out of all possible

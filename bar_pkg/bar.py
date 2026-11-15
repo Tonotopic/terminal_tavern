@@ -8,7 +8,7 @@ from unidecode import unidecode
 
 import recipe
 from bar_pkg import bar_menu, stock, occupancy, stats
-from bar_pkg.stats import BarStats
+from bar_pkg.stats import BarStats, Season
 from data import ingredients, menu_items
 from display.rich_console import console
 from interface import commands
@@ -230,7 +230,16 @@ class Bar:
         self.occupancy.last_new_customer_time = None
         self.occupancy.last_return_customer_time = None
 
-        self.bar_stats.days_old += 1
+        self.bar_stats.days_since_open += 1
+        self.bar_stats.day_of_season += 1
+        if self.bar_stats.day_of_season > 28:
+            self.bar_stats.day_of_season = 1
+            if self.bar_stats.season == Season.WINTER:
+                self.bar_stats.season = Season.SPRING
+            else:
+                self.bar_stats.season += 1
+
+
         self.menu.tick_freshness()
 
         self.set_screen("MAIN")

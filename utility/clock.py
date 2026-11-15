@@ -37,7 +37,9 @@ def run_clock(bar, start_game_mins, clock_panel, layout):
             current_mins = current_game_mins(start_game_mins)
             clock_hours, clock_minutes = clock_time(current_mins)
 
-            clock_panel.renderable = f"Sunday 01 Jan {clock_hours:02}:{clock_minutes:02}"
+            clock_panel.renderable = (f"{bar.bar_stats.day_of_week()}, "
+                                      f"{bar.bar_stats.day_of_season} {bar.bar_stats.season.name.capitalize()}  "
+                                      f"{clock_hours:02}:{clock_minutes:02}")
             live.update(layout, refresh=False)
 
             if clock_hours == 2:
